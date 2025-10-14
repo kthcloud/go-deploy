@@ -2,12 +2,12 @@ package metrics_update
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/key_value"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/db/resources/user_repo"
-	"go-deploy/pkg/metrics"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/key_value"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/user_repo"
+	"github.com/kthcloud/go-deploy/pkg/metrics"
+	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )

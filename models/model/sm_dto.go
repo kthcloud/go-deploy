@@ -1,7 +1,7 @@
 package model
 
 import (
-	"go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
 )
 
 // ToDTO converts an SM to a body.SmRead DTO.

@@ -2,10 +2,10 @@ package gpu_groups
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/gpu_group_repo"
-	sUtils "go-deploy/service/utils"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_group_repo"
+	sUtils "github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // Get gets a GPU group by ID

@@ -2,16 +2,17 @@ package v2
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/notifications/opts"
-	v12 "go-deploy/service/v2/utils"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/notifications/opts"
+	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // GetNotification godoc
@@ -21,6 +22,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
 // @Success 200 {object} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -36,13 +38,13 @@ func GetNotification(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	notification, err := service.V2(auth).Notifications().Get(requestQuery.NotificationID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -56,6 +58,7 @@ func GetNotification(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all notifications"
 // @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
@@ -74,7 +77,7 @@ func ListNotifications(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -90,7 +93,7 @@ func ListNotifications(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -109,6 +112,7 @@ func ListNotifications(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
 // @Param body body body.NotificationUpdate true "Notification update"
 // @Success 200
@@ -131,13 +135,13 @@ func UpdateNotification(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	updated, err := service.V2(auth).Notifications().Update(requestQuery.NotificationID, &requestBody)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -156,6 +160,7 @@ func UpdateNotification(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse
@@ -171,18 +176,18 @@ func DeleteNotification(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	err = service.V2(auth).Notifications().Delete(requestQuery.NotificationID)
 	if err != nil {
-		if errors.Is(err, sErrors.NotificationNotFoundErr) {
+		if errors.Is(err, sErrors.ErrNotificationNotFound) {
 			context.NotFound("Notification not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

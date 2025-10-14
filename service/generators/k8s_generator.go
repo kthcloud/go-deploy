@@ -1,7 +1,7 @@
 package generators
 
 import (
-	"go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 )
 
 // K8sGenerator is a generator for K8s resources

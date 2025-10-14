@@ -4,20 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/vm_port_repo"
-	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems"
-	kErrors "go-deploy/pkg/subsystems/k8s/errors"
-	k8sModels "go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/constants"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
-	"go-deploy/service/v2/vms/opts"
+
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_port_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	kErrors "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/errors"
+	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/service/constants"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/resources"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 	"golang.org/x/exp/slices"
 )
 
@@ -31,7 +32,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 
 	vm, kc, g, err := c.Get(OptsAll(id, opts.ExtraOpts{ExtraSshKeys: []string{config.Config.VM.AdminSshPublicKey}}))
 	if err != nil {
-		if errors.Is(err, sErrors.VmNotFoundErr) {
+		if errors.Is(err, sErrors.ErrVmNotFound) {
 			log.Println("VM not found when setting up k8s for", params.Name, ". Assuming it was deleted")
 			return nil
 		}
@@ -103,8 +104,8 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 			if port.Port == 0 {
 				vmPort, err := vm_port_repo.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
 				if err != nil {
-					if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
-						return makeError(sErrors.NoPortsAvailableErr)
+					if errors.Is(err, vm_port_repo.ErrNoPortsAvailable) {
+						return makeError(sErrors.ErrNoPortsAvailable)
 					}
 
 					return makeError(err)
@@ -131,8 +132,8 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 			Exec()
 
 		if err != nil {
-			if errors.Is(err, kErrors.IngressHostInUseErr) {
-				return makeError(sErrors.IngressHostInUseErr)
+			if errors.Is(err, kErrors.ErrIngressHostInUse) {
+				return makeError(sErrors.ErrIngressHostInUse)
 			}
 
 			return makeError(err)
@@ -169,7 +170,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 
 	vm, kc, _, err := c.Get(OptsNoGenerator(id, opts.ExtraOpts{UserID: userID}))
 	if err != nil {
-		if errors.Is(err, sErrors.VmNotFoundErr) {
+		if errors.Is(err, sErrors.ErrVmNotFound) {
 			log.Println("VM not found when deleting k8s for", id, ". Assuming it was deleted")
 			return nil
 		}
@@ -298,7 +299,7 @@ func (c *Client) Repair(id string) error {
 
 	vm, kc, g, err := c.Get(OptsAll(id, opts.ExtraOpts{ExtraSshKeys: []string{config.Config.VM.AdminSshPublicKey}}))
 	if err != nil {
-		if errors.Is(err, sErrors.VmNotFoundErr) {
+		if errors.Is(err, sErrors.ErrVmNotFound) {
 			log.Println("VM not found when deleting k8s for", id, ". Assuming it was deleted")
 			return nil
 		}
@@ -388,8 +389,8 @@ func (c *Client) Repair(id string) error {
 			if port.Port == 0 {
 				vmPort, err := vm_port_repo.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
 				if err != nil {
-					if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
-						return makeError(sErrors.NoPortsAvailableErr)
+					if errors.Is(err, vm_port_repo.ErrNoPortsAvailable) {
+						return makeError(sErrors.ErrNoPortsAvailable)
 					}
 
 					return makeError(err)
@@ -434,8 +435,8 @@ func (c *Client) Repair(id string) error {
 		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
-			if errors.Is(err, kErrors.IngressHostInUseErr) {
-				return makeError(sErrors.IngressHostInUseErr)
+			if errors.Is(err, kErrors.ErrIngressHostInUse) {
+				return makeError(sErrors.ErrIngressHostInUse)
 			}
 
 			return makeError(err)
@@ -481,7 +482,9 @@ func (c *Client) AttachGPU(vmID, groupName string) error {
 
 	vm, kc, _, err := c.Get(OptsAll(vmID))
 	if vm == nil {
-		return makeError(sErrors.VmNotFoundErr)
+		return makeError(sErrors.ErrVmNotFound)
+	} else if err != nil {
+		return makeError(err)
 	}
 
 	// Set the GPU to the VM
@@ -512,7 +515,9 @@ func (c *Client) DetachGPU(vmID string) error {
 
 	vm, kc, _, err := c.Get(OptsAll(vmID))
 	if vm == nil {
-		return makeError(sErrors.VmNotFoundErr)
+		return makeError(sErrors.ErrVmNotFound)
+	} else if err != nil {
+		return makeError(err)
 	}
 
 	// Remove the GPU from the VM
@@ -543,7 +548,7 @@ func (c *Client) DoAction(id string, action *model.VmActionParams) error {
 
 	vm, kc, _, err := c.Get(OptsAll(id))
 	if err != nil {
-		if errors.Is(err, sErrors.VmNotFoundErr) {
+		if errors.Is(err, sErrors.ErrVmNotFound) {
 			log.Println("VM not found when performing action", action.Action, "on", id, ". Assuming it was deleted")
 			return nil
 		}
@@ -642,7 +647,7 @@ func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error 
 	// Ensure zone has KubeVirt capabilities
 	zone := config.Config.GetZone(zoneName)
 	if zone == nil {
-		return makeError(sErrors.ZoneNotFoundErr)
+		return makeError(sErrors.ErrZoneNotFound)
 	}
 
 	if !zone.HasCapability(configModels.ZoneCapabilityVM) {

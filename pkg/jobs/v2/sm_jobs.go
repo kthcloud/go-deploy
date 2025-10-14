@@ -4,16 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/db/resources/sm_repo"
-	jErrors "go-deploy/pkg/jobs/errors"
-	"go-deploy/pkg/jobs/utils"
-	"go-deploy/pkg/log"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
 	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
+	jErrors "github.com/kthcloud/go-deploy/pkg/jobs/errors"
+	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/mitchellh/mapstructure"
 )
 
 func CreateSM(job *model.Job) error {
@@ -33,7 +34,7 @@ func CreateSM(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).SMs().Create(id, userID, &params)
 	if err != nil {
-		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		// We always terminate these jobs, since rerunning it would cause a ErrNonUniqueField
 		return jErrors.MakeTerminatedError(err)
 	}
 
@@ -93,7 +94,7 @@ func DeleteSM(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).SMs().Delete(id)
 	if err != nil {
-		if !errors.Is(err, sErrors.SmNotFoundErr) {
+		if !errors.Is(err, sErrors.ErrSmNotFound) {
 			return jErrors.MakeFailedError(err)
 		}
 	}

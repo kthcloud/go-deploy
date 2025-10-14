@@ -8,15 +8,18 @@ type DeploymentCreateParams struct {
 	RAM      float64
 	Replicas int
 
-	Image        string
-	InternalPort int
-	Envs         []DeploymentEnv
-	Volumes      []DeploymentVolume
-	InitCommands []string
-	Args         []string
-	PingPath     string
-	CustomDomain *string
-	Visibility   string
+	Image         string
+	InternalPort  int
+	InternalPorts []int
+	Envs          []DeploymentEnv
+	Volumes       []DeploymentVolume
+	InitCommands  []string
+	Args          []string
+	PingPath      string
+	CustomDomain  *string
+	Visibility    string
+
+	NeverStale bool
 
 	Zone string
 }
@@ -28,16 +31,19 @@ type DeploymentUpdateParams struct {
 	CpuCores *float64
 	RAM      *float64
 
-	Envs         *[]DeploymentEnv
-	InternalPort *int
-	Volumes      *[]DeploymentVolume
-	InitCommands *[]string
-	Args         *[]string
-	CustomDomain *string
-	Image        *string
-	PingPath     *string
-	Replicas     *int
-	Visibility   *string
+	Envs          *[]DeploymentEnv
+	InternalPort  *int
+	InternalPorts *[]int
+	Volumes       *[]DeploymentVolume
+	InitCommands  *[]string
+	Args          *[]string
+	CustomDomain  *string
+	Image         *string
+	PingPath      *string
+	Replicas      *int
+	Visibility    *string
+
+	NeverStale *bool
 }
 
 type DeploymentUpdateOwnerParams struct {

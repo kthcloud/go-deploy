@@ -40,11 +40,17 @@ export interface DeploymentRead {
   volumes: Volume[];
   initCommands: string[];
   args: string[];
-  private: boolean;
   internalPort: number /* int */;
+  internalPorts?: number /* int */[];
   image?: string;
   healthCheckPath?: string;
   customDomain?: CustomDomainRead;
+  visibility: string;
+  neverStale: boolean;
+  /**
+   * Deprecated: Use Visibility instead.
+   */
+  private: boolean;
   status: string;
   error?: string;
   replicaStatus?: ReplicaStatus;
@@ -62,11 +68,19 @@ export interface DeploymentCreate {
   cpuCores?: number /* float64 */;
   ram?: number /* float64 */;
   replicas?: number /* int */;
-  private: boolean;
   envs: Env[];
   volumes: Volume[];
   initCommands: string[];
   args: string[];
+  visibility: string;
+  /**
+   * Boolean to make deployment never get disabled, despite being stale
+   */
+  neverStale: boolean;
+  /**
+   * Deprecated: Use Visibility instead.
+   */
+  private: boolean;
   image?: string;
   healthCheckPath?: string;
   /**
@@ -85,11 +99,16 @@ export interface DeploymentUpdate {
   cpuCores?: number /* float64 */;
   ram?: number /* float64 */;
   replicas?: number /* int */;
-  private?: boolean;
   envs?: Env[];
   volumes?: Volume[];
   initCommands?: string[];
   args?: string[];
+  visibility?: string;
+  neverStale?: boolean;
+  /**
+   * Deprecated: Use Visibility instead.
+   */
+  private?: boolean;
   image?: string;
   healthCheckPath?: string;
   /**
@@ -264,6 +283,15 @@ export interface GpuLeaseDeleted {
 
 export interface HostRead extends HostBase {
 }
+export interface HostVerboseRead extends HostBase {
+  ip: string;
+  port: number /* int */;
+  enabled: boolean;
+  schedulable: boolean;
+  deactivatedUntil?: string;
+  lastSeenAt: string;
+  registeredAt: string;
+}
 export interface HostBase {
   name: string;
   displayName: string;
@@ -292,6 +320,14 @@ export interface HostRegisterParams {
    * Token is the discovery token validated against the config
    */
   token: string;
+  /**
+   * Enabled is the flag to enable or disable the node
+   */
+  enabled: boolean;
+  /**
+   * Schedulable is the flag to enable or disable scheduling on the node
+   */
+  schedulable: boolean;
 }
 
 //////////
@@ -322,10 +358,12 @@ export interface NotificationRead {
   content: { [key: string]: any};
   createdAt: string;
   readAt?: string;
+  toastedAt?: string;
   completedAt?: string;
 }
 export interface NotificationUpdate {
   read: boolean;
+  toasted: boolean;
 }
 
 //////////
@@ -493,31 +531,36 @@ export interface TimestampedSystemCapacities {
   timestamp: string;
 }
 export interface SystemCapacities {
+  /**
+   * Total
+   */
   cpuCore: CpuCoreCapacities;
   ram: RamCapacities;
   gpu: GpuCapacities;
+  /**
+   * Per Host
+   */
   hosts: HostCapacities[];
+  /**
+   * Per Cluster
+   */
+  clusters: ClusterCapacities[];
 }
 export interface ClusterCapacities {
   cluster: string;
-  ram: RamCapacities;
   cpuCore: CpuCoreCapacities;
-}
-export interface HostGpuCapacities {
-  count: number /* int */;
-}
-export interface HostRamCapacities {
-  total: number /* int */;
+  ram: RamCapacities;
+  gpu: GpuCapacities;
 }
 export interface HostCapacities extends HostBase {
   cpuCore: CpuCoreCapacities;
-  ram: HostRamCapacities;
-  gpu: HostGpuCapacities;
-}
-export interface RamCapacities {
-  total: number /* int */;
+  ram: RamCapacities;
+  gpu: GpuCapacities;
 }
 export interface CpuCoreCapacities {
+  total: number /* int */;
+}
+export interface RamCapacities {
   total: number /* int */;
 }
 export interface GpuCapacities {
@@ -732,6 +775,7 @@ export interface VmRead {
   updatedAt?: string;
   repairedAt?: string;
   accessedAt: string;
+  neverStale: boolean;
   specs: VmSpecs;
   ports: PortRead[];
   gpu?: VmGpuLease;
@@ -748,22 +792,14 @@ export interface VmCreate {
   ram: number /* int */;
   diskSize: number /* int */;
   zone?: string;
+  neverStale: boolean;
 }
 export interface VmUpdate {
+  name?: string;
   ports?: PortUpdate[];
   cpuCores?: number /* int */;
   ram?: number /* int */;
-  /**
-   * Name is used to rename a VM.
-   * If specified, only name will be updated.
-   */
-  name?: string;
-  /**
-   * OwnerID is used to initiate transfer a VM to another user.
-   * If specified, only the transfer will happen.
-   * If specified but empty, the transfer will be canceled.
-   */
-  ownerId?: string;
+  neverStale?: boolean;
 }
 export interface VmUpdateOwner {
   newOwnerId: string;

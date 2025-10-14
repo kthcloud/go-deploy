@@ -36,11 +36,12 @@ type App struct {
 	RAM      float64 `bson:"ram,omitempty"`
 	Replicas int     `bson:"replicas"`
 
-	Image        string             `bson:"image"`
-	InternalPort int                `bson:"internalPort"`
-	Envs         []DeploymentEnv    `bson:"envs"`
-	Volumes      []DeploymentVolume `bson:"volumes"`
-	Visibility   string             `bson:"visibility"`
+	Image         string             `bson:"image"`
+	InternalPort  int                `bson:"internalPort"`
+	InternalPorts []int              `bson:"internalPorts"`
+	Envs          []DeploymentEnv    `bson:"envs"`
+	Volumes       []DeploymentVolume `bson:"volumes"`
+	Visibility    string             `bson:"visibility"`
 
 	// Deprecated: use Visibility instead.
 	Private bool `bson:"private"`

@@ -2,26 +2,27 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/users/opts"
-	sUtils "go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/users/opts"
+	sUtils "github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // GetUser
 // @Summary Get user
 // @Description Get user
 // @Tags User
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param userId path string true "User ID"
 // @Param discover query bool false "Discovery mode"
 // @Success 200 {object}  body.UserRead
@@ -46,7 +47,7 @@ func GetUser(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -61,7 +62,7 @@ func GetUser(c *gin.Context) {
 			UserID: &requestURI.UserID,
 		})
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -76,7 +77,7 @@ func GetUser(c *gin.Context) {
 
 	user, err := deployV2.Users().Get(requestURI.UserID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -98,9 +99,9 @@ func GetUser(c *gin.Context) {
 // @Summary List users
 // @Description List users
 // @Tags User
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param discover query bool false "Discovery mode"
 // @Param search query string false "Search query"
@@ -121,7 +122,7 @@ func ListUsers(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -133,7 +134,7 @@ func ListUsers(c *gin.Context) {
 			Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		})
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -152,7 +153,7 @@ func ListUsers(c *gin.Context) {
 		All:        requestQuery.All,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -173,6 +174,7 @@ func ListUsers(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param userId path string true "User ID"
 // @Param body body body.UserUpdate true "User update"
 // @Success 200 {object} body.UserRead
@@ -196,7 +198,7 @@ func UpdateUser(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -211,11 +213,11 @@ func UpdateUser(c *gin.Context) {
 	updated, err := deployV2.Users().Update(requestURI.UserID, &userUpdate)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.UserNotFoundErr):
+		case errors.Is(err, sErrors.ErrUserNotFound):
 			context.NotFound("User not found")
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -224,6 +226,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	usage, err := deployV2.Users().GetUsage(updated.ID)
+	usage, _ := deployV2.Users().GetUsage(updated.ID)
 	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(updated.ID)))
 }

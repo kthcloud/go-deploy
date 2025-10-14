@@ -1,10 +1,10 @@
 package intializer
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/vm_port_repo"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_port_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"strconv"
 )
 

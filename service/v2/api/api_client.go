@@ -2,23 +2,24 @@ package api
 
 import (
 	"context"
-	"go-deploy/dto/v2/body"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/service/v2/deployments/harbor_service"
-	deploymentK8sService "go-deploy/service/v2/deployments/k8s_service"
-	dOpts "go-deploy/service/v2/deployments/opts"
-	jobOpts "go-deploy/service/v2/jobs/opts"
-	nOpts "go-deploy/service/v2/notifications/opts"
-	resourceMigrationOpts "go-deploy/service/v2/resource_migrations/opts"
-	smK8sService "go-deploy/service/v2/sms/k8s_service"
-	smOpts "go-deploy/service/v2/sms/opts"
-	systemOpts "go-deploy/service/v2/system/opts"
-	teamOpts "go-deploy/service/v2/teams/opts"
-	userOpts "go-deploy/service/v2/users/opts"
-	vmK8sService "go-deploy/service/v2/vms/k8s_service"
-	vmOpts "go-deploy/service/v2/vms/opts"
 	"time"
+
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/harbor_service"
+	deploymentK8sService "github.com/kthcloud/go-deploy/service/v2/deployments/k8s_service"
+	dOpts "github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	jobOpts "github.com/kthcloud/go-deploy/service/v2/jobs/opts"
+	nOpts "github.com/kthcloud/go-deploy/service/v2/notifications/opts"
+	resourceMigrationOpts "github.com/kthcloud/go-deploy/service/v2/resource_migrations/opts"
+	smK8sService "github.com/kthcloud/go-deploy/service/v2/sms/k8s_service"
+	smOpts "github.com/kthcloud/go-deploy/service/v2/sms/opts"
+	systemOpts "github.com/kthcloud/go-deploy/service/v2/system/opts"
+	teamOpts "github.com/kthcloud/go-deploy/service/v2/teams/opts"
+	userOpts "github.com/kthcloud/go-deploy/service/v2/users/opts"
+	vmK8sService "github.com/kthcloud/go-deploy/service/v2/vms/k8s_service"
+	vmOpts "github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 type Deployments interface {
@@ -195,6 +196,7 @@ type System interface {
 	RegisterNode(params *body.HostRegisterParams) error
 
 	ListHosts() ([]model.Host, error)
+	ListAllHosts() ([]model.Host, error)
 
 	GetZone(name string) *configModels.Zone
 	ListZones(opts ...systemOpts.ListOpts) ([]configModels.Zone, error)

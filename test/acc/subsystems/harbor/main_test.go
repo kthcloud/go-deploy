@@ -1,7 +1,7 @@
 package harbor
 
 import (
-	"go-deploy/test/acc"
+	"github.com/kthcloud/go-deploy/test/acc"
 	"log"
 	"os"
 	"testing"

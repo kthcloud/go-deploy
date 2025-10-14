@@ -3,11 +3,11 @@
 package fake
 
 import (
-	clientset "go-deploy/pkg/imp/kubevirt/kubevirt"
-	kubevirtv1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
-	fakekubevirtv1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1/fake"
-	snapshotv1alpha1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1"
-	fakesnapshotv1alpha1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1/fake"
+	clientset "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt"
+	kubevirtv1 "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
+	fakekubevirtv1 "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1/fake"
+	snapshotv1alpha1 "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1"
+	fakesnapshotv1alpha1 "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"

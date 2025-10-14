@@ -1,9 +1,9 @@
 package system
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/worker_status_repo"
-	"go-deploy/service/v2/system/opts"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/worker_status_repo"
+	"github.com/kthcloud/go-deploy/service/v2/system/opts"
 	"time"
 )
 

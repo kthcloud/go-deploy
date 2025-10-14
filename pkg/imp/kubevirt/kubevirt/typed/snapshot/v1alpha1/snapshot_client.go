@@ -3,7 +3,7 @@
 package v1alpha1
 
 import (
-	"go-deploy/pkg/imp/kubevirt/kubevirt/scheme"
+	"github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/scheme"
 	"net/http"
 
 	rest "k8s.io/client-go/rest"

@@ -1,12 +1,12 @@
 package jobs
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/job_repo"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/utils"
-	"go-deploy/service/v2/jobs/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/jobs/opts"
 )
 
 // Get retrieves a job by ID.
@@ -83,7 +83,7 @@ func (c *Client) Create(id, userID, jobType, version string, args map[string]int
 // Update updates a job.
 func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error) {
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
-		return nil, sErrors.ForbiddenErr
+		return nil, sErrors.ErrForbidden
 	}
 
 	var params model.JobUpdateParams

@@ -1,13 +1,14 @@
 package vm_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
-	"go-deploy/service/utils"
+	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
+	"github.com/kthcloud/go-deploy/service/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"time"
 )
 
 // Client is used to manage VMs in the database.
@@ -43,7 +44,7 @@ func New(version ...string) *Client {
 
 // WithVersion adds a filter to the client to only return VMs with the given version.
 func (client *Client) WithVersion(version string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"version", version}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "version", Value: version}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
 
 	return client
@@ -73,7 +74,7 @@ func (client *Client) IncludeDeletedResources() *Client {
 
 // WithOwner adds a filter to the client to only return VMs owned by the given ownerID.
 func (client *Client) WithOwner(ownerID string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "ownerId", Value: ownerID}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
 	client.RestrictUserID = &ownerID
 
@@ -93,7 +94,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	}
 
 	filter := bson.D{{
-		"$or", orFilter,
+		Key: "$or", Value: orFilter,
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
@@ -105,7 +106,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 // WithNoActivities adds a filter to the client to only return VMs that have no activities.
 func (client *Client) WithNoActivities() *Client {
 	filter := bson.D{{
-		"activities", bson.M{
+		Key: "activities", Value: bson.M{
 			"$gte": bson.M{},
 		},
 	}}
@@ -118,7 +119,7 @@ func (client *Client) WithNoActivities() *Client {
 
 // WithIDs adds a filter to the client to only return VMs with the given IDs.
 func (client *Client) WithIDs(ids ...string) *Client {
-	filter := bson.D{{"id", bson.D{{"$in", ids}}}}
+	filter := bson.D{{Key: "id", Value: bson.D{{Key: "$in", Value: ids}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -136,7 +137,7 @@ func (client *Client) WithCustomFilter(filter bson.D) *Client {
 
 // WithNameRegex adds a filter to the client to only return VMs with names matching the given regex.
 func (client *Client) WithNameRegex(name string) *Client {
-	filter := bson.D{{"name", bson.D{{"$regex", name}}}}
+	filter := bson.D{{Key: "name", Value: bson.D{{Key: "$regex", Value: name}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -146,7 +147,7 @@ func (client *Client) WithNameRegex(name string) *Client {
 
 // WithZone adds a filter to the client to only return VMs in the given zone.
 func (client *Client) WithZone(zone ...string) *Client {
-	filter := bson.D{{"zone", bson.D{{"$in", zone}}}}
+	filter := bson.D{{Key: "zone", Value: bson.D{{Key: "$in", Value: zone}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -156,7 +157,7 @@ func (client *Client) WithZone(zone ...string) *Client {
 
 // OlderThan adds a filter to the client to only return VMs created before the given timestamp.
 func (client *Client) OlderThan(timestamp time.Time) *Client {
-	filter := bson.D{{"createdAt", bson.D{{"$lt", timestamp}}}}
+	filter := bson.D{{Key: "createdAt", Value: bson.D{{Key: "$lt", Value: timestamp}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -166,7 +167,7 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 
 // LastAccessedBefore adds a filter to the client to only return VMs that were last accessed before the given timestamp.
 func (client *Client) LastAccessedBefore(timestamp time.Time) *Client {
-	filter := bson.D{{"accessedAt", bson.D{{"$lt", timestamp}}}}
+	filter := bson.D{{Key: "accessedAt", Value: bson.D{{Key: "$lt", Value: timestamp}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)

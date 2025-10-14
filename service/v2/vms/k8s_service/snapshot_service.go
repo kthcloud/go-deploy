@@ -2,10 +2,10 @@ package k8s_service
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/subsystems"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/resources"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/service/resources"
 )
 
 func (c *Client) CreateVmSnapshot(vmID string, params *model.CreateSnapshotParams) (*model.SnapshotV2, error) {

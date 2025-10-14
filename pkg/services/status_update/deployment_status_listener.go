@@ -3,14 +3,14 @@ package status_update
 import (
 	"context"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/v2/deployments/k8s_service"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/k8s_service"
 )
 
 func DeploymentStatusListener(ctx context.Context) error {

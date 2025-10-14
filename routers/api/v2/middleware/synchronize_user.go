@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/sys"
-	v2 "go-deploy/routers/api/v2"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	v2 "github.com/kthcloud/go-deploy/routers/api/v2"
+	"github.com/kthcloud/go-deploy/service"
 )
 
 // SetupAuthUser is a middleware that sets up the authenticated user in the context.
@@ -26,14 +27,14 @@ func SetupAuthUser(c *gin.Context) {
 	case context.HasApiKey():
 		apiKey, err := context.GetApiKey()
 		if err != nil {
-			context.ServerError(err, v2.AuthInfoSetupFailedErr)
+			context.ServerError(err, v2.ErrAuthInfoSetupFailed)
 			c.Abort()
 			return
 		}
 
 		user, err = service.V2().Users().GetByApiKey(apiKey)
 		if err != nil {
-			context.ServerError(err, v2.AuthInfoSetupFailedErr)
+			context.ServerError(err, v2.ErrAuthInfoSetupFailed)
 			c.Abort()
 			return
 		}
@@ -46,7 +47,7 @@ func SetupAuthUser(c *gin.Context) {
 	case context.HasKeycloakToken():
 		jwtToken, err := context.GetKeycloakToken()
 		if err != nil {
-			context.ServerError(err, v2.InternalError)
+			context.ServerError(err, v2.ErrInternal)
 			c.Abort()
 			return
 		}
@@ -71,20 +72,20 @@ func SetupAuthUser(c *gin.Context) {
 
 		user, err = service.V2().Users().Synchronize(authParams)
 		if err != nil {
-			context.ServerError(err, v2.AuthInfoSetupFailedErr)
+			context.ServerError(err, v2.ErrAuthInfoSetupFailed)
 			c.Abort()
 			return
 		}
 
 		if user == nil {
-			context.ServerError(fmt.Errorf("failed to synchronize auth user"), v2.AuthInfoSetupFailedErr)
+			context.ServerError(fmt.Errorf("failed to synchronize auth user"), v2.ErrAuthInfoSetupFailed)
 			c.Abort()
 			return
 		}
 	}
 
 	if user == nil {
-		context.ServerError(fmt.Errorf("failed to synchronize auth user"), v2.AuthInfoSetupFailedErr)
+		context.ServerError(fmt.Errorf("failed to synchronize auth user"), v2.ErrAuthInfoSetupFailed)
 		c.Abort()
 		return
 	}

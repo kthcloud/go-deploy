@@ -1,6 +1,6 @@
 package routes
 
-import "go-deploy/routers/api/v2"
+import "github.com/kthcloud/go-deploy/routers/api/v2"
 
 const (
 	GpuGroupsPath = "/v2/gpuGroups"

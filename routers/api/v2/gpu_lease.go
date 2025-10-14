@@ -2,27 +2,28 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/utils"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // GetGpuLease
 // @Summary Get GPU lease
 // @Description Get GPU lease
 // @Tags GpuLease
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Success 200 {object} body.GpuLeaseRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -41,13 +42,13 @@ func GetGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	gpuLease, err := service.V2(auth).VMs().GpuLeases().Get(requestURI.GpuLeaseID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -58,11 +59,11 @@ func GetGpuLease(c *gin.Context) {
 
 	position, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
 	if err != nil {
-		if errors.Is(err, sErrors.GpuLeaseNotFoundErr) {
+		if errors.Is(err, sErrors.ErrGpuLeaseNotFound) {
 			position = -1
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 	}
 
 	context.Ok(gpuLease.ToDTO(position))
@@ -72,9 +73,9 @@ func GetGpuLease(c *gin.Context) {
 // @Summary List GPU leases
 // @Description List GPU leases
 // @Tags GpuLease
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param vmId query string false "Filter by VM ID"
 // @Param page query int false "Page number"
@@ -102,7 +103,7 @@ func ListGpuLeases(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -116,7 +117,7 @@ func ListGpuLeases(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -130,9 +131,9 @@ func ListGpuLeases(c *gin.Context) {
 		queuePosition, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
 		if err != nil {
 			switch {
-			case errors.Is(err, sErrors.GpuLeaseNotFoundErr):
+			case errors.Is(err, sErrors.ErrGpuLeaseNotFound):
 				continue
-			case errors.Is(err, sErrors.GpuGroupNotFoundErr):
+			case errors.Is(err, sErrors.ErrGpuGroupNotFound):
 				continue
 			}
 
@@ -152,6 +153,7 @@ func ListGpuLeases(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.GpuLeaseCreate true "GPU lease"
 // @Success 200 {object} body.GpuLeaseCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -175,7 +177,7 @@ func CreateGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -189,7 +191,7 @@ func CreateGpuLease(c *gin.Context) {
 
 	groupExists, err := deployV2.VMs().GpuGroups().Exists(requestBody.GpuGroupID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -204,7 +206,7 @@ func CreateGpuLease(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -222,7 +224,7 @@ func CreateGpuLease(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -239,6 +241,7 @@ func CreateGpuLease(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Param body body body.GpuLeaseUpdate true "GPU lease"
 // @Success 200 {object} body.GpuLeaseUpdated
@@ -263,7 +266,7 @@ func UpdateGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -271,7 +274,7 @@ func UpdateGpuLease(c *gin.Context) {
 
 	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -293,7 +296,7 @@ func UpdateGpuLease(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -310,6 +313,7 @@ func UpdateGpuLease(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Success 200 {object} body.GpuLeaseDeleted
 // @Failure 400 {object} sys.ErrorResponse
@@ -327,7 +331,7 @@ func DeleteGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -335,7 +339,7 @@ func DeleteGpuLease(c *gin.Context) {
 
 	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -350,7 +354,7 @@ func DeleteGpuLease(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

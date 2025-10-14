@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/sys"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -196,6 +197,7 @@ func parseRawBody(body []byte, parsedBody interface{}) error {
 func MustParse[okType any](t *testing.T, resp *http.Response) okType {
 	if resp == nil {
 		assert.FailNow(t, "response is nil. is the server running?")
+		return *new(okType)
 	}
 
 	if resp.StatusCode > 299 {

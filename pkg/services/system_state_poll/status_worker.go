@@ -2,15 +2,16 @@ package system_state_poll
 
 import (
 	"fmt"
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/host_repo"
-	"go-deploy/pkg/db/resources/system_status_repo"
-	wErrors "go-deploy/pkg/services/errors"
-	"go-deploy/pkg/subsystems/host_api"
-	"go-deploy/utils"
 	"sync"
 	"time"
+
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/host_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/system_status_repo"
+	wErrors "github.com/kthcloud/go-deploy/pkg/services/errors"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/host_api"
+	"github.com/kthcloud/go-deploy/utils"
 )
 
 func GetHostStatuses() ([]body.HostStatus, error) {
@@ -81,7 +82,7 @@ func StatusWorker() error {
 	}
 
 	if len(hostStatuses) == 0 {
-		return wErrors.NoHostsErr
+		return wErrors.ErrNoHosts
 	}
 
 	status := body.SystemStatus{

@@ -2,10 +2,10 @@ package system
 
 import (
 	"fmt"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/db/resources/system_capacities_repo"
-	"go-deploy/pkg/db/resources/system_stats_repo"
-	"go-deploy/pkg/db/resources/system_status_repo"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/system_capacities_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/system_stats_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/system_status_repo"
 )
 
 // ListCapacities fetches the system capacities from the database.

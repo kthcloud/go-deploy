@@ -1,8 +1,8 @@
 package services
 
 import (
-	"go-deploy/pkg/db/resources/worker_status_repo"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/worker_status_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
 )
 
 // ReportUp reports that a worker is up.

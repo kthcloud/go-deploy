@@ -1,7 +1,7 @@
 package models
 
 import (
-	"go-deploy/pkg/subsystems/k8s/keys"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	"time"
 )

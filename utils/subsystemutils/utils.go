@@ -2,7 +2,7 @@ package subsystemutils
 
 import (
 	"fmt"
-	"go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/config"
 )
 
 // GetPrefixedName returns the name with the prefix.

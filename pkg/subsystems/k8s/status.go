@@ -3,18 +3,19 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/k8s/keys"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/pkg/subsystems/k8s/opts"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/opts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	kubevirtv1 "kubevirt.io/api/core/v1"
-	"regexp"
-	"strings"
-	"time"
 )
 
 // SetupStatusWatcher sets up a status watcher for a given resource type in a namespace
@@ -35,8 +36,8 @@ func (client *Client) SetupStatusWatcher(ctx context.Context, resourceType strin
 	return nil
 }
 
-func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
-	setupDeploymentWatcher := func(namespace string) (watch.Interface, error) {
+func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+	setupDeploymentWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.K8sClient.AppsV1().Deployments(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
 		if err != nil {
 			return nil, err
@@ -49,10 +50,6 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 		return statusChan, nil
 	}
 
-	hello := "hello"
-
-	strings.HasSuffix(hello, "o")
-
 	watcher, err := setupDeploymentWatcher(client.Namespace)
 	if err != nil {
 		return err
@@ -62,7 +59,7 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 	go func() {
 		// For now, the watch stops working sometimes, so we need to restart it every 10 seconds
 		// This is a temporary fix until we find the root cause
-		recreateInterval := time.Tick(20 * time.Second)
+		recreateInterval := time.NewTicker(20 * time.Second)
 
 		for {
 			select {
@@ -89,7 +86,7 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 						})
 					}
 				}
-			case <-recreateInterval:
+			case <-recreateInterval.C:
 				if watcher != nil {
 					watcher.Stop()
 				}
@@ -109,8 +106,8 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 	return nil
 }
 
-func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
-	setupVmWatcher := func(namespace string) (watch.Interface, error) {
+func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+	setupVmWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
 		if err != nil {
 			return nil, err
@@ -132,7 +129,7 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 	go func() {
 		// For now, the watch stops working sometimes, so we need to restart it every 10 seconds
 		// This is a temporary fix until we find the root cause
-		recreateInterval := time.Tick(20 * time.Second)
+		recreateInterval := time.NewTicker(20 * time.Second)
 
 		for {
 			select {
@@ -142,7 +139,7 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 					vmStatus := models.CreateVmStatusFromRead(vm)
 					handler(vmStatus.Name, vmStatus)
 				}
-			case <-recreateInterval:
+			case <-recreateInterval.C:
 				if watcher != nil {
 					watcher.Stop()
 				}
@@ -162,8 +159,8 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 	return nil
 }
 
-func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
-	setupVmWatcher := func(namespace string) (watch.Interface, error) {
+func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+	setupVmWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachineInstances(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
 		if err != nil {
 			return nil, err
@@ -185,7 +182,7 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 	go func() {
 		// For now, the watch stops working sometimes, so we need to restart it every 10 seconds
 		// This is a temporary fix until we find the root cause
-		recreateInterval := time.Tick(20 * time.Second)
+		recreateInterval := time.NewTicker(20 * time.Second)
 
 		for {
 			select {
@@ -195,7 +192,7 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 					vmiStatus := models.CreateVmiStatusFromRead(vmi)
 					handler(vmiStatus.Name, vmiStatus)
 				}
-			case <-recreateInterval:
+			case <-recreateInterval.C:
 				if watcher != nil {
 					watcher.Stop()
 				}
@@ -215,8 +212,8 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 	return nil
 }
 
-func (client *Client) eventWatcher(ctx context.Context, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
-	setupEventWatcher := func(namespace string) (watch.Interface, error) {
+func (client *Client) eventWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+	setupEventWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.K8sClient.CoreV1().Events(client.Namespace).Watch(ctx, metav1.ListOptions{
 			// Fields involvesObject.kind=Pod and type=Warning and reason=FailedMount or BackOff or Failed
 			FieldSelector: "involvedObject.kind=Pod,type=Warning",
@@ -241,7 +238,7 @@ func (client *Client) eventWatcher(ctx context.Context, handler func(string, int
 	resultsChan := watcher.ResultChan()
 	go func() {
 		// For now, the watch stops working sometimes, so we need to restart it every 300 seconds
-		recreateInterval := time.Tick(300 * time.Second)
+		recreateInterval := time.NewTicker(300 * time.Second)
 
 		for {
 			select {
@@ -345,7 +342,7 @@ func (client *Client) eventWatcher(ctx context.Context, handler func(string, int
 						})
 					}(e)
 				}
-			case <-recreateInterval:
+			case <-recreateInterval.C:
 				if watcher != nil {
 					watcher.Stop()
 				}

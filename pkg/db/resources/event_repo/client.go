@@ -1,9 +1,9 @@
 package event_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -35,8 +35,9 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 }
 
 // AddExtraFilter adds an extra custom filter to the client.
-func (client *Client) AddExtraFilter(filter bson.D) *Client {
-	client.AddExtraFilter(filter)
-
+func (client *Client) AddExtraFilter(filters bson.D) *Client {
+	for _, filter := range filters {
+		client.ExtraFilter[filter.Key] = filter.Value
+	}
 	return client
 }

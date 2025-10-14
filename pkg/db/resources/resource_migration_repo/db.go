@@ -2,10 +2,11 @@ package resource_migration_repo
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (c *Client) Create(id, userID, resourceID, migrationType, resourceType string, code *string, status string, params interface{}) (*model.ResourceMigration, error) {
@@ -38,7 +39,7 @@ func (c *Client) Create(id, userID, resourceID, migrationType, resourceType stri
 		return nil, fmt.Errorf("bad migration type %s", migrationType)
 	}
 
-	err := c.CreateIfUnique(id, migration, bson.D{{"resourceId", resourceID}})
+	err := c.CreateIfUnique(id, migration, bson.D{{Key: "resourceId", Value: resourceID}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create migration. details: %w", err)
 	}

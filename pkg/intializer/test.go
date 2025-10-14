@@ -3,20 +3,21 @@ package intializer
 import (
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"go-deploy/models/mode"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	rErrors "go-deploy/pkg/db/resources/errors"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/db/resources/team_repo"
-	"go-deploy/pkg/db/resources/user_repo"
-	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/service"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kthcloud/go-deploy/models/mode"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	rErrors "github.com/kthcloud/go-deploy/pkg/db/resources/errors"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/team_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/user_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service"
 )
 
 // CleanUpOldTests cleans up old E2E tests.
@@ -84,7 +85,7 @@ func EnsureTestUsersExist() error {
 			IsAdmin:       user.IsAdmin,
 			EffectiveRole: &user.EffectiveRole,
 		})
-		if err != nil && !errors.Is(err, rErrors.NonUniqueFieldErr) {
+		if err != nil && !errors.Is(err, rErrors.ErrNonUniqueField) {
 			return fmt.Errorf("failed to synchronize user %s: %w", user.ID, err)
 		}
 

@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"fmt"
-	"go-deploy/pkg/imp/kubevirt/kubevirt"
+	"github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt"
 	"k8s.io/client-go/kubernetes"
 )
 

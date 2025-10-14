@@ -3,13 +3,14 @@ package db
 import (
 	"context"
 	"fmt"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/log"
+	"strings"
+	"time"
+
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 // CollectionDefinition is a struct that defines a collection.
@@ -82,7 +83,7 @@ func (dbCtx *Context) setupMongo() error {
 
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys:    keys,
-				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{"deletedAt", bson.D{{"$in", []interface{}{nil, time.Time{}}}}}}),
+				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{Key: "deletedAt", Value: bson.D{{Key: "$in", Value: []interface{}{nil, time.Time{}}}}}}),
 			})
 			if err != nil && !isIndexExistsError(err) {
 				return makeError(err)

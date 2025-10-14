@@ -25,10 +25,13 @@ type DeploymentRead struct {
 	InitCommands    []string          `json:"initCommands"`
 	Args            []string          `json:"args"`
 	InternalPort    int               `json:"internalPort"`
+	InternalPorts   []int             `json:"internalPorts,omitempty"`
 	Image           *string           `json:"image,omitempty"`
 	HealthCheckPath *string           `json:"healthCheckPath,omitempty"`
 	CustomDomain    *CustomDomainRead `json:"customDomain,omitempty"`
 	Visibility      string            `json:"visibility"`
+
+	NeverStale bool `json:"neverStale" bson:"neverStale" binding:"omitempty,boolean"`
 
 	// Deprecated: Use Visibility instead.
 	Private bool `json:"private"`
@@ -60,6 +63,9 @@ type DeploymentCreate struct {
 	Args         []string `json:"args" bson:"args" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	Visibility   string   `json:"visibility" bson:"visibility" binding:"omitempty,oneof=public private auth"`
 
+	// Boolean to make deployment never get disabled, despite being stale
+	NeverStale bool `json:"neverStale" bson:"neverStale" binding:"omitempty,boolean"`
+
 	// Deprecated: Use Visibility instead.
 	Private bool `json:"private" bson:"private" binding:"omitempty,boolean"`
 
@@ -87,10 +93,12 @@ type DeploymentUpdate struct {
 	Args         *[]string `json:"args,omitempty" bson:"args,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	Visibility   *string   `json:"visibility" bson:"visibility" binding:"omitempty,oneof=public private auth"`
 
+	NeverStale *bool `json:"neverStale,omitempty" bson:"neverStale" binding:"omitempty,boolean"`
+
 	// Deprecated: Use Visibility instead.
 	Private *bool `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
 
-	Image           *string `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	Image           *string `json:"image,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	// CustomDomain is the domain that the deployment will be available on.
 	// The max length is set to 243 to allow for a subdomain when confirming the domain.

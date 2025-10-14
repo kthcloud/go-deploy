@@ -1,9 +1,9 @@
 package service
 
 import (
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
-	"go-deploy/service/v2"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/service/v2"
 )
 
 func V2(authInfo ...*core.AuthInfo) clients.V2 {

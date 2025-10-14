@@ -1,18 +1,23 @@
 ############################
 # STEP 1 build executable binary
 ############################
-FROM golang:alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:alpine AS builder
 # Install git.
 RUN apk update && apk add --no-cache git=~2
 
 # Set up working directory
 WORKDIR /app
-COPY . .
+# Copy go.mod and go.sum separately so we only invalidate the downloading layers if we need to
+COPY go.mod go.sum ./
 
 # Fetch dependencies and build the binary
 ENV GO111MODULE=on
-RUN go get -d -v
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN go mod download
+
+# Copy the rest of the project to ensure code changes doesnt trigger re-download of all deps
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -installsuffix cgo -o main .
 
 
 ############################
@@ -33,8 +38,8 @@ COPY --from=builder /app/index index
 COPY --from=builder /app/docs docs
 
 # Set environment variables and expose necessary port
-ENV PORT 8080
-ENV GIN_MODE release
+ENV PORT=8080
+ENV GIN_MODE=release
 EXPOSE 8080
 
 # Run the Go Gin binary

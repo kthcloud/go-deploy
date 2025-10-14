@@ -1,31 +1,32 @@
 package v2
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	"go-deploy/service/v2/sms/opts"
-	v12 "go-deploy/service/v2/utils"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/service/v2/sms/opts"
+	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // GetSM
 // @Summary Get storage manager
 // @Description Get storage manager
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse
@@ -44,7 +45,7 @@ func GetSM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -66,9 +67,9 @@ func GetSM(c *gin.Context) {
 // @Summary Get storage manager list
 // @Description Get storage manager list
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
@@ -88,7 +89,7 @@ func ListSMs(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -98,7 +99,7 @@ func ListSMs(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -119,16 +120,16 @@ func ListSMs(c *gin.Context) {
 // @Summary Delete storage manager
 // @Description Delete storage manager
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/storageManagers/{storageManagerId} [get]
+// @Router /v2/storageManagers/{storageManagerId} [delete]
 func DeleteSM(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -140,7 +141,7 @@ func DeleteSM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -148,7 +149,7 @@ func DeleteSM(c *gin.Context) {
 
 	sm, err := deployV2.SMs().Get(requestURI.SmID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -163,7 +164,7 @@ func DeleteSM(c *gin.Context) {
 		"ownerId": sm.OwnerID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

@@ -3,13 +3,14 @@ package gpu_leases
 import (
 	"errors"
 	"fmt"
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/gpu_lease_repo"
-	sErrors "go-deploy/service/errors"
-	sUtils "go-deploy/service/utils"
-	"go-deploy/service/v2/vms/opts"
 	"time"
+
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_lease_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	sUtils "github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // Get gets a GPU lease by ID
@@ -76,7 +77,7 @@ func (c *Client) GetByVmID(vmID string, opts ...opts.GetGpuLeaseOpts) (*model.Gp
 	}
 
 	if vm == nil {
-		return nil, makeError(sErrors.VmNotFoundErr)
+		return nil, makeError(sErrors.ErrVmNotFound)
 	}
 
 	glc := gpu_lease_repo.New()
@@ -122,7 +123,7 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 			}
 
 			if vm == nil {
-				return nil, makeError(sErrors.VmNotFoundErr)
+				return nil, makeError(sErrors.ErrVmNotFound)
 			}
 
 			if vm.OwnerID != c.V2.Auth().User.ID {
@@ -196,8 +197,8 @@ func (c *Client) Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLease
 
 	err := gpu_lease_repo.New().Create(leaseID, userID, params.GpuGroupName, leaseDuration)
 	if err != nil {
-		if errors.Is(err, gpu_lease_repo.GpuLeaseAlreadyExistsErr) {
-			return makeError(sErrors.GpuLeaseAlreadyExistsErr)
+		if errors.Is(err, gpu_lease_repo.ErrGpuLeaseAlreadyExists) {
+			return makeError(sErrors.ErrGpuLeaseAlreadyExists)
 		}
 
 		return makeError(err)
@@ -218,7 +219,7 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 	}
 
 	if lease == nil {
-		return makeError(sErrors.GpuLeaseNotFoundErr)
+		return makeError(sErrors.ErrGpuLeaseNotFound)
 	}
 
 	params := model.GpuLeaseUpdateParams{}.FromDTO(dtoGpuLeaseUpdate)
@@ -231,7 +232,7 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 
 	// If the lease was request to be activated, check if that is allowed but checking if the lease is assigned
 	if params.ActivatedAt != nil && lease.AssignedAt == nil {
-		return makeError(sErrors.GpuLeaseNotAssignedErr)
+		return makeError(sErrors.ErrGpuLeaseNotAssigned)
 	}
 
 	// If the lease is trying to update to the same VM, ignore the attaching
@@ -242,8 +243,8 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 
 	err = gpu_lease_repo.New().UpdateWithParams(id, params)
 	if err != nil {
-		if errors.Is(err, gpu_lease_repo.VmAlreadyAttachedErr) {
-			return makeError(sErrors.VmAlreadyAttachedErr)
+		if errors.Is(err, gpu_lease_repo.ErrVmAlreadyAttached) {
+			return makeError(sErrors.ErrVmAlreadyAttached)
 		}
 
 		return makeError(err)
@@ -252,7 +253,7 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 	// If the lease already has a VM attached, detach it
 	if lease.VmID != nil {
 		err = c.V2.VMs().K8s().DetachGPU(*lease.VmID)
-		if err != nil && !errors.Is(err, sErrors.VmNotFoundErr) {
+		if err != nil && !errors.Is(err, sErrors.ErrVmNotFound) {
 			return makeError(err)
 		}
 	}
@@ -291,7 +292,7 @@ func (c *Client) Delete(id string) error {
 	// Detach the GPU
 	if lease.VmID != nil {
 		err = c.V2.VMs().K8s().DetachGPU(*lease.VmID)
-		if err != nil && !errors.Is(err, sErrors.VmNotFoundErr) {
+		if err != nil && !errors.Is(err, sErrors.ErrVmNotFound) {
 			return makeError(err)
 		}
 	}
@@ -352,13 +353,16 @@ func (c *Client) GetQueuePosition(id string) (int, error) {
 	}
 
 	if lease == nil {
-		return 0, makeError(sErrors.GpuLeaseNotFoundErr)
+		return 0, makeError(sErrors.ErrGpuLeaseNotFound)
 	}
 
 	count, err := c.Count(opts.ListGpuLeaseOpts{
 		GpuGroupID:    &lease.GpuGroupID,
 		CreatedBefore: &lease.CreatedAt,
 	})
+	if err != nil {
+		return 0, makeError(err)
+	}
 
 	gpuGroup, err := c.V2.VMs().GpuGroups().Get(lease.GpuGroupID)
 	if err != nil {
@@ -366,7 +370,7 @@ func (c *Client) GetQueuePosition(id string) (int, error) {
 	}
 
 	if gpuGroup == nil {
-		return 0, makeError(sErrors.GpuGroupNotFoundErr)
+		return 0, makeError(sErrors.ErrGpuGroupNotFound)
 	}
 
 	// Add 1 to the queue position to make it human-readable (queue position 1 means next in line)

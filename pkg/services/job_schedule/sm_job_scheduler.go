@@ -2,11 +2,11 @@ package job_schedule
 
 import (
 	"github.com/google/uuid"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/db/resources/sm_repo"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
 )
 
 // SmRepairScheduler is a worker that repairs storage managers.

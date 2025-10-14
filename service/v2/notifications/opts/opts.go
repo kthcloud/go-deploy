@@ -1,7 +1,7 @@
 package opts
 
 import (
-	"go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // GetOpts is used to pass options to the Get method

@@ -1,7 +1,7 @@
 package generators
 
 import (
-	"go-deploy/pkg/subsystems/harbor/models"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
 )
 
 // HarborGenerator is a generator for Harbor resources

@@ -3,11 +3,12 @@ package base_clients
 import (
 	"context"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
+	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"time"
 )
 
 // ActivityResourceClient is a type of base client that adds methods to manage activities in the database.
@@ -35,9 +36,9 @@ func (client *ActivityResourceClient[T]) AddExtraFilter(filter bson.D) *Activity
 // If the activity already exists, it will be overwritten.
 func (client *ActivityResourceClient[T]) AddActivity(id, activity string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{{"$set", bson.D{
-			{"activities." + activity, model.Activity{
+		bson.D{{Key: "id", Value: id}},
+		bson.D{{Key: "$set", Value: bson.D{
+			{Key: "activities." + activity, Value: model.Activity{
 				Name:      activity,
 				CreatedAt: time.Now(),
 			}},
@@ -54,9 +55,9 @@ func (client *ActivityResourceClient[T]) AddActivity(id, activity string) error 
 // If the activity does not exist, nothing will happen.
 func (client *ActivityResourceClient[T]) RemoveActivity(id, activity string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{{"$unset", bson.D{
-			{"activities." + activity, ""},
+		bson.D{{Key: "id", Value: id}},
+		bson.D{{Key: "$unset", Value: bson.D{
+			{Key: "activities." + activity, Value: ""},
 		}}},
 	)
 	if err != nil {
@@ -69,9 +70,9 @@ func (client *ActivityResourceClient[T]) RemoveActivity(id, activity string) err
 // ClearActivities clears all activities from the model with the given ID.
 func (client *ActivityResourceClient[T]) ClearActivities(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{{"$set", bson.D{
-			{"activities", make(map[string]model.Activity)},
+		bson.D{{Key: "id", Value: id}},
+		bson.D{{Key: "$set", Value: bson.D{
+			{Key: "activities", Value: make(map[string]model.Activity)},
 		}}},
 	)
 	if err != nil {
@@ -85,8 +86,8 @@ func (client *ActivityResourceClient[T]) ClearActivities(id string) error {
 // IsDoingActivity returns whether the model with the given ID is doing the given activity.
 func (client *ActivityResourceClient[T]) IsDoingActivity(id, activity string) (bool, error) {
 	filter := bson.D{
-		{"id", id},
-		{"activities." + activity, bson.M{
+		{Key: "id", Value: id},
+		{Key: "activities." + activity, Value: bson.M{
 			"$exists": true,
 		}},
 	}

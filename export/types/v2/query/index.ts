@@ -123,6 +123,9 @@ export interface TimestampRequest {
 //////////
 // source: user.go
 
+export interface UserGet {
+  Discover: boolean;
+}
 export interface UserList {
   Pagination?: Pagination;
   All: boolean;

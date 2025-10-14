@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/utils"
 	"io"
 	"net/http"
 )

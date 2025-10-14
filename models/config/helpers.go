@@ -1,7 +1,7 @@
 package config
 
 import (
-	"go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/model"
 	"gopkg.in/yaml.v3"
 	"os"
 	"sync"

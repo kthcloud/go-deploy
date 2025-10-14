@@ -4,25 +4,27 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/team_repo"
-	"go-deploy/pkg/db/resources/user_repo"
-	"go-deploy/pkg/subsystems"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/pkg/subsystems/k8s/keys"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/constants"
-	"go-deploy/service/generators"
-	"go-deploy/utils"
-	v1 "k8s.io/api/core/v1"
 	"math"
 	"path"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
+
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/team_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/user_repo"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/service/constants"
+	"github.com/kthcloud/go-deploy/service/generators"
+	"github.com/kthcloud/go-deploy/utils"
+	v1 "k8s.io/api/core/v1"
 )
 
 type K8sGenerator struct {
@@ -66,7 +68,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 	k8sEnvs := make([]models.EnvVar, len(mainApp.Envs))
 	for i, env := range mainApp.Envs {
-		if env.Name == "PORT" {
+		if env.Name == "PORT" || env.Name == "INTERNAL_PORTS" {
 			continue
 		}
 
@@ -80,6 +82,18 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		Name:  "PORT",
 		Value: fmt.Sprintf("%d", mainApp.InternalPort),
 	})
+
+	if len(mainApp.InternalPorts) > 0 {
+		portsStr := make([]string, len(mainApp.InternalPorts))
+		for i, port := range mainApp.InternalPorts {
+			portsStr[i] = strconv.Itoa(port)
+		}
+
+		k8sEnvs = append(k8sEnvs, models.EnvVar{
+			Name:  "INTERNAL_PORTS",
+			Value: strings.Join(portsStr, ","),
+		})
+	}
 
 	k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
 	for i, volume := range mainApp.Volumes {
@@ -256,10 +270,34 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 	res := make([]models.ServicePublic, 0)
 
+	// Add the base http port
+	ports := []models.Port{
+		{
+			Name:       "http",
+			Protocol:   "tcp",
+			Port:       mainApp.InternalPort,
+			TargetPort: mainApp.InternalPort,
+		},
+	}
+
+	// add all internalPorts to expose to the with the service
+	for _, p := range mainApp.InternalPorts {
+		if p == mainApp.InternalPort || p == 0 {
+			continue
+		}
+
+		ports = append(ports, models.Port{
+			Name:       fmt.Sprintf("port-%d", p),
+			Protocol:   "tcp",
+			Port:       p,
+			TargetPort: p,
+		})
+	}
+
 	se := models.ServicePublic{
 		Name:      kg.deployment.Name,
 		Namespace: kg.namespace,
-		Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: mainApp.InternalPort, TargetPort: mainApp.InternalPort}},
+		Ports:     ports,
 		Selector: map[string]string{
 			keys.LabelDeployName: kg.deployment.Name,
 		},
@@ -338,7 +376,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 	if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == model.CustomDomainStatusActive {
 		customIn := models.IngressPublic{
-			Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.deployment.Name)),
+			Name:         fmt.Sprint(constants.WithCustomDomainSuffix(kg.deployment.Name)),
 			Namespace:    kg.namespace,
 			ServiceName:  serviceName,
 			ServicePort:  servicePort,

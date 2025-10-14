@@ -1,8 +1,8 @@
 package model
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/utils"
 	"sort"
 	"time"
 )

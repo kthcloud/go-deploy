@@ -2,32 +2,33 @@ package v2
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	teamOpts "go-deploy/service/v2/teams/opts"
-	v2Utils "go-deploy/service/v2/utils"
-	"go-deploy/service/v2/vms/opts"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	teamOpts "github.com/kthcloud/go-deploy/service/v2/teams/opts"
+	v2Utils "github.com/kthcloud/go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // GetVM
 // @Summary Get VM
 // @Description Get VM
 // @Tags VM
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -51,7 +52,7 @@ func GetVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -65,7 +66,7 @@ func GetVM(c *gin.Context) {
 	}
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -85,9 +86,9 @@ func GetVM(c *gin.Context) {
 // @Summary List VMs
 // @Description List VMs
 // @Tags VM
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
@@ -109,7 +110,7 @@ func ListVMs(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -128,7 +129,7 @@ func ListVMs(c *gin.Context) {
 		Shared:     true,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -155,10 +156,12 @@ func ListVMs(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.VmCreate true "VM body"
 // @Success 200 {object} body.VmCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms [post]
@@ -173,7 +176,7 @@ func CreateVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -181,7 +184,7 @@ func CreateVM(c *gin.Context) {
 
 	unique, err := deployV2.VMs().NameAvailable(requestBody.Name)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -208,6 +211,11 @@ func CreateVM(c *gin.Context) {
 		}
 	}
 
+	if requestBody.NeverStale && !auth.User.IsAdmin {
+		context.Forbidden("User is not allowed to create VM with neverStale attribute set as true")
+		return
+	}
+
 	err = deployV2.VMs().CheckQuota("", auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
 	if err != nil {
 		var quotaExceedErr sErrors.QuotaExceededError
@@ -216,7 +224,7 @@ func CreateVM(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -229,7 +237,7 @@ func CreateVM(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -246,6 +254,7 @@ func CreateVM(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmDeleted
 // @Failure 400 {object} sys.ErrorResponse
@@ -264,7 +273,7 @@ func DeleteVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -272,7 +281,7 @@ func DeleteVM(c *gin.Context) {
 
 	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -292,7 +301,7 @@ func DeleteVM(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -309,11 +318,13 @@ func DeleteVM(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmUpdate true "VM update"
 // @Success 200 {object} body.VmUpdated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms/{vmId} [post]
@@ -334,7 +345,7 @@ func UpdateVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -342,7 +353,7 @@ func UpdateVM(c *gin.Context) {
 
 	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -354,7 +365,7 @@ func UpdateVM(c *gin.Context) {
 	if requestBody.Name != nil {
 		available, err := deployV2.VMs().NameAvailable(*requestBody.Name)
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -382,6 +393,11 @@ func UpdateVM(c *gin.Context) {
 		}
 	}
 
+	if requestBody.NeverStale != nil && !auth.User.IsAdmin {
+		context.Forbidden("User is not allowed to modify the neverStale value")
+		return
+	}
+
 	err = deployV2.VMs().CheckQuota(vm.ID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
@@ -390,7 +406,7 @@ func UpdateVM(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -402,7 +418,7 @@ func UpdateVM(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
