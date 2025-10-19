@@ -1,10 +1,11 @@
 package config
 
 import (
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt"
 	"k8s.io/client-go/kubernetes"
-	"time"
 )
 
 // The following structs are used to parse the config.yaml file
@@ -222,6 +223,15 @@ type Zone struct {
 			} `yaml:"ip"`
 		} `yaml:"egress"`
 	} `yaml:"networkPolicies"`
+	ResourceClaimTemplates []struct {
+		Name             string   `yaml:"name"`
+		DeviceClass      string   `yaml:"deviceClass"`
+		Requests         []string `yaml:"requests"`
+		Driver           string   `yaml:"driver"`
+		Strategy         string   `yaml:"strategy"`
+		MPSActiveThreads int      `yaml:"mpsActiveThreads"`
+		MPSMemoryLimit   string   `yaml:"mpsMemoryLimit"`
+	} `yaml:"resourceClaimTemplates"`
 	PortRange struct {
 		Start int `yaml:"start"`
 		End   int `yaml:"end"`

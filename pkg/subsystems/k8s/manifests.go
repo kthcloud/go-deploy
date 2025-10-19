@@ -1,10 +1,12 @@
 package k8s
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	nvresourcebetav1 "github.com/NVIDIA/k8s-dra-driver-gpu/api/nvidia.com/resource/v1beta1"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/utils"
@@ -13,8 +15,10 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	resourcev1 "k8s.io/api/resource/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	snapshotalpha1 "kubevirt.io/api/snapshot/v1alpha1"
@@ -62,8 +66,8 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 		}
 	}
 
-	volumes := make([]apiv1.Volume, 0)
-	usedNames := make(map[string]bool)
+	volumes := make([]apiv1.Volume, 0, len(public.Volumes))
+	usedNames := make(map[string]bool, len(public.Volumes))
 	for _, volume := range public.Volumes {
 		if usedNames[volume.Name] {
 			continue
@@ -102,6 +106,40 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			normalContainerMounts = append(normalContainerMounts, apiv1.VolumeMount{
 				Name:      volume.Name,
 				MountPath: volume.MountPath,
+			})
+		}
+	}
+
+	resourceClaims := make([]apiv1.PodResourceClaim, 0, len(public.ResourceClaims))
+	usedResourceClaimName := make(map[string]bool, len(public.ResourceClaims))
+	for _, resourceClaim := range public.ResourceClaims {
+		if usedResourceClaimName[resourceClaim.Name] {
+			continue
+		}
+		usedResourceClaimName[resourceClaim.Name] = true
+
+		rc := apiv1.PodResourceClaim{
+			Name: resourceClaim.Name,
+		}
+
+		if resourceClaim.ResourceClaimTemplateName != nil {
+			rc.ResourceClaimTemplateName = utils.StrPtr(*resourceClaim.ResourceClaimTemplateName)
+		} else if resourceClaim.ResourceClaimName != nil {
+			rc.ResourceClaimName = utils.StrPtr(*resourceClaim.ResourceClaimName)
+		}
+
+		resourceClaims = append(resourceClaims, rc)
+	}
+
+	// will most likely have only one req per claim, thus we allocate that size
+	// on the off-chance we need more, we can accept the extra time needed to expand
+	resourceClaimUsages := make([]apiv1.ResourceClaim, 0, len(public.ResourceClaims))
+
+	for _, claim := range public.ResourceClaims {
+		for _, req := range claim.Request {
+			resourceClaimUsages = append(resourceClaimUsages, apiv1.ResourceClaim{
+				Name:    claim.Name,
+				Request: req,
 			})
 		}
 	}
@@ -161,7 +199,8 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 					},
 				},
 				Spec: apiv1.PodSpec{
-					Volumes: volumes,
+					Volumes:        volumes,
+					ResourceClaims: resourceClaims,
 					Containers: []apiv1.Container{
 						{
 							Name:    public.Name,
@@ -172,6 +211,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 							Resources: apiv1.ResourceRequirements{
 								Limits:   limits,
 								Requests: requests,
+								Claims:   resourceClaimUsages,
 							},
 							Lifecycle:    lifecycle,
 							VolumeMounts: normalContainerMounts,
@@ -784,6 +824,76 @@ func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networking
 			},
 			Egress:  egressRules,
 			Ingress: ingressRules,
+		},
+	}
+}
+
+func CreateResourceClaimTemplateManifest(public *models.ResourceClaimTemplatePublic) *resourcev1.ResourceClaimTemplate {
+	gpuCfg := nvresourcebetav1.GpuConfig{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "resource.nvidia.com/v1beta1",
+			Kind:       "GpuConfig",
+		},
+		Sharing: &nvresourcebetav1.GpuSharing{
+			Strategy: nvresourcebetav1.GpuSharingStrategy(public.Strategy),
+		},
+	}
+
+	if public.Strategy == string(nvresourcebetav1.MpsStrategy) {
+		gpuCfg.Sharing.MpsConfig = &nvresourcebetav1.MpsConfig{
+			DefaultActiveThreadPercentage: utils.PtrOf(public.MPSActiveThreads),
+		}
+		if public.MPSMemoryLimit != "" {
+			if qty, err := resource.ParseQuantity(public.MPSMemoryLimit); err == nil {
+				gpuCfg.Sharing.MpsConfig.DefaultPinnedDeviceMemoryLimit = utils.PtrOf(qty)
+			}
+		}
+	}
+
+	rawParams, _ := json.Marshal(gpuCfg)
+
+	var deviceRequests []resourcev1.DeviceRequest = make([]resourcev1.DeviceRequest, 0, len(public.Requests))
+	for _, reqName := range public.Requests {
+		deviceRequests = append(deviceRequests, resourcev1.DeviceRequest{
+			Name: reqName,
+			Exactly: &resourcev1.ExactDeviceRequest{
+				DeviceClassName: public.DeviceClass,
+			},
+		})
+	}
+
+	deviceClaim := resourcev1.DeviceClaim{
+		Requests: deviceRequests,
+		Config: []resourcev1.DeviceClaimConfiguration{
+			{
+				Requests: public.Requests,
+				DeviceConfiguration: resourcev1.DeviceConfiguration{
+					Opaque: &resourcev1.OpaqueDeviceConfiguration{
+						Driver: public.Driver,
+						Parameters: runtime.RawExtension{
+							Raw: rawParams,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return &resourcev1.ResourceClaimTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.LabelDeployName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Spec: resourcev1.ResourceClaimTemplateSpec{
+			Spec: resourcev1.ResourceClaimSpec{
+				Devices: deviceClaim,
+			},
 		},
 	}
 }

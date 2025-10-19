@@ -3,10 +3,11 @@ package confirm
 import (
 	"errors"
 	"fmt"
+	"net"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_port_repo"
-	"net"
 )
 
 // appDeletedK8s checks if the K8s setup for the given app is deleted.
@@ -19,6 +20,14 @@ func appDeletedK8s(deployment *model.Deployment, app *model.App) bool {
 
 		pvc := deployment.Subsystems.K8s.PvcMap[volume.Name]
 		if pvc.Created() {
+			return false
+		}
+	}
+
+	// TODO: add the resourceClaims to the model.App
+	for _, claim := range map[string]string{} {
+		rct := deployment.Subsystems.K8s.RCTMap[claim]
+		if rct.Created() {
 			return false
 		}
 	}

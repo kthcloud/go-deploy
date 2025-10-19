@@ -106,6 +106,15 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 	}
 
+	k8sResClaims := make([]models.ResourceClaim, 0, len(mainApp.GPUs))
+	for _, gpu := range mainApp.GPUs {
+		k8sResClaims = append(k8sResClaims, models.ResourceClaim{
+			Name:                      fmt.Sprintf("%s-%s", kg.deployment.Name, makeValidK8sName(gpu.Name)),
+			Request:                   []string{gpu.Name},
+			ResourceClaimTemplateName: utils.StrPtr(gpu.TemplateName),
+		})
+	}
+
 	res := make([]models.DeploymentPublic, 0)
 
 	dep := models.DeploymentPublic{
@@ -130,6 +139,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		InitCommands:   mainApp.InitCommands,
 		InitContainers: make([]models.InitContainer, 0),
 		Volumes:        k8sVolumes,
+		ResourceClaims: k8sResClaims,
 		Disabled:       mainApp.Replicas == 0,
 	}
 
@@ -655,6 +665,32 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 		}
 
 		res = append(res, np)
+	}
+
+	return res
+}
+
+// TODO: this should not be created for each deployment,  it should be created for each ns that wants to use it
+func (kg *K8sGenerator) ResourceClaimTemplates() []models.ResourceClaimTemplatePublic {
+	res := make([]models.ResourceClaimTemplatePublic, 0, len(kg.zone.ResourceClaimTemplates))
+
+	for _, rct := range kg.zone.ResourceClaimTemplates {
+		rctp := models.ResourceClaimTemplatePublic{
+			Name:             makeValidK8sName(rct.Name),
+			Namespace:        kg.zone.K8s.Namespaces.Deployment,
+			DeviceClass:      rct.DeviceClass,
+			Requests:         rct.Requests,
+			Driver:           rct.Driver,
+			Strategy:         rct.Strategy,
+			MPSActiveThreads: rct.MPSActiveThreads,
+			MPSMemoryLimit:   rct.MPSMemoryLimit,
+			CreatedAt:        time.Now(),
+		}
+		if rctpo := kg.deployment.Subsystems.K8s.GetRCT(rctp.Name); subsystems.Created(rctpo) {
+			// it already exists, skip
+			continue
+		}
+		res = append(res, rctp)
 	}
 
 	return res

@@ -13,14 +13,15 @@ type DeploymentSubsystems struct {
 type DeploymentK8s struct {
 	Namespace k8sModels.NamespacePublic `bson:"namespace"`
 
-	DeploymentMap    map[string]k8sModels.DeploymentPublic    `bson:"deploymentMap,omitempty"`
-	ServiceMap       map[string]k8sModels.ServicePublic       `bson:"serviceMap,omitempty"`
-	IngressMap       map[string]k8sModels.IngressPublic       `bson:"ingressMap,omitempty"`
-	PvMap            map[string]k8sModels.PvPublic            `bson:"pvMap,omitempty"`
-	PvcMap           map[string]k8sModels.PvcPublic           `bson:"pvcMap,omitempty"`
-	SecretMap        map[string]k8sModels.SecretPublic        `bson:"secretMap,omitempty"`
-	HpaMap           map[string]k8sModels.HpaPublic           `bson:"hpaMap,omitempty"`
-	NetworkPolicyMap map[string]k8sModels.NetworkPolicyPublic `bson:"networkPolicyMap,omitempty"`
+	DeploymentMap    map[string]k8sModels.DeploymentPublic            `bson:"deploymentMap,omitempty"`
+	ServiceMap       map[string]k8sModels.ServicePublic               `bson:"serviceMap,omitempty"`
+	IngressMap       map[string]k8sModels.IngressPublic               `bson:"ingressMap,omitempty"`
+	PvMap            map[string]k8sModels.PvPublic                    `bson:"pvMap,omitempty"`
+	PvcMap           map[string]k8sModels.PvcPublic                   `bson:"pvcMap,omitempty"`
+	RCTMap           map[string]k8sModels.ResourceClaimTemplatePublic `bson:"rctMap,omitempty"`
+	SecretMap        map[string]k8sModels.SecretPublic                `bson:"secretMap,omitempty"`
+	HpaMap           map[string]k8sModels.HpaPublic                   `bson:"hpaMap,omitempty"`
+	NetworkPolicyMap map[string]k8sModels.NetworkPolicyPublic         `bson:"networkPolicyMap,omitempty"`
 }
 
 type DeploymentHarbor struct {
@@ -84,6 +85,16 @@ func (k *DeploymentK8s) GetPvcMap() map[string]k8sModels.PvcPublic {
 	}
 
 	return k.PvcMap
+}
+
+// GetRCTMap returns the resourceClaimTemplate map of the deployment.
+// If the map is nil, it will be initialized before returning.
+func (k *DeploymentK8s) GetRCTMap() map[string]k8sModels.ResourceClaimTemplatePublic {
+	if k.RCTMap == nil {
+		k.RCTMap = make(map[string]k8sModels.ResourceClaimTemplatePublic)
+	}
+
+	return k.RCTMap
 }
 
 // GetSecretMap returns the secret map of the deployment.
@@ -171,6 +182,17 @@ func (k *DeploymentK8s) GetPVC(name string) *k8sModels.PvcPublic {
 	return &resource
 }
 
+// GetRCT returns the ResourceClaimTemplate with the given name.
+// If a RCT with the given name does not exist, nil will be returned.
+func (k *DeploymentK8s) GetRCT(name string) *k8sModels.ResourceClaimTemplatePublic {
+	resource, ok := k.GetRCTMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resource
+}
+
 // GetSecret returns the secret with the given name.
 // If a secret with the given name does not exist, nil will be returned.
 func (k *DeploymentK8s) GetSecret(name string) *k8sModels.SecretPublic {
@@ -232,6 +254,12 @@ func (k *DeploymentK8s) DeletePV(name string) {
 // It uses GetPvcMap to get the map to avoid nil pointer dereferences.
 func (k *DeploymentK8s) DeletePVC(name string) {
 	delete(k.GetPvcMap(), name)
+}
+
+// DeleteRCT deletes the ResourceClaimTemplate from the RCTMap with the given name.
+// It uses GetRCTMap to get the map to avoid nil pointer dereferences.
+func (k *DeploymentK8s) DeleteRCT(name string) {
+	delete(k.GetRCTMap(), name)
 }
 
 // DeleteSecret deletes the secret from the SecretMap with the given name.

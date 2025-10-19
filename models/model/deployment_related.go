@@ -32,9 +32,10 @@ var (
 type App struct {
 	Name string `bson:"name"`
 
-	CpuCores float64 `bson:"cpuCores,omitempty"`
-	RAM      float64 `bson:"ram,omitempty"`
-	Replicas int     `bson:"replicas"`
+	CpuCores float64         `bson:"cpuCores,omitempty"`
+	RAM      float64         `bson:"ram,omitempty"`
+	Replicas int             `bson:"replicas"`
+	GPUs     []DeploymentGPU `bson:"gpus,omitempty"`
 
 	Image         string             `bson:"image"`
 	InternalPort  int                `bson:"internalPort"`
@@ -92,6 +93,11 @@ type DeploymentVolume struct {
 	Init       bool   `bson:"init"`
 	AppPath    string `bson:"appPath"`
 	ServerPath string `bson:"serverPath"`
+}
+
+type DeploymentGPU struct {
+	Name         string `bson:"name"`
+	TemplateName string `bson:"name"`
 }
 
 type DeploymentUsage struct {

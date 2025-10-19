@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/core/v1"
-	"time"
 )
 
 type K8sResource interface {
@@ -42,6 +43,13 @@ type Requests struct {
 type Resources struct {
 	Limits   Limits   `bson:"limits"`
 	Requests Requests `bson:"requests"`
+}
+
+type ResourceClaim struct {
+	Name                      string   `bson:"name"`
+	Request                   []string `bson:"request,omitempty"`
+	ResourceClaimName         *string  `bson:"resourceClaimName,omitempty"`
+	ResourceClaimTemplateName *string  `bson:"resourceClaimTemplateName,omitempty"`
 }
 
 // ToK8sEnvVar converts an EnvVar to a v1.EnvVar.

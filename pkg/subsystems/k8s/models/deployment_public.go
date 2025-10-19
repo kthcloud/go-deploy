@@ -1,8 +1,9 @@
 package models
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 type DeploymentPublic struct {
@@ -19,6 +20,7 @@ type DeploymentPublic struct {
 	InitCommands     []string        `bson:"initCommands"`
 	InitContainers   []InitContainer `bson:"initContainers"`
 	Volumes          []Volume        `bson:"volumes"`
+	ResourceClaims   []ResourceClaim `bson:"resourcClaims,omitempty"`
 	CreatedAt        time.Time       `bson:"createdAt"`
 
 	// Disabled is a flag that can be set to true to disable the deployment.
@@ -48,6 +50,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	var command []string
 	var args []string
 	var volumes []Volume
+	var claims []ResourceClaim
 	var image string
 
 	for _, k8sVolume := range deployment.Spec.Template.Spec.Volumes {
@@ -60,6 +63,26 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			Name:    k8sVolume.Name,
 			PvcName: pvcName,
 			Init:    false,
+		})
+	}
+
+	for _, k8sResourceClaim := range deployment.Spec.Template.Spec.ResourceClaims {
+		var (
+			resourceClaimTemplateName, resourceClaimName *string
+		)
+
+		if k8sResourceClaim.ResourceClaimTemplateName != nil {
+			resourceClaimTemplateName = k8sResourceClaim.ResourceClaimName
+		}
+
+		if k8sResourceClaim.ResourceClaimTemplateName != nil {
+			resourceClaimTemplateName = k8sResourceClaim.ResourceClaimTemplateName
+		}
+
+		claims = append(claims, ResourceClaim{
+			Name:                      k8sResourceClaim.Name,
+			ResourceClaimName:         resourceClaimName,
+			ResourceClaimTemplateName: resourceClaimTemplateName,
 		})
 	}
 
@@ -99,6 +122,15 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			for idx, volume := range volumes {
 				if volume.Name == volumeMount.Name {
 					volumes[idx].MountPath = volumeMount.MountPath
+					break
+				}
+			}
+		}
+
+		for _, resourceClaim := range resources.Claims {
+			for idx, claim := range claims {
+				if claim.Name == resourceClaim.Name {
+					claims[idx].Request = append(claims[idx].Request, resourceClaim.Request)
 					break
 				}
 			}
@@ -164,6 +196,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		InitCommands:   initCommands,
 		InitContainers: initContainers,
 		Volumes:        volumes,
+		ResourceClaims: claims,
 		CreatedAt:      formatCreatedAt(deployment.Annotations),
 	}
 }
