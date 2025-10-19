@@ -39,6 +39,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		CpuCores: params.CpuCores,
 		RAM:      params.RAM,
 		Replicas: params.Replicas,
+		GPUs:     params.GPUs,
 
 		Image:         params.Image,
 		InternalPort:  params.InternalPort,
@@ -144,6 +145,7 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "apps.main.cpuCores", params.CpuCores)
 	db.AddIfNotNil(&setUpdate, "apps.main.ram", params.RAM)
 	db.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
+	db.AddIfNotNil(&setUpdate, "apps.main.gpus", params.GPUs)
 	db.AddIfNotNil(&setUpdate, "apps.main.visibility", params.Visibility)
 	db.AddIfNotNil(&setUpdate, "neverStale", params.NeverStale)
 
