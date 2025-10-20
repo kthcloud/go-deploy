@@ -52,6 +52,12 @@ type ResourceClaim struct {
 	ResourceClaimTemplateName *string  `bson:"resourceClaimTemplateName,omitempty"`
 }
 
+type Toleration struct {
+	Key      string `bson:"name"`
+	Operator string `bson:"operator"`
+	Effect   string `bson:"effect"`
+}
+
 // ToK8sEnvVar converts an EnvVar to a v1.EnvVar.
 func (envVar *EnvVar) ToK8sEnvVar() v1.EnvVar {
 	return v1.EnvVar{

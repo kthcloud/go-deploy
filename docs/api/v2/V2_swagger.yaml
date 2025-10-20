@@ -142,6 +142,11 @@ components:
           minItems: 0
           type: array
           uniqueItems: false
+        gpus:
+          items:
+            $ref: '#/components/schemas/body.DeploymentGPU'
+          type: array
+          uniqueItems: false
         healthCheckPath:
           maxLength: 1000
           minLength: 0
@@ -200,6 +205,13 @@ components:
         id:
           type: string
         jobId:
+          type: string
+      type: object
+    body.DeploymentGPU:
+      properties:
+        name:
+          type: string
+        templateName:
           type: string
       type: object
     body.DeploymentRead:
@@ -297,6 +309,11 @@ components:
       properties:
         cpuCores:
           type: number
+        gpus:
+          items:
+            $ref: '#/components/schemas/body.DeploymentGPU'
+          type: array
+          uniqueItems: false
         ram:
           type: number
         replicas:
@@ -323,6 +340,11 @@ components:
             $ref: '#/components/schemas/body.Env'
           maxItems: 1000
           minItems: 0
+          type: array
+          uniqueItems: false
+        gpus:
+          items:
+            $ref: '#/components/schemas/body.DeploymentGPU'
           type: array
           uniqueItems: false
         healthCheckPath:

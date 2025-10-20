@@ -97,7 +97,7 @@ type DeploymentVolume struct {
 
 type DeploymentGPU struct {
 	Name         string `bson:"name"`
-	TemplateName string `bson:"name"`
+	TemplateName string `bson:"tenplateName"`
 }
 
 type DeploymentUsage struct {

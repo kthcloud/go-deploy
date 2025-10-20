@@ -115,6 +115,16 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		})
 	}
 
+	// TODO: make this more dynamic, dont just support nvidia
+	tolerations := make([]models.Toleration, 0, max(1, len(mainApp.GPUs)))
+	if len(mainApp.GPUs) > 0 {
+		tolerations = append(tolerations, models.Toleration{
+			Key:      "nvidia.com/gpu",
+			Operator: "Exists",
+			Effect:   "NoSchedule",
+		})
+	}
+
 	res := make([]models.DeploymentPublic, 0)
 
 	dep := models.DeploymentPublic{
@@ -140,6 +150,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		InitContainers: make([]models.InitContainer, 0),
 		Volumes:        k8sVolumes,
 		ResourceClaims: k8sResClaims,
+		Tolerations:    tolerations,
 		Disabled:       mainApp.Replicas == 0,
 	}
 

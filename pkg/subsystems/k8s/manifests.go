@@ -131,6 +131,25 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 		resourceClaims = append(resourceClaims, rc)
 	}
 
+	tolerations := make([]apiv1.Toleration, 0, len(public.Tolerations))
+	for _, toleration := range public.Tolerations {
+		tolerations = append(tolerations, apiv1.Toleration{
+			Key:      toleration.Key,
+			Operator: apiv1.TolerationOperator(toleration.Operator),
+			Effect:   apiv1.TaintEffect(toleration.Effect),
+		})
+	}
+
+	// Add toleration if there is a resourceclaim
+	// TODO: make this more dynamic
+	if len(resourceClaims) > 0 && len(tolerations) < 1 {
+		tolerations = append(tolerations, apiv1.Toleration{
+			Key:      "nvidia.com/gpu",
+			Operator: apiv1.TolerationOperator("Exists"),
+			Effect:   apiv1.TaintEffect("NoSchedule"),
+		})
+	}
+
 	// will most likely have only one req per claim, thus we allocate that size
 	// on the off-chance we need more, we can accept the extra time needed to expand
 	resourceClaimUsages := make([]apiv1.ResourceClaim, 0, len(public.ResourceClaims))
@@ -201,6 +220,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 				Spec: apiv1.PodSpec{
 					Volumes:        volumes,
 					ResourceClaims: resourceClaims,
+					Tolerations:    tolerations,
 					Containers: []apiv1.Container{
 						{
 							Name:    public.Name,

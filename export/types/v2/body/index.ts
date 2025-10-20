@@ -68,6 +68,7 @@ export interface DeploymentCreate {
   cpuCores?: number /* float64 */;
   ram?: number /* float64 */;
   replicas?: number /* int */;
+  gpus?: DeploymentGPU[];
   envs: Env[];
   volumes: Volume[];
   initCommands: string[];
@@ -99,6 +100,7 @@ export interface DeploymentUpdate {
   cpuCores?: number /* float64 */;
   ram?: number /* float64 */;
   replicas?: number /* int */;
+  gpus?: DeploymentGPU[];
   envs?: Env[];
   volumes?: Volume[];
   initCommands?: string[];
@@ -162,10 +164,15 @@ export interface DeploymentUpdated {
   id: string;
   jobId?: string;
 }
+export interface DeploymentGPU {
+  name: string;
+  templateName: string;
+}
 export interface DeploymentSpecs {
   cpuCores: number /* float64 */;
   ram: number /* float64 */;
   replicas: number /* int */;
+  gpus?: DeploymentGPU[];
 }
 export interface CiConfig {
   config: string;

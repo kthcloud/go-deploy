@@ -56,7 +56,7 @@ type DeploymentCreate struct {
 	CpuCores *float64        `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
 	RAM      *float64        `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
 	Replicas *int            `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
-	GPUs     []DeploymentGPU `json:"gpus,omitempty" bson:"gpus,omitempty" binding:"omitempty"`
+	GPUs     []DeploymentGPU `json:"gpus,omitempty" bson:"gpus,omitempty" binding:"omitempty,min=0"`
 
 	Envs         []Env    `json:"envs" bson:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      []Volume `json:"volumes" bson:"volumes" binding:"omitempty,min=0,max=100,dive"`
@@ -87,7 +87,7 @@ type DeploymentUpdate struct {
 	CpuCores *float64         `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
 	RAM      *float64         `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
 	Replicas *int             `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
-	GPUs     *[]DeploymentGPU `json:"gpus,omitempty" bson:"gpus,omitempty" binding:"omitempty"`
+	GPUs     *[]DeploymentGPU `json:"gpus,omitempty" bson:"gpus,omitempty" binding:"omitempty,min=0"`
 
 	Envs         *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`

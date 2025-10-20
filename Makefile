@@ -13,7 +13,7 @@ all: build
 build:
 	@echo "Building the application..."
 	@mkdir -p $(BUILD_DIR)
-	@CGO_ENABLED=0 go build -o $(BUILD_DIR)/$(BINARY_NAME)$(EXT) .
+	@CGO_ENABLED=0 go build -ldflags="-X github.com/NVIDIA/k8s-dra-driver-gpu/internal/info.version=v1.34.2" -o $(BUILD_DIR)/$(BINARY_NAME)$(EXT) .
 	@echo "Build complete."
 
 run: build

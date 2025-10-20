@@ -21,6 +21,7 @@ type DeploymentPublic struct {
 	InitContainers   []InitContainer `bson:"initContainers"`
 	Volumes          []Volume        `bson:"volumes"`
 	ResourceClaims   []ResourceClaim `bson:"resourcClaims,omitempty"`
+	Tolerations      []Toleration    `bson:"tolerations,omitempty"`
 	CreatedAt        time.Time       `bson:"createdAt"`
 
 	// Disabled is a flag that can be set to true to disable the deployment.
@@ -51,6 +52,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	var args []string
 	var volumes []Volume
 	var claims []ResourceClaim
+	var tolerations []Toleration
 	var image string
 
 	for _, k8sVolume := range deployment.Spec.Template.Spec.Volumes {
@@ -83,6 +85,15 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			Name:                      k8sResourceClaim.Name,
 			ResourceClaimName:         resourceClaimName,
 			ResourceClaimTemplateName: resourceClaimTemplateName,
+		})
+	}
+
+	// TODO: figure out how this can be done better
+	for _, k8sToleration := range deployment.Spec.Template.Spec.Tolerations {
+		tolerations = append(tolerations, Toleration{
+			Key:      k8sToleration.Key,
+			Operator: string(k8sToleration.Operator),
+			Effect:   string(k8sToleration.Effect),
 		})
 	}
 
@@ -197,6 +208,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		InitContainers: initContainers,
 		Volumes:        volumes,
 		ResourceClaims: claims,
+		Tolerations:    tolerations,
 		CreatedAt:      formatCreatedAt(deployment.Annotations),
 	}
 }
