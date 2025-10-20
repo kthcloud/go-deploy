@@ -108,11 +108,21 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 	k8sResClaims := make([]models.ResourceClaim, 0, len(mainApp.GPUs))
 	for _, gpu := range mainApp.GPUs {
-		k8sResClaims = append(k8sResClaims, models.ResourceClaim{
-			Name:                      fmt.Sprintf("%s-%s", kg.deployment.Name, makeValidK8sName(gpu.Name)),
-			Request:                   []string{gpu.Name},
-			ResourceClaimTemplateName: utils.StrPtr(gpu.TemplateName),
-		})
+		rc := models.ResourceClaim{
+			Name:    fmt.Sprintf("%s-%s", kg.deployment.Name, makeValidK8sName(gpu.Name)),
+			Request: []string{gpu.Name},
+		}
+
+		if gpu.TemplateName != nil {
+			rc.ResourceClaimTemplateName = utils.StrPtr(*gpu.TemplateName)
+		} else if gpu.ClaimName != nil {
+			rc.ResourceClaimName = utils.StrPtr(*gpu.ClaimName)
+		} else {
+			// needs to have one of them
+			continue
+		}
+
+		k8sResClaims = append(k8sResClaims, rc)
 	}
 
 	// TODO: make this more dynamic, dont just support nvidia

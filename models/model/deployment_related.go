@@ -96,8 +96,9 @@ type DeploymentVolume struct {
 }
 
 type DeploymentGPU struct {
-	Name         string `bson:"name"`
-	TemplateName string `bson:"tenplateName"`
+	Name         string  `bson:"name"`
+	TemplateName *string `bson:"templateName,omitempty"`
+	ClaimName    *string `bson:"ClaimName,omitempty"`
 }
 
 type DeploymentUsage struct {

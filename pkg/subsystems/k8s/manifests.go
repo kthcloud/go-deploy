@@ -126,6 +126,8 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			rc.ResourceClaimTemplateName = utils.StrPtr(*resourceClaim.ResourceClaimTemplateName)
 		} else if resourceClaim.ResourceClaimName != nil {
 			rc.ResourceClaimName = utils.StrPtr(*resourceClaim.ResourceClaimName)
+		} else {
+			continue
 		}
 
 		resourceClaims = append(resourceClaims, rc)

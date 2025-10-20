@@ -152,8 +152,9 @@ type DeploymentUpdated struct {
 }
 
 type DeploymentGPU struct {
-	Name         string `json:"name"`
-	TemplateName string `json:"templateName"`
+	Name         string  `json:"name"`
+	TemplateName *string `json:"templateName,omitempty"`
+	ClaimName    *string `json:"claimName,omitempty"`
 }
 
 type DeploymentSpecs struct {

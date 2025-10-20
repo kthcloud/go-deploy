@@ -144,10 +144,18 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 
 	var gpus []body.DeploymentGPU = make([]body.DeploymentGPU, 0, len(app.GPUs))
 	for _, gpu := range app.GPUs {
-		gpus = append(gpus, body.DeploymentGPU{
-			Name:         gpu.Name,
-			TemplateName: gpu.TemplateName,
-		})
+		dto := body.DeploymentGPU{
+			Name: gpu.Name,
+		}
+		if gpu.TemplateName != nil {
+			dto.TemplateName = gpu.TemplateName
+		} else if gpu.ClaimName != nil {
+			dto.ClaimName = gpu.ClaimName
+		} else {
+			continue
+		}
+
+		gpus = append(gpus, dto)
 	}
 
 	return body.DeploymentRead{
@@ -261,10 +269,17 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 
 	p.GPUs = make([]DeploymentGPU, 0, len(dto.GPUs))
 	for _, gpu := range dto.GPUs {
-		p.GPUs = append(p.GPUs, DeploymentGPU{
-			Name:         gpu.Name,
-			TemplateName: gpu.TemplateName,
-		})
+		gpuM := DeploymentGPU{
+			Name: gpu.Name,
+		}
+		if gpu.TemplateName != nil {
+			gpuM.TemplateName = utils.StrPtr(*gpu.TemplateName)
+		} else if gpu.ClaimName != nil {
+			gpuM.ClaimName = utils.StrPtr(*gpu.ClaimName)
+		} else {
+			continue
+		}
+		p.GPUs = append(p.GPUs, gpuM)
 	}
 
 	if dto.HealthCheckPath == nil {
@@ -348,10 +363,21 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 	if dto.GPUs != nil {
 		gpus := make([]DeploymentGPU, 0, len(*dto.GPUs))
 		for _, gpu := range *dto.GPUs {
-			gpus = append(gpus, DeploymentGPU{
-				Name:         gpu.Name,
-				TemplateName: gpu.TemplateName,
-			})
+			var gpuM DeploymentGPU = DeploymentGPU{
+				Name: gpu.Name,
+			}
+
+			if gpu.TemplateName != nil {
+				gpuM.TemplateName = utils.StrPtr(*gpu.TemplateName)
+			} else if gpu.ClaimName != nil {
+				gpuM.ClaimName = utils.StrPtr(*gpu.ClaimName)
+			} else {
+				// One of them needs to be set
+				// TODO: add validation so user can get feedback
+				continue
+			}
+
+			gpus = append(gpus, gpuM)
 		}
 		p.GPUs = &gpus
 	}

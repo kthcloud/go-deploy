@@ -77,8 +77,8 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			resourceClaimTemplateName = k8sResourceClaim.ResourceClaimName
 		}
 
-		if k8sResourceClaim.ResourceClaimTemplateName != nil {
-			resourceClaimTemplateName = k8sResourceClaim.ResourceClaimTemplateName
+		if k8sResourceClaim.ResourceClaimName != nil {
+			resourceClaimName = k8sResourceClaim.ResourceClaimName
 		}
 
 		claims = append(claims, ResourceClaim{
