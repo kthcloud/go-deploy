@@ -158,3 +158,18 @@ func Int64Ptr(i int64) *int64 {
 func PtrOf[T any](v T) *T {
 	return &v
 }
+
+func ZeroDeref[T any](v *T) T {
+	var zero T
+	if v == nil {
+		return zero
+	}
+	return *v
+}
+
+func ErrorStr(v error) string {
+	if v != nil {
+		return v.Error()
+	}
+	return ""
+}

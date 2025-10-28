@@ -39,12 +39,12 @@ type ResourceClaimBaseRequestPublic struct {
 
 type ResourceClaimExactlyRequestPublic struct {
 	ResourceClaimBaseRequestPublic `bson:",inline"`
-	AdminAccess                    *bool `bson:"adminAccess"`
+	AdminAccess                    *bool `bson:"adminAccess,omitempty"`
 }
 
 type ResourceClaimOpaquePublic struct {
 	Driver     string           `bson:"driver"`
-	Parameters dra.OpaqueParams `bson:"parameters"`
+	Parameters dra.OpaqueParams `bson:"parameters,omitempty"`
 }
 
 type ResourceClaimAllocationResultPublic struct {
