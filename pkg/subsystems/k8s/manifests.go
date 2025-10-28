@@ -920,6 +920,31 @@ func CreateResourceClaimTemplateManifest(public *models.ResourceClaimTemplatePub
 	}
 }
 
+func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1.ResourceClaim {
+
+	var deviceClaim resourcev1.DeviceClaim = resourcev1.DeviceClaim{
+		Requests:    []resourcev1.DeviceRequest{},
+		Constraints: []resourcev1.DeviceConstraint{},
+		Config:      []resourcev1.DeviceClaimConfiguration{},
+	}
+
+	return &resourcev1.ResourceClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.LabelDeployName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Spec: resourcev1.ResourceClaimSpec{
+			Devices: deviceClaim,
+		},
+	}
+}
+
 // pathTypeAddr is a helper function to convert a string to a networkingv1.PathType.
 func pathTypeAddr(s string) *networkingv1.PathType {
 	return (*networkingv1.PathType)(&s)

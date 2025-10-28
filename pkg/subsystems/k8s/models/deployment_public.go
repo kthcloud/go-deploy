@@ -11,18 +11,18 @@ type DeploymentPublic struct {
 	Namespace string            `bson:"namespace"`
 	Labels    map[string]string `bson:"labels"`
 
-	Image            string          `bson:"image"`
-	ImagePullSecrets []string        `bson:"imagePullSecrets"`
-	EnvVars          []EnvVar        `bson:"envVars"`
-	Resources        Resources       `bson:"resources"`
-	Command          []string        `bson:"command"`
-	Args             []string        `bson:"args"`
-	InitCommands     []string        `bson:"initCommands"`
-	InitContainers   []InitContainer `bson:"initContainers"`
-	Volumes          []Volume        `bson:"volumes"`
-	ResourceClaims   []ResourceClaim `bson:"resourcClaims,omitempty"`
-	Tolerations      []Toleration    `bson:"tolerations,omitempty"`
-	CreatedAt        time.Time       `bson:"createdAt"`
+	Image            string                 `bson:"image"`
+	ImagePullSecrets []string               `bson:"imagePullSecrets"`
+	EnvVars          []EnvVar               `bson:"envVars"`
+	Resources        Resources              `bson:"resources"`
+	Command          []string               `bson:"command"`
+	Args             []string               `bson:"args"`
+	InitCommands     []string               `bson:"initCommands"`
+	InitContainers   []InitContainer        `bson:"initContainers"`
+	Volumes          []Volume               `bson:"volumes"`
+	ResourceClaims   []DynamicResourceClaim `bson:"resourcClaims,omitempty"`
+	Tolerations      []Toleration           `bson:"tolerations,omitempty"`
+	CreatedAt        time.Time              `bson:"createdAt"`
 
 	// Disabled is a flag that can be set to true to disable the deployment.
 	// This is useful for deployments that should not be running, but should still exist.
@@ -51,7 +51,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	var command []string
 	var args []string
 	var volumes []Volume
-	var claims []ResourceClaim
+	var claims []DynamicResourceClaim
 	var tolerations []Toleration
 	var image string
 
@@ -81,7 +81,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			resourceClaimName = k8sResourceClaim.ResourceClaimName
 		}
 
-		claims = append(claims, ResourceClaim{
+		claims = append(claims, DynamicResourceClaim{
 			Name:                      k8sResourceClaim.Name,
 			ResourceClaimName:         resourceClaimName,
 			ResourceClaimTemplateName: resourceClaimTemplateName,

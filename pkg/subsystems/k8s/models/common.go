@@ -45,7 +45,7 @@ type Resources struct {
 	Requests Requests `bson:"requests"`
 }
 
-type ResourceClaim struct {
+type DynamicResourceClaim struct {
 	Name                      string   `bson:"name"`
 	Request                   []string `bson:"request,omitempty"`
 	ResourceClaimName         *string  `bson:"resourceClaimName,omitempty"`

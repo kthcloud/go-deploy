@@ -106,9 +106,9 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 	}
 
-	k8sResClaims := make([]models.ResourceClaim, 0, len(mainApp.GPUs))
+	k8sResClaims := make([]models.DynamicResourceClaim, 0, len(mainApp.GPUs))
 	for _, gpu := range mainApp.GPUs {
-		rc := models.ResourceClaim{
+		rc := models.DynamicResourceClaim{
 			Name:    fmt.Sprintf("%s-%s", kg.deployment.Name, makeValidK8sName(gpu.Name)),
 			Request: []string{gpu.Name},
 		}
