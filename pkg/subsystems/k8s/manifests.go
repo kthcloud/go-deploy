@@ -945,6 +945,7 @@ func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1
 						Driver: req.Config.Driver,
 						Parameters: runtime.RawExtension{
 							Raw: raw,
+							// TODO: test if this is needed
 							//Object: req.Config.Parameters,
 						},
 					},

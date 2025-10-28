@@ -62,6 +62,14 @@ type ResourceClaimConsumerPublic struct {
 	UID      string `bson:"uid,omitempty"`
 }
 
+func (r *ResourceClaimPublic) Created() bool {
+	return r.CreatedAt != time.Time{}
+}
+
+func (r *ResourceClaimPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateResourceClaimPublicFromRead(claim *resourcev1.ResourceClaim) *ResourceClaimPublic {
 	if claim == nil {
 		return nil

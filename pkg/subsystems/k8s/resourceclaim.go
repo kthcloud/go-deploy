@@ -13,11 +13,11 @@ import (
 // ReadResourceClaim reads a ResourceClaim from Kubernetes.
 func (client *Client) ReadResourceClaim(name string) (*models.ResourceClaimPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s RCT %s. details: %w", name, err)
+		return fmt.Errorf("failed to read k8s ResourceClaim %s. details: %w", name, err)
 	}
 
 	if name == "" {
-		log.Println("No name supplied when reading k8s RCT. Assuming it was deleted")
+		log.Println("No name supplied when reading k8s ResourceClaim. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -36,11 +36,11 @@ func (client *Client) ReadResourceClaim(name string) (*models.ResourceClaimPubli
 // CreateResourceClaim creates a ResourceClaim in Kubernetes.
 func (client *Client) CreateResourceClaim(public *models.ResourceClaimPublic) (*models.ResourceClaimPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s RCT %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to create k8s ResourceClaim %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
-		log.Println("No name supplied when creating k8s RCT. Assuming it was deleted")
+		log.Println("No name supplied when creating k8s ResourceClaim. Assuming it was deleted")
 		return nil, nil
 	}
 
