@@ -47,6 +47,11 @@ const (
 	JobDeleteSM = "deleteSm"
 	// JobRepairSM is used when repairing a storage manager.
 	JobRepairSM = "repairSm"
+
+	// JobCreateGpuClaim is used when creating a gpu claim.
+	JobCreateGpuClaim = "createGpuClaim"
+	// JobCreateGpuClaim is used when deleting a gpu claim.
+	JobDeleteGpuClaim = "deleteGpuClaim"
 )
 
 const (

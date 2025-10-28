@@ -10,6 +10,7 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/deployments/harbor_service"
 	deploymentK8sService "github.com/kthcloud/go-deploy/service/v2/deployments/k8s_service"
 	dOpts "github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	gpuClaimOpts "github.com/kthcloud/go-deploy/service/v2/gpu_claims/opts"
 	jobOpts "github.com/kthcloud/go-deploy/service/v2/jobs/opts"
 	nOpts "github.com/kthcloud/go-deploy/service/v2/notifications/opts"
 	resourceMigrationOpts "github.com/kthcloud/go-deploy/service/v2/resource_migrations/opts"
@@ -201,4 +202,11 @@ type System interface {
 	GetZone(name string) *configModels.Zone
 	ListZones(opts ...systemOpts.ListOpts) ([]configModels.Zone, error)
 	ZoneHasCapability(zoneName, capability string) bool
+}
+
+type GpuClaims interface {
+	Get(id string, opts ...gpuClaimOpts.Opts) (*model.GpuClaim, error)
+	List(opts ...gpuClaimOpts.ListOpts) ([]model.GpuClaim, error)
+	Create(id string, gpuConfigCreateParams *model.GpuClaimCreateParams) error
+	Delete(id string) error
 }

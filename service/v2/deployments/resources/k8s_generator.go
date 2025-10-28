@@ -691,32 +691,6 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 	return res
 }
 
-// TODO: this should not be created for each deployment,  it should be created for each ns that wants to use it
-func (kg *K8sGenerator) ResourceClaimTemplates() []models.ResourceClaimTemplatePublic {
-	res := make([]models.ResourceClaimTemplatePublic, 0, len(kg.zone.ResourceClaimTemplates))
-
-	for _, rct := range kg.zone.ResourceClaimTemplates {
-		rctp := models.ResourceClaimTemplatePublic{
-			Name:             makeValidK8sName(rct.Name),
-			Namespace:        kg.zone.K8s.Namespaces.Deployment,
-			DeviceClass:      rct.DeviceClass,
-			Requests:         rct.Requests,
-			Driver:           rct.Driver,
-			Strategy:         rct.Strategy,
-			MPSActiveThreads: rct.MPSActiveThreads,
-			MPSMemoryLimit:   rct.MPSMemoryLimit,
-			CreatedAt:        time.Now(),
-		}
-		if rctpo := kg.deployment.Subsystems.K8s.GetRCT(rctp.Name); subsystems.Created(rctpo) {
-			// it already exists, skip
-			continue
-		}
-		res = append(res, rctp)
-	}
-
-	return res
-}
-
 // makeValidK8sName returns a valid Kubernetes name
 // It returns a string that conforms to the Kubernetes naming convention (RFC 1123)
 func makeValidK8sName(name string) string {

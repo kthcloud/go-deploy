@@ -69,29 +69,6 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 		}
 	}
 
-	// ResourceClaimTemplates
-	for _, rctPublic := range g.RCTs() {
-		err = resources.SsCreator(kc.CreateRCT).
-			WithDbFunc(dbFunc(id, "rctMap."+rctPublic.Name)).
-			WithPublic(&rctPublic).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	// ResourceClaims
-	for _, rcPublic := range g.ResourceClaims() {
-		if err := resources.SsCreator(kc.CreateResourceClaim).
-			WithDbFunc(dbFunc(id, "resourceClaimMap."+rcPublic.Name)).
-			WithPublic(&rcPublic).
-			Exec(); err != nil {
-			return makeError(err)
-		}
-
-	}
-
 	// NetworkPolicies
 	for _, networkPolicyPublic := range g.NetworkPolicies() {
 		err = resources.SsCreator(kc.CreateNetworkPolicy).
@@ -240,17 +217,6 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		err := resources.SsDeleter(kc.DeletePVC).
 			WithResourceID(pvc.Name).
 			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	for mapName, rct := range d.Subsystems.K8s.RCTMap {
-		err := resources.SsDeleter(kc.DeleteRCT).
-			WithResourceID(rct.Name).
-			WithDbFunc(dbFunc(id, "rctMap."+mapName)).
 			Exec()
 
 		if err != nil {
@@ -645,29 +611,6 @@ func (c *Client) Repair(id string) error {
 
 	if anyMismatch {
 		return c.recreatePvPvcDeployments(id)
-	}
-
-	// TODO: figure out how mismatches should be handled
-	rcts := g.RCTs()
-	for mapName := range d.Subsystems.K8s.RCTMap {
-		idx := slices.IndexFunc(rcts, func(s k8sModels.ResourceClaimTemplatePublic) bool { return s.Name == mapName })
-		if idx == -1 {
-			break
-		}
-	}
-	for _, public := range rcts {
-		err = resources.SsRepairer(
-			kc.ReadRCT,
-			kc.CreateRCT,
-			func(_ *k8sModels.ResourceClaimTemplatePublic) (*k8sModels.ResourceClaimTemplatePublic, error) {
-				return &public, nil
-			},
-			func(id string) error { return nil },
-		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "rctMap."+public.Name)).WithGenPublic(&public).Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	// OneShotJobs should be kept last since they depend on the PVCs

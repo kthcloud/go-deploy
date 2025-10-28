@@ -24,14 +24,6 @@ func appDeletedK8s(deployment *model.Deployment, app *model.App) bool {
 		}
 	}
 
-	// TODO: add the resourceClaims to the model.App
-	for _, claim := range map[string]string{} {
-		rct := deployment.Subsystems.K8s.RCTMap[claim]
-		if rct.Created() {
-			return false
-		}
-	}
-
 	deploymentDeleted := true
 	for mapName, k8sDeployment := range deployment.Subsystems.K8s.DeploymentMap {
 		if k8sDeployment.Created() && mapName == deployment.Name {
@@ -181,6 +173,17 @@ func portsCleared(vm *model.VM) (bool, error) {
 	}
 
 	return !exists, nil
+}
+
+// k8sDeleted checks if the K8s setup for the given GC is deleted.
+func k8sDeletedGC(gc *model.GpuClaim) (bool, error) {
+	k8s := &gc.Subsystems.K8s
+
+	if len(k8s.ResourceClaimMap) > 0 {
+		return false, nil
+	}
+
+	return !k8s.Namespace.Created(), nil
 }
 
 // checkCustomDomain checks if the custom domain is setup.

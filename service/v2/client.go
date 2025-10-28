@@ -6,6 +6,7 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/deployments"
 	"github.com/kthcloud/go-deploy/service/v2/discovery"
 	"github.com/kthcloud/go-deploy/service/v2/events"
+	"github.com/kthcloud/go-deploy/service/v2/gpu_claims"
 	"github.com/kthcloud/go-deploy/service/v2/jobs"
 	"github.com/kthcloud/go-deploy/service/v2/notifications"
 	"github.com/kthcloud/go-deploy/service/v2/resource_migrations"
@@ -83,4 +84,8 @@ func (c *Client) Users() api.Users {
 
 func (c *Client) VMs() api.VMs {
 	return vms.New(c, c.cache)
+}
+
+func (c *Client) GpuClaims() api.GpuClaims {
+	return gpu_claims.New(c, c.cache)
 }

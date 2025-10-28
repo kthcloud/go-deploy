@@ -7,16 +7,16 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/api/nvidia"
 )
 
-// GpuClaimAdminRead is a detailed DTO for administrators
+// GpuClaimRead is a detailed DTO for administrators
 // providing full visibility into requested, allocated,
 // and consumed GPU resources.
-type GpuClaimAdminRead struct {
+type GpuClaimRead struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Zone string `json:"zone"`
 
 	// Requested contains all requested GPU configurations by key (request.Name).
-	Requested map[string]RequestedGpu `json:"requested"`
+	Requested map[string]RequestedGpu `json:"requested,omitempty"`
 
 	// Allocated contains the GPUs that have been successfully bound/allocated.
 	Allocated map[string]AllocatedGpu `json:"allocated,omitempty"`
@@ -34,14 +34,27 @@ type GpuClaimAdminRead struct {
 	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
 }
 
+type GpuClaimCreate struct {
+	Name string  `json:"name" bson:"name" binding:"required"`
+	Zone *string `json:"zone" bson:"name"`
+
+	// Requested contains all requested GPU configurations by key (request.Name).
+	Requested map[string]RequestedGpu `json:"requested,omitempty" bson:"requested,omitempty" binding:"min=1"`
+}
+
+type GpuClaimCreated struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
 // RequestedGpu describes the desired GPU configuration that was requested.
 type RequestedGpu struct {
-	AllocationMode  string                 `json:"allocationMode"`
-	Capacity        map[string]string      `json:"capacity,omitempty"`
-	Count           *int64                 `json:"count,omitempty"`
-	DeviceClassName string                 `json:"deviceClassName"`
-	Selectors       []string               `json:"selectors,omitempty"`
-	Config          GpuDeviceConfiguration `json:"config,omitempty"`
+	AllocationMode  string                 `json:"allocationMode" bson:"allocationMode" binding:"omitempty,oneof=All ExactCount"`
+	Capacity        map[string]string      `json:"capacity,omitempty" bson:"capacity,omitempty"`
+	Count           *int64                 `json:"count,omitempty" bson:"count,omitempty"`
+	DeviceClassName string                 `json:"deviceClassName" bson:"deviceClassName" binding:"required"`
+	Selectors       []string               `json:"selectors,omitempty" bson:"selectors,omitempty"`
+	Config          GpuDeviceConfiguration `json:"config,omitempty" bson:"config,omitempty"`
 }
 
 // GpuDeviceConfiguration represents a vendor-specific GPU configuration.
@@ -52,7 +65,7 @@ type GpuDeviceConfiguration interface {
 
 // GenericDeviceConfiguration is a catch-all configuration when no vendor-specific struct is used.
 type GenericDeviceConfiguration struct {
-	Driver string `json:"driver,omitempty"`
+	Driver string `json:"driver" bson:"driver"`
 }
 
 func (g GenericDeviceConfiguration) DriverName() string {
@@ -62,7 +75,7 @@ func (g GenericDeviceConfiguration) DriverName() string {
 func (g GenericDeviceConfiguration) MarshalJSON() ([]byte, error) {
 	type Alias GenericDeviceConfiguration
 	return json.Marshal(&struct {
-		Type string `json:"type"`
+		Type string `json:"type" bson:"type"`
 		Alias
 	}{
 		Type:  "generic",
@@ -72,8 +85,8 @@ func (g GenericDeviceConfiguration) MarshalJSON() ([]byte, error) {
 
 // NvidiaDeviceConfiguration represents NVIDIA-specific configuration options.
 type NvidiaDeviceConfiguration struct {
-	Driver  string             `json:"driver,omitempty"`
-	Sharing *nvidia.GpuSharing `json:"sharing,omitempty"`
+	Driver  string             `json:"driver" bson:"driver"`
+	Sharing *nvidia.GpuSharing `json:"sharing,omitempty" bson:"sharing,omitempty"`
 }
 
 func (NvidiaDeviceConfiguration) DriverName() string {

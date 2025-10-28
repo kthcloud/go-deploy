@@ -42,6 +42,10 @@ type GpuClaim struct {
 	// TODO: add rbac
 	//AllowedRoles []string `bson:"allowedRoles,omitempty"`
 
+	Activities map[string]Activity `bson:"activities"`
+
+	Subsystems GpuClaimSubsystems `bson:"subsystems"`
+
 	CreatedAt time.Time  `bson:"createdAt"`
 	UpdatedAt *time.Time `bson:"updatedAt,omitempty"`
 }
@@ -123,8 +127,8 @@ type GpuClaimStatus struct {
 	LastSynced *time.Time          `bson:"lastSynced,omitempty"`
 }
 
-func (g GpuClaim) ToDTO() body.GpuClaimAdminRead {
-	dto := body.GpuClaimAdminRead{
+func (g GpuClaim) ToDTO() body.GpuClaimRead {
+	dto := body.GpuClaimRead{
 		ID:        g.ID,
 		Name:      g.Name,
 		Zone:      g.Zone,
@@ -210,4 +214,26 @@ func (g GpuClaim) ToDTO() body.GpuClaimAdminRead {
 	}
 
 	return dto
+}
+
+func (g GpuClaim) ToBriefDTO() body.GpuClaimRead {
+	dto := body.GpuClaimRead{
+		ID:        g.ID,
+		Name:      g.Name,
+		Zone:      g.Zone,
+		CreatedAt: g.CreatedAt,
+		UpdatedAt: g.UpdatedAt,
+	}
+
+	return dto
+}
+
+// DoingActivity returns true if the gpuClaim is doing the given activity.
+func (gc *GpuClaim) DoingActivity(activity string) bool {
+	for _, a := range gc.Activities {
+		if a.Name == activity {
+			return true
+		}
+	}
+	return false
 }
