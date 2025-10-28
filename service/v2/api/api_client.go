@@ -207,6 +207,6 @@ type System interface {
 type GpuClaims interface {
 	Get(id string, opts ...gpuClaimOpts.Opts) (*model.GpuClaim, error)
 	List(opts ...gpuClaimOpts.ListOpts) ([]model.GpuClaim, error)
-	Create(id string, gpuConfigCreateParams *model.GpuClaimCreateParams) error
+	Create(id string, gpuClaimsCreateParams *model.GpuClaimCreateParams) error
 	Delete(id string) error
 }

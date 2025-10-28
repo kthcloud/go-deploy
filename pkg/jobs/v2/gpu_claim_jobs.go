@@ -17,7 +17,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func CreateGpuConfig(job *model.Job) error {
+func CreateGpuClaim(job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -40,7 +40,7 @@ func CreateGpuConfig(job *model.Job) error {
 	return nil
 }
 
-func DeleteGpuConfig(job *model.Job) error {
+func DeleteGpuClaim(job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)

@@ -256,6 +256,11 @@ func GetCollectionDefinitions() map[string]CollectionDefinition {
 			Name:    "workerStatus",
 			Indexes: []string{"name", "status"},
 		},
+		"gpuClaims": {
+			Name:                 "gpuClaims",
+			UniqueIndexes:        [][]string{{"name"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
 	}
 }
 
