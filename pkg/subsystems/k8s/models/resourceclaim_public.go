@@ -31,7 +31,7 @@ type ResourceClaimDeviceRequestPublic struct {
 type ResourceClaimBaseRequestPublic struct {
 	AllocationMode   string                                         `bson:"allocationMode"`
 	CapacityRequests map[resourcev1.QualifiedName]resource.Quantity `bson:"capacityRequests,omitempty"`
-	Count            int64                                          `bson:"count"`
+	Count            int64                                          `bson:"count,omitempty"`
 	DeviceClassName  string                                         `bson:"deviceClassName"`
 	SelectorCelExprs []string                                       `bson:"selectorCelExprs,omitempty"`
 	//TODO: Tolerations
