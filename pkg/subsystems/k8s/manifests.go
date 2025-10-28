@@ -10,6 +10,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/utils"
+	"github.com/kthcloud/go-deploy/utils/hashutils"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
@@ -923,9 +924,112 @@ func CreateResourceClaimTemplateManifest(public *models.ResourceClaimTemplatePub
 func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1.ResourceClaim {
 
 	var deviceClaim resourcev1.DeviceClaim = resourcev1.DeviceClaim{
-		Requests:    []resourcev1.DeviceRequest{},
-		Constraints: []resourcev1.DeviceConstraint{},
-		Config:      []resourcev1.DeviceClaimConfiguration{},
+		Requests: make([]resourcev1.DeviceRequest, 0, len(public.DeviceRequests)),
+		// TODO: add constraints
+		//Constraints: []resourcev1.DeviceConstraint{},
+		Config: make([]resourcev1.DeviceClaimConfiguration, 0, len(public.DeviceRequests)),
+	}
+
+	cfgReqMap := make(map[string][]string, len(public.DeviceRequests))
+	for _, req := range public.DeviceRequests {
+		if req.Config != nil {
+
+			raw, err := json.Marshal(req.Config.Parameters)
+			if err != nil {
+				// TODO: handle somwhow
+				continue
+			}
+			dcc := resourcev1.DeviceClaimConfiguration{
+				DeviceConfiguration: resourcev1.DeviceConfiguration{
+					Opaque: &resourcev1.OpaqueDeviceConfiguration{
+						Driver: req.Config.Driver,
+						Parameters: runtime.RawExtension{
+							Raw: raw,
+							//Object: req.Config.Parameters,
+						},
+					},
+				},
+			}
+
+			key, _ := hashutils.HashDeterministicJSON(dcc.DeviceConfiguration)
+			if strings.TrimSpace(key) == "" {
+				continue
+			}
+			if v, found := cfgReqMap[key]; found {
+				cfgReqMap[key] = append(v, req.Name)
+				// already present
+				continue
+			} else {
+				cfgReqMap[key] = []string{req.Name}
+			}
+
+			deviceClaim.Config = append(deviceClaim.Config, dcc)
+		}
+
+		var dr resourcev1.DeviceRequest
+
+		dr.Name = req.Name
+
+		if req.RequestsExactly != nil {
+			dr.Exactly = &resourcev1.ExactDeviceRequest{
+				DeviceClassName: req.RequestsExactly.DeviceClassName,
+				AllocationMode:  resourcev1.DeviceAllocationMode(req.RequestsExactly.AllocationMode),
+				Count:           req.RequestsExactly.Count,
+				AdminAccess:     req.RequestsExactly.AdminAccess,
+				Capacity: &resourcev1.CapacityRequirements{
+					Requests: req.RequestsExactly.CapacityRequests,
+				},
+				// TODO: add tolerations
+			}
+			for _, sel := range req.RequestsExactly.SelectorCelExprs {
+				dr.Exactly.Selectors = append(dr.Exactly.Selectors, resourcev1.DeviceSelector{
+					CEL: &resourcev1.CELDeviceSelector{
+						Expression: sel,
+					},
+				})
+			}
+		}
+
+		if len(req.RequestsFirstAvaliable) < 1 {
+			for _, fa := range req.RequestsFirstAvaliable {
+				dsr := resourcev1.DeviceSubRequest{
+					DeviceClassName: fa.DeviceClassName,
+					AllocationMode:  resourcev1.DeviceAllocationMode(fa.AllocationMode),
+					Count:           fa.Count,
+					Capacity: &resourcev1.CapacityRequirements{
+						Requests: fa.CapacityRequests,
+					},
+					// TODO: add tolerations
+				}
+				for _, sel := range fa.SelectorCelExprs {
+					dsr.Selectors = append(dsr.Selectors, resourcev1.DeviceSelector{
+						CEL: &resourcev1.CELDeviceSelector{
+							Expression: sel,
+						},
+					})
+				}
+				dr.FirstAvailable = append(dr.FirstAvailable, dsr)
+			}
+		}
+
+		deviceClaim.Requests = append(deviceClaim.Requests, dr)
+	}
+
+	for i, cfg := range deviceClaim.Config {
+		if cfg.Opaque == nil {
+			continue
+		}
+		key, _ := hashutils.HashDeterministicJSON(cfg.DeviceConfiguration)
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		if v, found := cfgReqMap[key]; found {
+			deviceClaim.Config[i].Requests = v
+		} else {
+			// Public input contains a config without any requests,
+			// just leave it in for now, k8s will probably return error for it
+			// TODO: check this behavior
+		}
 	}
 
 	return &resourcev1.ResourceClaim{
