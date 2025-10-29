@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_claim_repo"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	serviceUtils "github.com/kthcloud/go-deploy/service/utils"
@@ -48,6 +50,10 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.GpuClaim, error) {
 func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create gpu claim. details: %w", err)
+	}
+
+	if params.Zone = strings.TrimSpace(params.Zone); params.Zone == "" {
+		params.Zone = config.Config.Deployment.DefaultZone
 	}
 
 	err := gpu_claim_repo.New().Create(id, params)

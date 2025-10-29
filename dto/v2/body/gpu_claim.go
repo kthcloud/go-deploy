@@ -36,7 +36,7 @@ type GpuClaimRead struct {
 
 type GpuClaimCreate struct {
 	Name string  `json:"name" bson:"name" binding:"required"`
-	Zone *string `json:"zone" bson:"name"`
+	Zone *string `json:"zone" bson:"zone"`
 
 	// Requested contains all requested GPU configurations by key (request.Name).
 	Requested map[string]RequestedGpu `json:"requested,omitempty" bson:"requested,omitempty" binding:"min=1"`

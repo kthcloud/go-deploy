@@ -2215,6 +2215,11 @@ paths:
         name: pageSize
         schema:
           type: integer
+      - description: Admin detailed list
+        in: query
+        name: detailed
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -2300,21 +2305,16 @@ paths:
       summary: Create GpuClaim
       tags:
       - GpuClaim
-  /v2/gpuClaims/{GpuClaimId}:
+  /v2/gpuClaims/{gpuClaimId}:
     delete:
       description: Delete GpuClaim
       parameters:
       - description: GpuClaim ID
         in: path
-        name: GpuClaimId
+        name: gpuClaimId
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
       responses:
         "200":
           content:
@@ -2363,7 +2363,7 @@ paths:
       parameters:
       - description: GPU claim ID
         in: path
-        name: GpuClaimId
+        name: gpuClaimId
         required: true
         schema:
           type: string

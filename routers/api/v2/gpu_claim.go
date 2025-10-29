@@ -23,13 +23,13 @@ import (
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
-// @Param GpuClaimId path string true "GPU claim ID"
+// @Param gpuClaimId path string true "GPU claim ID"
 // @Success 200 {object} body.GpuClaimRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/gpuClaims/{GpuClaimId} [get]
+// @Router /v2/gpuClaims/{gpuClaimId} [get]
 func GetGpuClaim(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -70,6 +70,7 @@ func GetGpuClaim(c *gin.Context) {
 // @Security KeycloakOAuth
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
+// @Param detailed query bool false "Admin detailed list"
 // @Success 200 {array} body.GpuClaimRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
@@ -212,18 +213,17 @@ func CreateGpuClaim(c *gin.Context) {
 // @Summary Delete GpuClaim
 // @Description Delete GpuClaim
 // @Tags GpuClaim
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
-// @Param GpuClaimId path string true "GpuClaim ID"
+// @Param gpuClaimId path string true "GpuClaim ID"
 // @Success 200 {object} body.GpuClaimCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 403 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/gpuClaims/{GpuClaimId} [delete]
+// @Router /v2/gpuClaims/{gpuClaimId} [delete]
 func DeleteGpuClaim(c *gin.Context) {
 	context := sys.NewContext(c)
 
