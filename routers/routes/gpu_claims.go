@@ -17,5 +17,7 @@ func (group *GpuClaimRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
 		{Method: "GET", Pattern: GpuClaimPath, HandlerFunc: v2.GetGpuClaim},
 		{Method: "GET", Pattern: GpuClaimsPath, HandlerFunc: v2.ListGpuClaims},
+		{Method: "POST", Pattern: GpuClaimsPath, HandlerFunc: v2.CreateGpuClaim},
+		{Method: "DELETE", Pattern: GpuClaimPath, HandlerFunc: v2.DeleteDeployment},
 	}
 }

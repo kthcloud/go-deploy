@@ -1809,209 +1809,6 @@ info:
   version: "1.0"
 openapi: 3.1.0
 paths:
-  /v2/GpuClaims:
-    get:
-      description: List GPU claims
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        schema:
-          type: integer
-      - description: Number of items per page
-        in: query
-        name: pageSize
-        schema:
-          type: integer
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/body.GpuClaimRead'
-                type: array
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Bad Request
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Not Found
-        "423":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Locked
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Internal Server Error
-      security:
-      - ApiKeyAuth: []
-      - KeycloakOAuth: []
-      summary: List GPU claims
-      tags:
-      - GpuClaim
-    post:
-      description: Create GpuClaim
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/body.GpuClaimCreate'
-        description: GpuClaim body
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuClaimRead'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Bad Request
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Forbidden
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Not Found
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Internal Server Error
-      security:
-      - ApiKeyAuth: []
-      - KeycloakOAuth: []
-      summary: Create GpuClaim
-      tags:
-      - GpuClaim
-  /v2/GpuClaims/{GpuClaimId}:
-    delete:
-      description: Delete GpuClaim
-      parameters:
-      - description: GpuClaim ID
-        in: path
-        name: GpuClaimId
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuClaimCreated'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Bad Request
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Unauthorized
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Forbidden
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Not Found
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Internal Server Error
-      security:
-      - ApiKeyAuth: []
-      - KeycloakOAuth: []
-      summary: Delete GpuClaim
-      tags:
-      - GpuClaim
-    get:
-      description: Get GPU claim
-      parameters:
-      - description: GPU claim ID
-        in: path
-        name: GpuClaimId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuClaimRead'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Bad Request
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Not Found
-        "423":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Locked
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-          description: Internal Server Error
-      security:
-      - ApiKeyAuth: []
-      - KeycloakOAuth: []
-      summary: Get GPU claim
-      tags:
-      - GpuClaim
   /v2/deployments:
     get:
       description: List deployments
@@ -2404,6 +2201,209 @@ paths:
       summary: Discover
       tags:
       - Discover
+  /v2/gpuClaims:
+    get:
+      description: List GPU claims
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/body.GpuClaimRead'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Not Found
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Locked
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List GPU claims
+      tags:
+      - GpuClaim
+    post:
+      description: Create GpuClaim
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body.GpuClaimCreate'
+        description: GpuClaim body
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/body.GpuClaimRead'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Bad Request
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create GpuClaim
+      tags:
+      - GpuClaim
+  /v2/gpuClaims/{GpuClaimId}:
+    delete:
+      description: Delete GpuClaim
+      parameters:
+      - description: GpuClaim ID
+        in: path
+        name: GpuClaimId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/body.GpuClaimCreated'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete GpuClaim
+      tags:
+      - GpuClaim
+    get:
+      description: Get GPU claim
+      parameters:
+      - description: GPU claim ID
+        in: path
+        name: GpuClaimId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/body.GpuClaimRead'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Not Found
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Locked
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get GPU claim
+      tags:
+      - GpuClaim
   /v2/gpuGroups:
     get:
       description: List GPU groups

@@ -29,7 +29,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/GpuClaims/{GpuClaimId} [get]
+// @Router /v2/gpuClaims/{GpuClaimId} [get]
 func GetGpuClaim(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -75,7 +75,7 @@ func GetGpuClaim(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/GpuClaims [get]
+// @Router /v2/gpuClaims [get]
 func ListGpuClaims(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -142,7 +142,7 @@ func ListGpuClaims(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 403 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/GpuClaims [post]
+// @Router /v2/gpuClaims [post]
 func CreateGpuClaim(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -223,7 +223,7 @@ func CreateGpuClaim(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 403 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/GpuClaims/{GpuClaimId} [delete]
+// @Router /v2/gpuClaims/{GpuClaimId} [delete]
 func DeleteGpuClaim(c *gin.Context) {
 	context := sys.NewContext(c)
 
