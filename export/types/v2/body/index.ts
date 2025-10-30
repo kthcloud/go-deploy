@@ -244,11 +244,15 @@ export interface GpuClaimCreate {
   /**
    * Requested contains all requested GPU configurations by key (request.Name).
    */
-  requested?: { [key: string]: RequestedGpu};
+  requested?: RequestedGpuCreate[];
 }
 export interface GpuClaimCreated {
   id: string;
   jobId: string;
+}
+export interface RequestedGpuCreate {
+  RequestedGpu: RequestedGpu;
+  name: string;
 }
 /**
  * RequestedGpu describes the desired GPU configuration that was requested.
@@ -298,7 +302,6 @@ export interface GpuClaimConsumer {
   resource?: string;
   name?: string;
   uid?: string;
-  namespace?: string;
 }
 /**
  * GpuClaimStatus represents runtime state and metadata about allocation progress.

@@ -10,6 +10,7 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/deployments/harbor_service"
 	deploymentK8sService "github.com/kthcloud/go-deploy/service/v2/deployments/k8s_service"
 	dOpts "github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	gpuClaimsK8sService "github.com/kthcloud/go-deploy/service/v2/gpu_claims/k8s_service"
 	gpuClaimOpts "github.com/kthcloud/go-deploy/service/v2/gpu_claims/opts"
 	jobOpts "github.com/kthcloud/go-deploy/service/v2/jobs/opts"
 	nOpts "github.com/kthcloud/go-deploy/service/v2/notifications/opts"
@@ -209,4 +210,6 @@ type GpuClaims interface {
 	List(opts ...gpuClaimOpts.ListOpts) ([]model.GpuClaim, error)
 	Create(id string, gpuClaimsCreateParams *model.GpuClaimCreateParams) error
 	Delete(id string) error
+
+	K8s() *gpuClaimsK8sService.Client
 }

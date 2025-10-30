@@ -59,6 +59,11 @@ const (
 	RequestAllocationMode_ExactCount RequestAllocationMode = "ExactCount"
 )
 
+type RequestedGpuCreate struct {
+	RequestedGpu `mapstructure:",squash" json:",inline" bson:",inline"`
+	Name         string `json:"name" bson:"name"`
+}
+
 // RequestedGpu describes the desired GPU configuration a workload requests.
 type RequestedGpu struct {
 	AllocationMode  RequestAllocationMode   `bson:"allocationMode"`
@@ -103,11 +108,10 @@ type AllocatedGpu struct {
 
 // GpuClaimConsumer describes a workload (Pod/Deployment/etc.) consuming this GPU claim.
 type GpuClaimConsumer struct {
-	APIGroup  string `bson:"apiGroup,omitempty"`
-	Resource  string `bson:"resource,omitempty"`
-	Name      string `bson:"name,omitempty"`
-	UID       string `bson:"uid,omitempty"`
-	Namespace string `bson:"namespace,omitempty"`
+	APIGroup string `bson:"apiGroup,omitempty"`
+	Resource string `bson:"resource,omitempty"`
+	Name     string `bson:"name,omitempty"`
+	UID      string `bson:"uid,omitempty"`
 }
 
 type GpuClaimStatusPhase string
@@ -195,11 +199,10 @@ func (g GpuClaim) ToDTO() body.GpuClaimRead {
 	// Convert Consumers
 	for _, c := range g.Consumers {
 		dto.Consumers = append(dto.Consumers, body.GpuClaimConsumer{
-			APIGroup:  c.APIGroup,
-			Resource:  c.Resource,
-			Name:      c.Name,
-			UID:       c.UID,
-			Namespace: c.Namespace,
+			APIGroup: c.APIGroup,
+			Resource: c.Resource,
+			Name:     c.Name,
+			UID:      c.UID,
 		})
 	}
 

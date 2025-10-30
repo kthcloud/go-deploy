@@ -28,9 +28,6 @@ type K8sGenerator interface {
 	// PVCs returns a list of models.PvcPublic that should be created
 	PVCs() []models.PvcPublic
 
-	// RCTs returns a list of models.ResourceClaimTemplatePublic that should be created
-	RCTs() []models.ResourceClaimTemplatePublic
-
 	// ResourceClaims returns a list of models.ResourceClaimPublic that should be created
 	ResourceClaims() []models.ResourceClaimPublic
 
@@ -76,10 +73,6 @@ func (kg *K8sGeneratorBase) PVs() []models.PvPublic {
 }
 
 func (kg *K8sGeneratorBase) PVCs() []models.PvcPublic {
-	return nil
-}
-
-func (kg *K8sGeneratorBase) RCTs() []models.ResourceClaimTemplatePublic {
 	return nil
 }
 

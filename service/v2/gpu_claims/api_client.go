@@ -4,6 +4,7 @@ import (
 	"github.com/kthcloud/go-deploy/service/clients"
 	"github.com/kthcloud/go-deploy/service/core"
 	"github.com/kthcloud/go-deploy/service/v2/gpu_claims/client"
+	"github.com/kthcloud/go-deploy/service/v2/gpu_claims/k8s_service"
 )
 
 // Client is the client for the Deployment service.
@@ -26,4 +27,9 @@ func New(v2 clients.V2, cache ...*core.Cache) *Client {
 	c := &Client{V2: v2, BaseClient: client.NewBaseClient[Client](ca)}
 	c.BaseClient.SetParent(c)
 	return c
+}
+
+// K8s returns the client for the K8s service.
+func (c *Client) K8s() *k8s_service.Client {
+	return k8s_service.New(c.Cache)
 }

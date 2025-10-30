@@ -1,6 +1,9 @@
 package errors
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // QuotaExceededError is returned when the quota is exceeded.
 // For instance, if a user creates too many deployments.
@@ -182,4 +185,11 @@ var (
 
 	// ErrBadMigrationCode is returned when the migration code is invalid.
 	ErrBadMigrationCode = fmt.Errorf("bad migration code")
+
+	// ErrGpuClaimAlreadyExists is returned when the gpu claim already exists.
+	ErrGpuClaimAlreadyExists = errors.New("gpu claim already exists")
+
+	ErrBadGpuClaim = errors.New("bad gpu claim")
+
+	ErrBadGpuClaimNoRequest = errors.Join(ErrBadGpuClaim, errors.New("no request in claim"))
 )

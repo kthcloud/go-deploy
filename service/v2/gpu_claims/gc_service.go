@@ -56,10 +56,14 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 		params.Zone = config.Config.Deployment.DefaultZone
 	}
 
+	if len(params.Requested) < 1 {
+		return sErrors.ErrBadGpuClaimNoRequest
+	}
+
 	err := gpu_claim_repo.New().Create(id, params)
 	if err != nil {
 		if errors.Is(err, gpu_claim_repo.ErrGpuClaimAlreadyExists) {
-			return sErrors.ErrSmAlreadyExists
+			return sErrors.ErrGpuClaimAlreadyExists
 		}
 
 		return makeErr(err)

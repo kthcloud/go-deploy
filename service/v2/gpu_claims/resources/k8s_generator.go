@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"log"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/subsystems"
@@ -52,9 +54,12 @@ func (kg *K8sGenerator) ResourceClaims() []models.ResourceClaimPublic {
 	}
 
 	var rc models.ResourceClaimPublic = models.ResourceClaimPublic{
-		Name:      kg.gc.Name,
-		Namespace: kg.namespace,
+		Name:           kg.gc.Name,
+		Namespace:      kg.namespace,
+		DeviceRequests: make([]models.ResourceClaimDeviceRequestPublic, 0, len(kg.gc.Requested)),
 	}
+
+	log.Printf("in k8s_generator: len(kg.gc.Requested) = %d\n", len(kg.gc.Requested))
 
 	for name, req := range kg.gc.Requested {
 		rcdr := models.ResourceClaimDeviceRequestPublic{

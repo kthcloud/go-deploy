@@ -90,10 +90,15 @@ func CreateResourceClaimPublicFromRead(claim *resourcev1.ResourceClaim) *Resourc
 		if req.Exactly != nil {
 			request.RequestsExactly = &ResourceClaimExactlyRequestPublic{
 				ResourceClaimBaseRequestPublic: ResourceClaimBaseRequestPublic{
-					AllocationMode:   string(req.Exactly.AllocationMode),
-					CapacityRequests: req.Exactly.Capacity.Requests,
-					Count:            req.Exactly.Count,
-					DeviceClassName:  req.Exactly.DeviceClassName,
+					AllocationMode: string(req.Exactly.AllocationMode),
+					CapacityRequests: func() map[resourcev1.QualifiedName]resource.Quantity {
+						if req.Exactly.Capacity == nil {
+							return nil
+						}
+						return req.Exactly.Capacity.Requests
+					}(),
+					Count:           req.Exactly.Count,
+					DeviceClassName: req.Exactly.DeviceClassName,
 				},
 				AdminAccess: req.Exactly.AdminAccess,
 			}

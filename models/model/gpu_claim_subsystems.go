@@ -9,7 +9,7 @@ type GpuClaimSubsystems struct {
 type GpuClaimK8s struct {
 	Namespace k8sModels.NamespacePublic `bson:"namespace"`
 
-	ResourceClaimMap map[string]k8sModels.ResourceClaimPublic `bson:"ResourceClaimMap,omitempty"`
+	ResourceClaimMap map[string]k8sModels.ResourceClaimPublic `bson:"resourceClaimMap,omitempty"`
 }
 
 // GetNamespace returns the namespace of the resourceClaim.

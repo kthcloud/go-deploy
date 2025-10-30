@@ -35,11 +35,11 @@ type GpuClaimRead struct {
 }
 
 type GpuClaimCreate struct {
-	Name string  `json:"name" bson:"name" binding:"required"`
+	Name string  `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
 	Zone *string `json:"zone" bson:"zone"`
 
 	// Requested contains all requested GPU configurations by key (request.Name).
-	Requested map[string]RequestedGpu `json:"requested,omitempty" bson:"requested,omitempty" binding:"min=1"`
+	Requested []RequestedGpuCreate `json:"requested,omitempty" bson:"requested,omitempty" binding:"min=1,dive"`
 }
 
 type GpuClaimCreated struct {
@@ -47,12 +47,17 @@ type GpuClaimCreated struct {
 	JobID string `json:"jobId"`
 }
 
+type RequestedGpuCreate struct {
+	RequestedGpu `mapstructure:",squash" json:",inline" bson:",inline" binding:"required"`
+	Name         string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
+}
+
 // RequestedGpu describes the desired GPU configuration that was requested.
 type RequestedGpu struct {
-	AllocationMode  string                 `json:"allocationMode" bson:"allocationMode" binding:"omitempty,oneof=All ExactCount"`
+	AllocationMode  string                 `json:"allocationMode" bson:"allocationMode" binding:"required,oneof=All ExactCount"`
 	Capacity        map[string]string      `json:"capacity,omitempty" bson:"capacity,omitempty"`
 	Count           *int64                 `json:"count,omitempty" bson:"count,omitempty"`
-	DeviceClassName string                 `json:"deviceClassName" bson:"deviceClassName" binding:"required"`
+	DeviceClassName string                 `json:"deviceClassName" bson:"deviceClassName" binding:"required,rfc1123"`
 	Selectors       []string               `json:"selectors,omitempty" bson:"selectors,omitempty"`
 	Config          GpuDeviceConfiguration `json:"config,omitempty" bson:"config,omitempty"`
 }
@@ -114,11 +119,10 @@ type AllocatedGpu struct {
 
 // GpuClaimConsumer describes a workload consuming this GPU claim.
 type GpuClaimConsumer struct {
-	APIGroup  string `json:"apiGroup,omitempty"`
-	Resource  string `json:"resource,omitempty"`
-	Name      string `json:"name,omitempty"`
-	UID       string `json:"uid,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
+	APIGroup string `json:"apiGroup,omitempty"`
+	Resource string `json:"resource,omitempty"`
+	Name     string `json:"name,omitempty"`
+	UID      string `json:"uid,omitempty"`
 }
 
 // GpuClaimStatus represents runtime state and metadata about allocation progress.

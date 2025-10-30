@@ -1,10 +1,13 @@
 package k8s_service
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_claim_repo"
+	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/service/resources"
 )
 
@@ -44,7 +47,7 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 
 func (c *Client) Delete(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create gpu claim in k8s. details: %w", err)
+		return fmt.Errorf("failed to delete gpu claim in k8s. details: %w", err)
 	}
 
 	gc, kc, _, err := c.Get(OptsNoGenerator(id))
@@ -80,4 +83,12 @@ func dbFunc(id, key string) func(any) error {
 		}
 		return gpu_claim_repo.New().SetSubsystem(id, "k8s."+key, data)
 	}
+}
+
+func (c *Client) SetupResourceClaimWatcher(ctx context.Context, zone *config.Zone, yield func(name string, status k8sModels.ResourceClaimStatus, action string)) error {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone))
+	if err != nil {
+		return err
+	}
+	return kc.SetupResourceClaimWatcher(ctx, yield)
 }

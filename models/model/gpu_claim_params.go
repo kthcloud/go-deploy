@@ -1,20 +1,20 @@
 package model
 
 type GpuClaimCreateParams struct {
-	Name string
-	Zone string
+	Name string `json:"name" bson:"name"`
+	Zone string `json:"zone" bson:"zone"`
 
-	Requested map[string]RequestedGpu
+	Requested []RequestedGpuCreate `json:"requested" bson:"requested"`
 
 	// TODO: add rbac
 	//AllowedRoles []string `bson:"allowedRoles,omitempty"`
 }
 
 type GpuClaimUpdateParams struct {
-	Name *string
-	Zone *string
+	Name *string `json:"name" bson:"name"`
+	Zone *string `json:"zone" bson:"zone"`
 
-	Requested *map[string]RequestedGpu `bson:"requested"`
+	Requested *[]RequestedGpuCreate `json:"requested" bson:"requested"`
 
 	// TODO: add rbac
 	//AllowedRoles []string `bson:"allowedRoles,omitempty"`

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	nvresourcebetav1 "github.com/NVIDIA/k8s-dra-driver-gpu/api/nvidia.com/resource/v1beta1"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/utils"
@@ -851,76 +850,6 @@ func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networking
 	}
 }
 
-func CreateResourceClaimTemplateManifest(public *models.ResourceClaimTemplatePublic) *resourcev1.ResourceClaimTemplate {
-	gpuCfg := nvresourcebetav1.GpuConfig{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "resource.nvidia.com/v1beta1",
-			Kind:       "GpuConfig",
-		},
-		Sharing: &nvresourcebetav1.GpuSharing{
-			Strategy: nvresourcebetav1.GpuSharingStrategy(public.Strategy),
-		},
-	}
-
-	if public.Strategy == string(nvresourcebetav1.MpsStrategy) {
-		gpuCfg.Sharing.MpsConfig = &nvresourcebetav1.MpsConfig{
-			DefaultActiveThreadPercentage: utils.PtrOf(public.MPSActiveThreads),
-		}
-		if public.MPSMemoryLimit != "" {
-			if qty, err := resource.ParseQuantity(public.MPSMemoryLimit); err == nil {
-				gpuCfg.Sharing.MpsConfig.DefaultPinnedDeviceMemoryLimit = utils.PtrOf(qty)
-			}
-		}
-	}
-
-	rawParams, _ := json.Marshal(gpuCfg)
-
-	var deviceRequests []resourcev1.DeviceRequest = make([]resourcev1.DeviceRequest, 0, len(public.Requests))
-	for _, reqName := range public.Requests {
-		deviceRequests = append(deviceRequests, resourcev1.DeviceRequest{
-			Name: reqName,
-			Exactly: &resourcev1.ExactDeviceRequest{
-				DeviceClassName: public.DeviceClass,
-			},
-		})
-	}
-
-	deviceClaim := resourcev1.DeviceClaim{
-		Requests: deviceRequests,
-		Config: []resourcev1.DeviceClaimConfiguration{
-			{
-				Requests: public.Requests,
-				DeviceConfiguration: resourcev1.DeviceConfiguration{
-					Opaque: &resourcev1.OpaqueDeviceConfiguration{
-						Driver: public.Driver,
-						Parameters: runtime.RawExtension{
-							Raw: rawParams,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	return &resourcev1.ResourceClaimTemplate{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      public.Name,
-			Namespace: public.Namespace,
-			Labels: map[string]string{
-				keys.LabelDeployName: public.Name,
-			},
-			Annotations: map[string]string{
-				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
-			},
-		},
-		Spec: resourcev1.ResourceClaimTemplateSpec{
-			Spec: resourcev1.ResourceClaimSpec{
-				Devices: deviceClaim,
-			},
-		},
-	}
-}
-
 func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1.ResourceClaim {
 
 	var deviceClaim resourcev1.DeviceClaim = resourcev1.DeviceClaim{
@@ -991,7 +920,7 @@ func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1
 			}
 		}
 
-		if len(req.RequestsFirstAvaliable) < 1 {
+		if len(req.RequestsFirstAvaliable) > 0 {
 			for _, fa := range req.RequestsFirstAvaliable {
 				dsr := resourcev1.DeviceSubRequest{
 					DeviceClassName: fa.DeviceClassName,

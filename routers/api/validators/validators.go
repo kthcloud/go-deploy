@@ -392,3 +392,29 @@ func goodURL(url string) bool {
 	}
 	return true
 }
+
+var rfc1123SubdomainRE = regexp.MustCompile(
+	`^[a-z0-9]([\-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([\-a-z0-9]*[a-z0-9])?)*$`,
+)
+
+// Rfc1123 validates that the field is a valid RFC1123 subdomain.
+// It returns false for empty strings.
+func Rfc1123(fl validator.FieldLevel) bool {
+	// only string fields supported
+	if fl.Field().Kind().String() != "string" {
+		return false
+	}
+	val := fl.Field().String()
+
+	// reject surrounding whitespace explicitly
+	if strings.TrimSpace(val) != val {
+		return false
+	}
+
+	// empty => invalid here
+	if val == "" {
+		return false
+	}
+
+	return rfc1123SubdomainRE.MatchString(val)
+}

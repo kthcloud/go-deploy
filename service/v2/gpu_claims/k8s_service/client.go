@@ -147,6 +147,13 @@ func (c *Client) Generator(gc *model.GpuClaim, client *k8s.Client, zone *configM
 	return resources.K8s(gc, zone, client, getNamespaceName(zone))
 }
 
+func OptsOnlyClient(zone *configModels.Zone) *opts.Opts {
+	return &opts.Opts{
+		Client:    true,
+		ExtraOpts: opts.ExtraOpts{Zone: zone},
+	}
+}
+
 // getNamespaceName returns the namespace name
 func getNamespaceName(zone *configModels.Zone) string {
 	return zone.K8s.Namespaces.Deployment

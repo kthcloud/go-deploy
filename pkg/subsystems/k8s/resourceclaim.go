@@ -7,7 +7,11 @@ import (
 
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	resourcev1 "k8s.io/api/resource/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 )
 
 // ReadResourceClaim reads a ResourceClaim from Kubernetes.
@@ -100,4 +104,72 @@ func (client *Client) waitResourceClaimDeleted(name string) error {
 	}
 
 	return fmt.Errorf("timeout waiting for ResourceClaim %s to be deleted", name)
+}
+
+// SetupResourceClaimWatcher is a function that sets up a resourceClaim watcher with a callback.
+// It triggers the callback when a resourceClaim event occurs.
+func (client *Client) SetupResourceClaimWatcher(ctx context.Context, callback func(resourceClaimName string, status k8sModels.ResourceClaimStatus, event string)) error {
+	factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
+	resoureClaimInformer := factory.Resource().V1().ResourceClaims().Informer()
+
+	allowedResourceClaim := func(_ *resourcev1.ResourceClaim) bool {
+		return true
+	}
+
+	_, err := resoureClaimInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj any) {
+			claim, ok := obj.(*resourcev1.ResourceClaim)
+			if !ok {
+				return
+			}
+
+			if !allowedResourceClaim(claim) {
+				return
+			}
+
+			callback(claim.Name, rcToK8sModel(claim), PodEventAdded)
+		},
+		UpdateFunc: func(oldObj, newObj any) {
+			claim, ok := newObj.(*resourcev1.ResourceClaim)
+			if !ok {
+				return
+			}
+
+			if !allowedResourceClaim(claim) {
+				return
+			}
+
+			callback(claim.Name, rcToK8sModel(claim), PodEventUpdated)
+		},
+		DeleteFunc: func(obj any) {
+			claim, ok := obj.(*resourcev1.ResourceClaim)
+			if !ok {
+				return
+			}
+
+			if !allowedResourceClaim(claim) {
+				return
+			}
+
+			callback(claim.Name, rcToK8sModel(claim), PodEventDeleted)
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	factory.Start(ctx.Done())
+	factory.WaitForCacheSync(ctx.Done())
+
+	return nil
+}
+
+func rcToK8sModel(rc *resourcev1.ResourceClaim) k8sModels.ResourceClaimStatus {
+	rcp := k8sModels.CreateResourceClaimPublicFromRead(rc)
+
+	return k8sModels.ResourceClaimStatus{
+		Allocated:         rcp.Allocated,
+		AllocationResults: rcp.AllocationResults,
+		Consumers:         rcp.Consumers,
+	}
 }

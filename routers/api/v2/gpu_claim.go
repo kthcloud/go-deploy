@@ -275,7 +275,7 @@ func DeleteGpuClaim(c *gin.Context) {
 	}*/
 
 	jobID := uuid.NewString()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuClaim, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuClaim, version.V2, map[string]any{
 		"id":       currentGpuClaim.ID,
 		"authInfo": auth,
 	})

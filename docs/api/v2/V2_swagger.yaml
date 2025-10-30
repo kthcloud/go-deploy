@@ -450,8 +450,6 @@ components:
           type: string
         name:
           type: string
-        namespace:
-          type: string
         resource:
           type: string
         uid:
@@ -460,13 +458,17 @@ components:
     body.GpuClaimCreate:
       properties:
         name:
+          maxLength: 30
+          minLength: 3
           type: string
         requested:
-          additionalProperties:
-            $ref: '#/components/schemas/body.RequestedGpu'
           description: Requested contains all requested GPU configurations by key
             (request.Name).
-          type: object
+          items:
+            $ref: '#/components/schemas/body.RequestedGpuCreate'
+          minItems: 1
+          type: array
+          uniqueItems: false
         zone:
           type: string
       required:
@@ -989,7 +991,38 @@ components:
           type: array
           uniqueItems: false
       required:
+      - allocationMode
       - deviceClassName
+      type: object
+    body.RequestedGpuCreate:
+      properties:
+        allocationMode:
+          enum:
+          - All
+          - ExactCount
+          type: string
+        capacity:
+          additionalProperties:
+            type: string
+          type: object
+        config: {}
+        count:
+          type: integer
+        deviceClassName:
+          type: string
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+        selectors:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+      required:
+      - allocationMode
+      - deviceClassName
+      - name
       type: object
     body.ResourceMigrationCreate:
       properties:

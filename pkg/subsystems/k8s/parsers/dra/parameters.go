@@ -11,8 +11,3 @@ type ParametersParser interface {
 	CanParse(raw io.Reader) bool
 	Parse(raw io.Reader) (OpaqueParams, error)
 }
-
-func OptParseToOpaqueParams() OpaqueParams {
-	var opt OpaqueParams
-	return opt
-}
