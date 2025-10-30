@@ -1,6 +1,8 @@
 package v2
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -151,6 +153,12 @@ func CreateGpuClaim(c *gin.Context) {
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
+	}
+
+	if pretty, err := json.MarshalIndent(requestBody, "", "  "); err == nil {
+		fmt.Println(string(pretty))
+	} else {
+		fmt.Println("failed to pretty-print:", err)
 	}
 
 	auth, err := WithAuth(&context)

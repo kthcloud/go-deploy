@@ -529,6 +529,8 @@ components:
         updatedAt:
           type: string
       type: object
+    body.GpuDeviceConfigurationWrapper:
+      type: object
     body.GpuGroupRead:
       properties:
         available:
@@ -980,7 +982,8 @@ components:
           additionalProperties:
             type: string
           type: object
-        config: {}
+        config:
+          $ref: '#/components/schemas/body.GpuDeviceConfigurationWrapper'
         count:
           type: integer
         deviceClassName:
@@ -1005,7 +1008,8 @@ components:
           additionalProperties:
             type: string
           type: object
-        config: {}
+        config:
+          $ref: '#/components/schemas/body.GpuDeviceConfigurationWrapper'
         count:
           type: integer
         deviceClassName:

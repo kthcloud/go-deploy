@@ -150,7 +150,7 @@ func (g GpuClaim) ToDTO() body.GpuClaimRead {
 			Count:           req.Count,
 			DeviceClassName: req.DeviceClassName,
 			Selectors:       req.Selectors,
-			Config: func() body.GpuDeviceConfiguration {
+			Config: func() *body.GpuDeviceConfigurationWrapper {
 				if req.Config == nil {
 					return nil
 				}
@@ -161,25 +161,29 @@ func (g GpuClaim) ToDTO() body.GpuClaimRead {
 					}
 					switch driver {
 					case "gpu.nvidia.com":
-						return body.NvidiaDeviceConfiguration{
-							Driver: driver,
-						}
+						return &body.GpuDeviceConfigurationWrapper{
+							GpuDeviceConfiguration: body.NvidiaDeviceConfiguration{
+								Driver: driver,
+							}}
 					default:
-						return body.GenericDeviceConfiguration{
-							Driver: driver,
-						}
+						return &body.GpuDeviceConfigurationWrapper{
+							GpuDeviceConfiguration: body.GenericDeviceConfiguration{
+								Driver: driver,
+							}}
 					}
 				}
 				switch t := req.Config.Parameters.(type) {
 				case nvidia.GPUConfigParametersImpl:
-					return body.NvidiaDeviceConfiguration{
-						Driver:  req.Config.Driver,
-						Sharing: t.Sharing,
-					}
+					return &body.GpuDeviceConfigurationWrapper{
+						GpuDeviceConfiguration: body.NvidiaDeviceConfiguration{
+							Driver:     req.Config.Driver,
+							Parameters: &t.GpuConfig,
+						}}
 				default:
-					return body.GenericDeviceConfiguration{
-						Driver: req.Config.Driver,
-					}
+					return &body.GpuDeviceConfigurationWrapper{
+						GpuDeviceConfiguration: body.GenericDeviceConfiguration{
+							Driver: req.Config.Driver,
+						}}
 				}
 			}(),
 		}

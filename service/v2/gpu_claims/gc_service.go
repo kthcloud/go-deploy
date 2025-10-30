@@ -58,6 +58,16 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 
 	if len(params.Requested) < 1 {
 		return sErrors.ErrBadGpuClaimNoRequest
+	} else {
+		for _, req := range params.Requested {
+			if req.Config != nil {
+				if strings.TrimSpace(req.Config.Driver) == "" {
+					return makeErr(fmt.Errorf("config provided but driver is empty!"))
+				} else {
+					log.Println("driver: ", req.Config.Driver)
+				}
+			}
+		}
 	}
 
 	err := gpu_claim_repo.New().Create(id, params)

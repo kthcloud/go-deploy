@@ -263,7 +263,9 @@ export interface RequestedGpu {
   count?: number /* int64 */;
   deviceClassName: string;
   selectors?: string[];
-  config?: GpuDeviceConfiguration;
+  config?: GpuDeviceConfigurationWrapper;
+}
+export interface GpuDeviceConfigurationWrapper {
 }
 /**
  * GpuDeviceConfiguration represents a vendor-specific GPU configuration.

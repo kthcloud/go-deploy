@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/api/nvidia"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // GpuClaimRead is a detailed DTO for administrators
@@ -54,12 +55,95 @@ type RequestedGpuCreate struct {
 
 // RequestedGpu describes the desired GPU configuration that was requested.
 type RequestedGpu struct {
-	AllocationMode  string                 `json:"allocationMode" bson:"allocationMode" binding:"required,oneof=All ExactCount"`
-	Capacity        map[string]string      `json:"capacity,omitempty" bson:"capacity,omitempty"`
-	Count           *int64                 `json:"count,omitempty" bson:"count,omitempty"`
-	DeviceClassName string                 `json:"deviceClassName" bson:"deviceClassName" binding:"required,rfc1123"`
-	Selectors       []string               `json:"selectors,omitempty" bson:"selectors,omitempty"`
-	Config          GpuDeviceConfiguration `json:"config,omitempty" bson:"config,omitempty"`
+	AllocationMode  string                         `json:"allocationMode" bson:"allocationMode" binding:"required,oneof=All ExactCount"`
+	Capacity        map[string]string              `json:"capacity,omitempty" bson:"capacity,omitempty"`
+	Count           *int64                         `json:"count,omitempty" bson:"count,omitempty"`
+	DeviceClassName string                         `json:"deviceClassName" bson:"deviceClassName" binding:"required,rfc1123"`
+	Selectors       []string                       `json:"selectors,omitempty" bson:"selectors,omitempty"`
+	Config          *GpuDeviceConfigurationWrapper `json:"config,omitempty" bson:"config,omitempty"`
+}
+
+type GpuDeviceConfigurationWrapper struct {
+	GpuDeviceConfiguration `mapstructure:"-" json:"-" bson:"-"`
+}
+
+func (w *GpuDeviceConfigurationWrapper) UnmarshalJSON(data []byte) error {
+	// Peek at the "driver" field first
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	var driver string
+	if d, ok := raw["driver"]; ok {
+		if err := json.Unmarshal(d, &driver); err != nil {
+			return err
+		}
+	}
+
+	switch driver {
+	case "gpu.nvidia.com":
+		var n NvidiaDeviceConfiguration
+		if err := json.Unmarshal(data, &n); err != nil {
+			return err
+		}
+		w.GpuDeviceConfiguration = n
+
+	default:
+		var g GenericDeviceConfiguration
+		if err := json.Unmarshal(data, &g); err != nil {
+			return err
+		}
+		w.GpuDeviceConfiguration = g
+	}
+
+	return nil
+}
+
+func (w GpuDeviceConfigurationWrapper) MarshalJSON() ([]byte, error) {
+	if w.GpuDeviceConfiguration == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(w.GpuDeviceConfiguration)
+}
+
+// MarshalBSON implements bson.Marshaler
+func (w GpuDeviceConfigurationWrapper) MarshalBSON() ([]byte, error) {
+	if w.GpuDeviceConfiguration == nil {
+		return bson.Marshal(nil)
+	}
+	return bson.Marshal(w.GpuDeviceConfiguration)
+}
+
+// UnmarshalBSON implements bson.Unmarshaler
+func (w *GpuDeviceConfigurationWrapper) UnmarshalBSON(data []byte) error {
+	var raw map[string]interface{}
+	if err := bson.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	// Detect driver
+	driver := ""
+	if d, ok := raw["driver"].(string); ok {
+		driver = d
+	}
+
+	switch driver {
+	case "gpu.nvidia.com":
+		var n NvidiaDeviceConfiguration
+		if err := bson.Unmarshal(data, &n); err != nil {
+			return err
+		}
+		w.GpuDeviceConfiguration = n
+	default:
+		var g GenericDeviceConfiguration
+		if err := bson.Unmarshal(data, &g); err != nil {
+			return err
+		}
+		w.GpuDeviceConfiguration = g
+	}
+
+	return nil
 }
 
 // GpuDeviceConfiguration represents a vendor-specific GPU configuration.
@@ -90,8 +174,8 @@ func (g GenericDeviceConfiguration) MarshalJSON() ([]byte, error) {
 
 // NvidiaDeviceConfiguration represents NVIDIA-specific configuration options.
 type NvidiaDeviceConfiguration struct {
-	Driver  string             `json:"driver" bson:"driver"`
-	Sharing *nvidia.GpuSharing `json:"sharing,omitempty" bson:"sharing,omitempty"`
+	Driver     string            `json:"driver" bson:"driver"`
+	Parameters *nvidia.GpuConfig `json:"parameters,omitempty" bson:"parameters,omitempty"`
 }
 
 func (NvidiaDeviceConfiguration) DriverName() string {
