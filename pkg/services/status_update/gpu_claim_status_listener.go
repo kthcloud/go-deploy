@@ -72,15 +72,15 @@ func convertGpuClaimConsumers(consumers []models.ResourceClaimConsumerPublic) []
 	return res
 }
 
-func convertGpuClaimAllocations(allocations []models.ResourceClaimAllocationResultPublic) map[string]model.AllocatedGpu {
-	var res = make(map[string]model.AllocatedGpu, len(allocations))
+func convertGpuClaimAllocations(allocations []models.ResourceClaimAllocationResultPublic) map[string][]model.AllocatedGpu {
+	var res = make(map[string][]model.AllocatedGpu)
 	for _, alloc := range allocations {
-		res[alloc.Request] = model.AllocatedGpu{
+		res[alloc.Request] = append(res[alloc.Request], model.AllocatedGpu{
 			Pool:        alloc.Pool,
 			Device:      alloc.Device,
 			ShareID:     alloc.ShareID,
 			AdminAccess: alloc.AdminAccess,
-		}
+		})
 	}
 	return res
 }

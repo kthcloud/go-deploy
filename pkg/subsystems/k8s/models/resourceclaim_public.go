@@ -2,11 +2,14 @@ package models
 
 import (
 	"bytes"
+	"fmt"
 	"slices"
 	"time"
 
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra/nvidia"
+	"go.mongodb.org/mongo-driver/bson"
 	resourcev1 "k8s.io/api/resource/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -45,6 +48,70 @@ type ResourceClaimExactlyRequestPublic struct {
 type ResourceClaimOpaquePublic struct {
 	Driver     string           `bson:"driver"`
 	Parameters dra.OpaqueParams `bson:"parameters,omitempty"`
+}
+
+func (cfg ResourceClaimOpaquePublic) MarshalBSON() ([]byte, error) {
+	doc := bson.M{
+		"driver": cfg.Driver,
+	}
+
+	if cfg.Parameters != nil {
+		// Marshal interface to BSON using its JSON form (to preserve structure)
+		paramBytes, err := bson.Marshal(cfg.Parameters)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal parameters: %w", err)
+		}
+
+		var paramDoc bson.M
+		if err := bson.Unmarshal(paramBytes, &paramDoc); err != nil {
+			return nil, err
+		}
+		doc["parameters"] = paramDoc
+	}
+
+	return bson.Marshal(doc)
+}
+
+func (cfg *ResourceClaimOpaquePublic) UnmarshalBSON(data []byte) error {
+	var raw bson.M
+	if err := bson.Unmarshal(data, &raw); err != nil {
+		return fmt.Errorf("failed to unmarshal raw data: %w", err)
+	}
+
+	// Extract driver first
+	if d, ok := raw["driver"].(string); ok {
+		cfg.Driver = d
+	}
+
+	// Nothing more to do if no parameters
+	paramsRaw, ok := raw["parameters"]
+	if !ok || paramsRaw == nil {
+		return nil
+	}
+
+	// Marshal the inner parameters object for re-decoding
+	paramBytes, err := bson.Marshal(paramsRaw)
+	if err != nil {
+		return fmt.Errorf("failed to re-marshal parameters: %w", err)
+	}
+
+	switch cfg.Driver {
+	case "gpu.nvidia.com":
+		var nvidia nvidia.GPUConfigParametersImpl
+		if err := bson.Unmarshal(paramBytes, &nvidia); err != nil {
+			return fmt.Errorf("failed to decode nvidia parameters: %w", err)
+		}
+		cfg.Parameters = nvidia
+
+	default:
+		var generic dra.OpaqueParams
+		if err := bson.Unmarshal(paramBytes, &generic); err != nil {
+			return fmt.Errorf("failed to decode generic parameters: %w", err)
+		}
+		cfg.Parameters = generic
+	}
+
+	return nil
 }
 
 type ResourceClaimAllocationResultPublic struct {

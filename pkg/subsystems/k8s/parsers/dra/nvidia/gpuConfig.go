@@ -3,6 +3,7 @@ package nvidia
 import (
 	"encoding/json"
 	"io"
+	"strings"
 
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/api/nvidia"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra"
@@ -35,11 +36,27 @@ func (GPUConfigParametersParserImpl) CanParse(raw io.Reader) bool {
 		return false
 	}
 
-	if apiVersion, ok := tmp["apiVersion"].(string); ok && apiVersion == supportedApiVersion {
-		if kind, ok := tmp["kind"].(string); ok && kind == supportedKind {
-			return true
+	// Helper to find a key ignoring case
+	findKey := func(m map[string]any, key string) (any, bool) {
+		for k, v := range m {
+			if strings.EqualFold(k, key) {
+				return v, true
+			}
+		}
+		return nil, false
+	}
+
+	// Get apiVersion ignoring key case
+	if apiVersionRaw, ok := findKey(tmp, "apiVersion"); ok {
+		if apiVersion, ok := apiVersionRaw.(string); ok && strings.EqualFold(apiVersion, supportedApiVersion) {
+			if kindRaw, ok := findKey(tmp, "kind"); ok {
+				if kind, ok := kindRaw.(string); ok && strings.EqualFold(kind, supportedKind) {
+					return true
+				}
+			}
 		}
 	}
+
 	return false
 }
 

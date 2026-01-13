@@ -48,32 +48,28 @@ func Parse[T any](raw io.Reader) (T, error) {
 	}
 	reader := bytes.NewReader(buf.Bytes())
 
-	// Ensure T implements dra.OpaqueParams
-	if _, ok := any(zero).(dra.OpaqueParams); ok {
-		for _, vendor := range GpuOpaqueParamParsers {
-			// Rewind reader before CanParse
+	for _, vendor := range GpuOpaqueParamParsers {
+		// Rewind reader before CanParse
+		if _, err := reader.Seek(0, io.SeekStart); err != nil {
+			return zero, err
+		}
+
+		if vendor.CanParse(reader) {
+			// Rewind again before Parse
 			if _, err := reader.Seek(0, io.SeekStart); err != nil {
 				return zero, err
 			}
 
-			if vendor.CanParse(reader) {
-				// Rewind again before Parse
-				if _, err := reader.Seek(0, io.SeekStart); err != nil {
-					return zero, err
-				}
-
-				parsed, err := vendor.Parse(reader)
-				if err != nil {
-					return zero, err
-				}
-
-				if casted, ok := parsed.(T); ok {
-					return casted, nil
-				}
-				return zero, ErrParserCastFailed
+			parsed, err := vendor.Parse(reader)
+			if err != nil {
+				return zero, err
 			}
+
+			if casted, ok := parsed.(T); ok {
+				return casted, nil
+			}
+			return zero, ErrParserCastFailed
 		}
 	}
-
 	return zero, ErrParserNotFound
 }

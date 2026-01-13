@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
 
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_claim_repo"
@@ -15,7 +14,6 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
-	"github.com/mitchellh/mapstructure"
 )
 
 func CreateGpuClaim(job *model.Job) error {
@@ -30,6 +28,8 @@ func CreateGpuClaim(job *model.Job) error {
 	if !ok {
 		return jErrors.MakeTerminatedError(fmt.Errorf("invalid params type"))
 	}
+
+	fmt.Println("paramsMap", paramsMap)
 
 	params, err := DecodeGpuClaimCreateParams(paramsMap)
 	if err != nil {
@@ -83,61 +83,70 @@ func DeleteGpuClaim(job *model.Job) error {
 func DecodeGpuClaimCreateParams(raw map[string]any) (model.GpuClaimCreateParams, error) {
 	var result model.GpuClaimCreateParams
 
-	// Make a shallow copy and remove Config from Requested items
-	rawCopy := make(map[string]any)
-	maps.Copy(rawCopy, raw)
-
-	requestedRaw, _ := rawCopy["Requested"]
-	requestedSlice, ok := requestedRaw.([]any)
-	if !ok || requestedSlice == nil {
-		requestedSlice = []any{}
+	// --- 1. Define a temporary model that uses generic maps for Parameters
+	type tempGpuDeviceConfiguration struct {
+		Driver     string `json:"driver"`
+		Parameters any    `json:"parameters"`
+	}
+	type tempRequestedGpu struct {
+		AllocationMode  string                      `json:"allocationMode"`
+		DeviceClassName string                      `json:"deviceClassName"`
+		Name            string                      `json:"name"`
+		Config          *tempGpuDeviceConfiguration `json:"config,omitempty"`
+	}
+	type tempGpuClaimCreateParams struct {
+		Name      string             `json:"name"`
+		Zone      string             `json:"zone"`
+		Requested []tempRequestedGpu `json:"requested"`
 	}
 
-	// Remove Config from map so mapstructure won't try to decode it
-	for _, r := range requestedSlice {
-		if reqMap, ok := r.(map[string]any); ok {
-			delete(reqMap, "Config")
-		}
-	}
-	rawCopy["Requested"] = requestedSlice
+	var temp tempGpuClaimCreateParams
 
-	// Decode top-level fields + Requested without Config
-	if err := mapstructure.Decode(rawCopy, &result); err != nil {
-		return result, fmt.Errorf("failed to decode top-level fields: %w", err)
+	// --- 2. Marshal → Unmarshal into the temporary struct (safe)
+	data, err := json.Marshal(raw)
+	if err != nil {
+		return result, fmt.Errorf("failed to marshal raw input: %w", err)
+	}
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return result, fmt.Errorf("failed to unmarshal into temp struct: %w", err)
 	}
 
-	// manually parse Config.Parameters and assign
-	for i, r := range requestedSlice {
-		reqMap, ok := r.(map[string]any)
-		if !ok {
-			continue
+	// --- 3. Convert the safe struct into your actual model
+	result.Name = temp.Name
+	result.Zone = temp.Zone
+	result.Requested = make([]model.RequestedGpuCreate, len(temp.Requested))
+
+	for i, r := range temp.Requested {
+		req := model.RequestedGpuCreate{
+			RequestedGpu: model.RequestedGpu{
+				AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
+				DeviceClassName: r.DeviceClassName,
+			},
+
+			Name: r.Name,
 		}
 
-		configRaw, exists := reqMap["Config"]
-		if !exists || configRaw == nil {
-			continue
+		if r.Config != nil {
+			// Marshal Parameters to JSON for your custom parser
+			paramsJSON, err := json.Marshal(r.Config.Parameters)
+			if err != nil {
+				return result, fmt.Errorf("failed to marshal Parameters: %w", err)
+			}
+
+			fmt.Println(string(paramsJSON))
+
+			opaqueParams, err := parsers.Parse[dra.OpaqueParams](bytes.NewReader(paramsJSON))
+			if err != nil {
+				return result, fmt.Errorf("failed to parse Parameters: %w", err)
+			}
+
+			req.Config = &model.GpuDeviceConfiguration{
+				Driver:     r.Config.Driver,
+				Parameters: opaqueParams,
+			}
 		}
 
-		cfgMap, ok := configRaw.(map[string]any)
-		if !ok {
-			continue
-		}
-
-		rawParams, err := json.Marshal(cfgMap["Parameters"])
-		if err != nil {
-			return result, fmt.Errorf("failed to marshal Parameters: %w", err)
-		}
-
-		opaqueParams, err := parsers.Parse[dra.OpaqueParams](bytes.NewReader(rawParams))
-		if err != nil {
-			return result, fmt.Errorf("failed to parse Parameters: %w", err)
-		}
-
-		// put back parsed Config into the result struct
-		result.Requested[i].Config = &model.GpuDeviceConfiguration{
-			Driver:     cfgMap["driver"].(string),
-			Parameters: opaqueParams,
-		}
+		result.Requested[i] = req
 	}
 
 	return result, nil

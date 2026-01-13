@@ -49,7 +49,7 @@ func WithSetStatus(status *model.GpuClaimStatus) ReconcileOption {
 	}
 }
 
-func WithSetAllocated(allocated map[string]model.AllocatedGpu) ReconcileOption {
+func WithSetAllocated(allocated map[string][]model.AllocatedGpu) ReconcileOption {
 	return func(d *bson.D) {
 		(*d) = append(*d, bson.E{Key: "allocated", Value: allocated})
 	}

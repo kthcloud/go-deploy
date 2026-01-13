@@ -7,6 +7,6 @@ import (
 )
 
 type GpuConfig struct {
-	v1.TypeMeta `json:",inline"`
-	Sharing     *GpuSharing `json:"sharing,omitempty"`
+	v1.TypeMeta `json:",inline" bson:",inline"`
+	Sharing     *GpuSharing `json:"sharing,omitempty" bson:"sharing,omitempty"`
 }

@@ -20,7 +20,7 @@ type GpuClaimRead struct {
 	Requested map[string]RequestedGpu `json:"requested,omitempty"`
 
 	// Allocated contains the GPUs that have been successfully bound/allocated.
-	Allocated map[string]AllocatedGpu `json:"allocated,omitempty"`
+	Allocated map[string][]AllocatedGpu `json:"allocated,omitempty"`
 
 	// Consumers are the workloads currently using this claim.
 	Consumers []GpuClaimConsumer `json:"consumers,omitempty"`
@@ -109,10 +109,15 @@ func (w GpuDeviceConfigurationWrapper) MarshalJSON() ([]byte, error) {
 
 // MarshalBSON implements bson.Marshaler
 func (w GpuDeviceConfigurationWrapper) MarshalBSON() ([]byte, error) {
-	if w.GpuDeviceConfiguration == nil {
-		return bson.Marshal(nil)
+	j, err := json.Marshal(w)
+	if err != nil {
+		return nil, err
 	}
-	return bson.Marshal(w.GpuDeviceConfiguration)
+	var doc map[string]any
+	if err := bson.UnmarshalExtJSON(j, false, &doc); err != nil {
+		return nil, err
+	}
+	return bson.Marshal(doc)
 }
 
 // UnmarshalBSON implements bson.Unmarshaler
