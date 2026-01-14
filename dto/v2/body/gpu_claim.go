@@ -16,6 +16,9 @@ type GpuClaimRead struct {
 	Name string `json:"name"`
 	Zone string `json:"zone"`
 
+	// Roles allowed to use this GpuClaim, empty means all
+	AllowedRoles []string `json:"allowedRoles,omitempty"`
+
 	// Requested contains all requested GPU configurations by key (request.Name).
 	Requested map[string]RequestedGpu `json:"requested,omitempty"`
 
@@ -38,6 +41,8 @@ type GpuClaimRead struct {
 type GpuClaimCreate struct {
 	Name string  `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
 	Zone *string `json:"zone" bson:"zone"`
+
+	AllowedRoles []string `json:"allowedRoles,omitempty" bson:"allowedRoles,omitempty"`
 
 	// Requested contains all requested GPU configurations by key (request.Name).
 	Requested []RequestedGpuCreate `json:"requested,omitempty" bson:"requested,omitempty" binding:"min=1,dive"`

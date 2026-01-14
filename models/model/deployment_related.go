@@ -25,9 +25,7 @@ const (
 	VisibilityAuth = "auth"
 )
 
-var (
-	EmptyReplicaStatus = &ReplicaStatus{}
-)
+var EmptyReplicaStatus = &ReplicaStatus{}
 
 type App struct {
 	Name string `bson:"name"`
@@ -96,9 +94,8 @@ type DeploymentVolume struct {
 }
 
 type DeploymentGPU struct {
-	Name         string  `bson:"name"`
-	TemplateName *string `bson:"templateName,omitempty"`
-	ClaimName    *string `bson:"ClaimName,omitempty"`
+	Name      string  `bson:"name"`
+	ClaimName *string `bson:"ClaimName,omitempty"`
 }
 
 type DeploymentUsage struct {

@@ -113,9 +113,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			Request: []string{gpu.Name},
 		}
 
-		if gpu.TemplateName != nil {
-			rc.ResourceClaimTemplateName = utils.StrPtr(*gpu.TemplateName)
-		} else if gpu.ClaimName != nil {
+		if gpu.ClaimName != nil {
 			rc.ResourceClaimName = utils.StrPtr(*gpu.ClaimName)
 		} else {
 			// needs to have one of them
@@ -768,7 +766,7 @@ func encodeDockerConfig(registry, username, password string) []byte {
 // getExternalFQDN returns the external FQDN for a deployment in a given zone
 func getExternalFQDN(name string, zone *configModels.Zone) string {
 	// Remove protocol:// and :port from the zone.Domains.ParentDeployment
-	var fqdn = zone.Domains.ParentDeployment
+	fqdn := zone.Domains.ParentDeployment
 
 	split := strings.Split(zone.Domains.ParentDeployment, "://")
 	if len(split) > 1 {

@@ -60,6 +60,11 @@ func GetGpuClaim(c *gin.Context) {
 		return
 	}
 
+	if !auth.User.IsAdmin && !GpuClaim.HasAccess(auth.User.EffectiveRole.Name) {
+		context.NotFound("GPU claim not found")
+		return
+	}
+
 	context.Ok(GpuClaim.ToDTO())
 }
 
@@ -119,12 +124,19 @@ func ListGpuClaims(c *gin.Context) {
 		return
 	}
 
+	roles := make([]string, 0, 1)
+	if auth.User != nil && auth.User.EffectiveRole.Name != "" {
+		roles = append(roles, auth.User.EffectiveRole.Name)
+	}
+
 	dtoGpuClaims := make([]body.GpuClaimRead, len(GpuClaims))
 	for i, GpuClaim := range GpuClaims {
-		if requestQuery.Detailed {
-			dtoGpuClaims[i] = GpuClaim.ToDTO()
-		} else {
-			dtoGpuClaims[i] = GpuClaim.ToBriefDTO()
+		if auth.User.IsAdmin || GpuClaim.HasAccess(roles...) {
+			if requestQuery.Detailed {
+				dtoGpuClaims[i] = GpuClaim.ToDTO()
+			} else {
+				dtoGpuClaims[i] = GpuClaim.ToBriefDTO()
+			}
 		}
 	}
 

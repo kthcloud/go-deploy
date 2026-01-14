@@ -147,9 +147,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		dto := body.DeploymentGPU{
 			Name: gpu.Name,
 		}
-		if gpu.TemplateName != nil {
-			dto.TemplateName = gpu.TemplateName
-		} else if gpu.ClaimName != nil {
+		if gpu.ClaimName != nil {
 			dto.ClaimName = gpu.ClaimName
 		} else {
 			continue
@@ -272,9 +270,7 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 		gpuM := DeploymentGPU{
 			Name: gpu.Name,
 		}
-		if gpu.TemplateName != nil {
-			gpuM.TemplateName = utils.StrPtr(*gpu.TemplateName)
-		} else if gpu.ClaimName != nil {
+		if gpu.ClaimName != nil {
 			gpuM.ClaimName = utils.StrPtr(*gpu.ClaimName)
 		} else {
 			continue
@@ -367,9 +363,7 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 				Name: gpu.Name,
 			}
 
-			if gpu.TemplateName != nil {
-				gpuM.TemplateName = utils.StrPtr(*gpu.TemplateName)
-			} else if gpu.ClaimName != nil {
+			if gpu.ClaimName != nil {
 				gpuM.ClaimName = utils.StrPtr(*gpu.ClaimName)
 			} else {
 				// One of them needs to be set

@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -41,8 +42,9 @@ type GpuClaim struct {
 	// LastError holds the last reconciliation or provisioning error
 	LastError error `bson:"lastError,omitempty"`
 
-	// TODO: add rbac
-	//AllowedRoles []string `bson:"allowedRoles,omitempty"`
+	// The roles that are allowed to use this GpuClaim
+	// Empty means all roles
+	AllowedRoles []string `bson:"allowedRoles,omitempty"`
 
 	Activities map[string]Activity `bson:"activities"`
 
@@ -199,12 +201,13 @@ type GpuClaimStatus struct {
 
 func (g GpuClaim) ToDTO() body.GpuClaimRead {
 	dto := body.GpuClaimRead{
-		ID:        g.ID,
-		Name:      g.Name,
-		Zone:      g.Zone,
-		CreatedAt: g.CreatedAt,
-		UpdatedAt: g.UpdatedAt,
-		LastError: utils.ErrorStr(g.LastError),
+		ID:           g.ID,
+		Name:         g.Name,
+		Zone:         g.Zone,
+		AllowedRoles: slices.Clone(g.AllowedRoles),
+		CreatedAt:    g.CreatedAt,
+		UpdatedAt:    g.UpdatedAt,
+		LastError:    utils.ErrorStr(g.LastError),
 	}
 
 	// Convert Requested
@@ -230,12 +233,14 @@ func (g GpuClaim) ToDTO() body.GpuClaimRead {
 						return &body.GpuDeviceConfigurationWrapper{
 							GpuDeviceConfiguration: body.NvidiaDeviceConfiguration{
 								Driver: driver,
-							}}
+							},
+						}
 					default:
 						return &body.GpuDeviceConfigurationWrapper{
 							GpuDeviceConfiguration: body.GenericDeviceConfiguration{
 								Driver: driver,
-							}}
+							},
+						}
 					}
 				}
 				switch t := req.Config.Parameters.(type) {
@@ -244,12 +249,14 @@ func (g GpuClaim) ToDTO() body.GpuClaimRead {
 						GpuDeviceConfiguration: body.NvidiaDeviceConfiguration{
 							Driver:     req.Config.Driver,
 							Parameters: &t.GpuConfig,
-						}}
+						},
+					}
 				default:
 					return &body.GpuDeviceConfigurationWrapper{
 						GpuDeviceConfiguration: body.GenericDeviceConfiguration{
 							Driver: req.Config.Driver,
-						}}
+						},
+					}
 				}
 			}(),
 		}
@@ -309,6 +316,19 @@ func (g GpuClaim) ToBriefDTO() body.GpuClaimRead {
 func (gc *GpuClaim) DoingActivity(activity string) bool {
 	for _, a := range gc.Activities {
 		if a.Name == activity {
+			return true
+		}
+	}
+	return false
+}
+
+// Check if a user is allowed to use a gpuClaim
+func (gc *GpuClaim) HasAccess(roles ...string) bool {
+	if len(gc.AllowedRoles) == 0 {
+		return true
+	}
+	for _, role := range roles {
+		if slices.Contains(gc.AllowedRoles, role) {
 			return true
 		}
 	}

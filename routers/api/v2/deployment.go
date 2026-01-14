@@ -239,7 +239,6 @@ func CreateDeployment(c *gin.Context) {
 		"params":   requestBody,
 		"authInfo": auth,
 	})
-
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -425,7 +424,6 @@ func UpdateDeployment(c *gin.Context) {
 		"params":   requestBody,
 		"authInfo": auth,
 	})
-
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
