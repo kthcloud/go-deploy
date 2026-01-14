@@ -14,6 +14,7 @@ import (
 const (
 	ZoneCapabilityDeployment = "deployment"
 	ZoneCapabilityVM         = "vm"
+	ZoneCapabilityDRA        = "dra"
 )
 
 type ConfigType struct {

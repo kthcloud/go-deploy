@@ -10,6 +10,7 @@ import (
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/dto/v2/query"
 	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
 	"github.com/kthcloud/go-deploy/pkg/sys"
@@ -167,6 +168,7 @@ func CreateGpuClaim(c *gin.Context) {
 		return
 	}
 
+	// TODO: this should be removed
 	if pretty, err := json.MarshalIndent(requestBody, "", "  "); err == nil {
 		fmt.Println(string(pretty))
 	} else {
@@ -206,6 +208,11 @@ func CreateGpuClaim(c *gin.Context) {
 
 		if !zone.Enabled {
 			context.Forbidden("Zone is disabled")
+			return
+		}
+
+		if !deployV2.System().ZoneHasCapability(*requestBody.Zone, configModels.ZoneCapabilityDRA) {
+			context.Forbidden("Zone does not have dra capability")
 			return
 		}
 	}
