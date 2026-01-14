@@ -9,6 +9,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_claim_repo"
 	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/service/resources"
+	"github.com/kthcloud/go-deploy/utils/versionutils"
 )
 
 func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
@@ -21,12 +22,24 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 		return makeError(err)
 	}
 
+	v, err := kc.K8sClient.Discovery().ServerVersion()
+	if err != nil {
+		return makeError(fmt.Errorf("could not get k8s version: %v", err))
+	}
+
+	supportsDRA, err := versionutils.HasStableDRASupport(v)
+	if err != nil {
+		return makeError(fmt.Errorf("version parsing error: %v", err))
+	}
+	if !supportsDRA {
+		return makeError(fmt.Errorf("doesnt support dynamic resource allocation, server is on: %s, dra requires at least: %s", v.String(), versionutils.DRASupportMinStable.String()))
+	}
+
 	// Namespace
 	err = resources.SsCreator(kc.CreateNamespace).
 		WithDbFunc(dbFunc(id, "namespace")).
 		WithPublic(g.Namespace()).
 		Exec()
-
 	if err != nil {
 		return makeError(err)
 	}
@@ -36,7 +49,6 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 			WithDbFunc(dbFunc(id, "resourceClaimMap."+public.Name)).
 			WithPublic(&public).
 			Exec()
-
 		if err != nil {
 			return makeError(err)
 		}

@@ -205,7 +205,6 @@ func CreateGpuClaim(c *gin.Context) {
 		"params":   requestBody,
 		"authInfo": auth,
 	})
-
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -296,5 +295,4 @@ func DeleteGpuClaim(c *gin.Context) {
 		ID:    currentGpuClaim.ID,
 		JobID: jobID,
 	})
-
 }

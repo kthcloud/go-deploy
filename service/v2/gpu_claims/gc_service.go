@@ -33,6 +33,7 @@ func (c *Client) Get(id string, opts ...opts.Opts) (*model.GpuClaim, error) {
 
 	return c.GpuClaim(id, gcrc)
 }
+
 func (c *Client) List(opts ...opts.ListOpts) ([]model.GpuClaim, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
@@ -43,7 +44,6 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.GpuClaim, error) {
 	}
 
 	return c.GpuClaims(gcrc)
-
 }
 
 // Create creates a new gpu claim
@@ -62,7 +62,7 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 		for _, req := range params.Requested {
 			if req.Config != nil {
 				if strings.TrimSpace(req.Config.Driver) == "" {
-					return makeErr(fmt.Errorf("config provided but driver is empty!"))
+					return makeErr(fmt.Errorf("config provided but driver is empty"))
 				} else {
 					log.Println("driver: ", req.Config.Driver)
 				}

@@ -223,15 +223,6 @@ type Zone struct {
 			} `yaml:"ip"`
 		} `yaml:"egress"`
 	} `yaml:"networkPolicies"`
-	ResourceClaimTemplates []struct {
-		Name             string   `yaml:"name"`
-		DeviceClass      string   `yaml:"deviceClass"`
-		Requests         []string `yaml:"requests"`
-		Driver           string   `yaml:"driver"`
-		Strategy         string   `yaml:"strategy"`
-		MPSActiveThreads int      `yaml:"mpsActiveThreads"`
-		MPSMemoryLimit   string   `yaml:"mpsMemoryLimit"`
-	} `yaml:"resourceClaimTemplates"`
 	PortRange struct {
 		Start int `yaml:"start"`
 		End   int `yaml:"end"`
