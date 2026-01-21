@@ -94,14 +94,13 @@ type DeploymentVolume struct {
 }
 
 type DeploymentGPU struct {
-	Name      string  `bson:"name"`
-	ClaimName *string `bson:"ClaimName,omitempty"`
+	Name      string `bson:"name"`
+	ClaimName string `bson:"claimName"`
 }
 
 type DeploymentUsage struct {
 	CpuCores float64
 	RAM      float64
-	// TODO: add gpu here later
 }
 
 type DeploymentError struct {

@@ -145,11 +145,10 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 	var gpus []body.DeploymentGPU = make([]body.DeploymentGPU, 0, len(app.GPUs))
 	for _, gpu := range app.GPUs {
 		dto := body.DeploymentGPU{
-			Name: gpu.Name,
+			Name:      gpu.Name,
+			ClaimName: gpu.ClaimName,
 		}
-		if gpu.ClaimName != nil {
-			dto.ClaimName = gpu.ClaimName
-		} else {
+		if gpu.ClaimName == "" {
 			continue
 		}
 
@@ -268,11 +267,10 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 	p.GPUs = make([]DeploymentGPU, 0, len(dto.GPUs))
 	for _, gpu := range dto.GPUs {
 		gpuM := DeploymentGPU{
-			Name: gpu.Name,
+			Name:      gpu.Name,
+			ClaimName: gpu.ClaimName,
 		}
-		if gpu.ClaimName != nil {
-			gpuM.ClaimName = utils.StrPtr(*gpu.ClaimName)
-		} else {
+		if gpu.ClaimName == "" {
 			continue
 		}
 		p.GPUs = append(p.GPUs, gpuM)
@@ -360,14 +358,11 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 		gpus := make([]DeploymentGPU, 0, len(*dto.GPUs))
 		for _, gpu := range *dto.GPUs {
 			var gpuM DeploymentGPU = DeploymentGPU{
-				Name: gpu.Name,
+				Name:      gpu.Name,
+				ClaimName: gpu.ClaimName,
 			}
 
-			if gpu.ClaimName != nil {
-				gpuM.ClaimName = utils.StrPtr(*gpu.ClaimName)
-			} else {
-				// One of them needs to be set
-				// TODO: add validation so user can get feedback
+			if gpu.ClaimName == "" {
 				continue
 			}
 

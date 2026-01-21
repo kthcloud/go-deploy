@@ -152,8 +152,8 @@ type DeploymentUpdated struct {
 }
 
 type DeploymentGPU struct {
-	Name      string  `json:"name"`
-	ClaimName *string `json:"claimName,omitempty"`
+	Name      string `json:"name,omitempty" binding:"required"`
+	ClaimName string `json:"claimName,omitempty" binding:"required"`
 }
 
 type DeploymentSpecs struct {

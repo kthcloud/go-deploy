@@ -92,6 +92,14 @@ func (w *GpuDeviceConfigurationWrapper) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(data, &n); err != nil {
 			return err
 		}
+		if n.Parameters != nil {
+			if n.Parameters.APIVersion == "" {
+				n.Parameters.APIVersion = "resource.nvidia.com/v1beta1"
+			}
+			if n.Parameters.Kind == "" {
+				n.Parameters.Kind = "GpuConfig"
+			}
+		}
 		w.GpuDeviceConfiguration = n
 
 	default:
@@ -144,6 +152,14 @@ func (w *GpuDeviceConfigurationWrapper) UnmarshalBSON(data []byte) error {
 		if err := bson.Unmarshal(data, &n); err != nil {
 			return err
 		}
+		if n.Parameters != nil {
+			if n.Parameters.APIVersion == "" {
+				n.Parameters.APIVersion = "resource.nvidia.com/v1beta1"
+			}
+			if n.Parameters.Kind == "" {
+				n.Parameters.Kind = "GpuConfig"
+			}
+		}
 		w.GpuDeviceConfiguration = n
 	default:
 		var g GenericDeviceConfiguration
@@ -195,7 +211,7 @@ func (NvidiaDeviceConfiguration) DriverName() string {
 func (n NvidiaDeviceConfiguration) MarshalJSON() ([]byte, error) {
 	type Alias NvidiaDeviceConfiguration
 	return json.Marshal(&struct {
-		Type string `json:"type"`
+		Type string `json:"type" bson:"type"`
 		Alias
 	}{
 		Type:  "nvidia",

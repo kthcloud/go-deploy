@@ -166,7 +166,6 @@ export interface DeploymentUpdated {
 }
 export interface DeploymentGPU {
   name: string;
-  templateName?: string;
   claimName?: string;
 }
 export interface DeploymentSpecs {
@@ -216,13 +215,17 @@ export interface GpuClaimRead {
   name: string;
   zone: string;
   /**
+   * Roles allowed to use this GpuClaim, empty means all
+   */
+  allowedRoles?: string[];
+  /**
    * Requested contains all requested GPU configurations by key (request.Name).
    */
   requested?: { [key: string]: RequestedGpu};
   /**
    * Allocated contains the GPUs that have been successfully bound/allocated.
    */
-  allocated?: { [key: string]: AllocatedGpu};
+  allocated?: { [key: string]: AllocatedGpu[]};
   /**
    * Consumers are the workloads currently using this claim.
    */
@@ -241,6 +244,7 @@ export interface GpuClaimRead {
 export interface GpuClaimCreate {
   name: string;
   zone?: string;
+  allowedRoles?: string[];
   /**
    * Requested contains all requested GPU configurations by key (request.Name).
    */
@@ -284,7 +288,7 @@ export type Alias = GenericDeviceConfiguration;
  */
 export interface NvidiaDeviceConfiguration {
   driver: string;
-  sharing?: any /* nvidia.GpuSharing */;
+  parameters?: any /* nvidia.GpuConfig */;
 }
 export type Alias = NvidiaDeviceConfiguration;
 /**

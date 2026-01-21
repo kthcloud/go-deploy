@@ -191,6 +191,13 @@ func CreateDeployment(c *gin.Context) {
 		return
 	}
 
+	for _, gpu := range requestBody.GPUs {
+		if strings.TrimSpace(gpu.ClaimName) == "" || strings.TrimSpace(gpu.Name) == "" {
+			context.UserError("Invalid gpu claim reference, requires both ClaimName and Name")
+			return
+		}
+	}
+
 	if requestBody.Zone != nil {
 		zone := deployV2.System().GetZone(*requestBody.Zone)
 		if zone == nil {
@@ -206,6 +213,13 @@ func CreateDeployment(c *gin.Context) {
 		if !deployV2.System().ZoneHasCapability(*requestBody.Zone, configModels.ZoneCapabilityDeployment) {
 			context.Forbidden("Zone does not have deployment capability")
 			return
+		}
+
+		if len(requestBody.GPUs) > 0 {
+			if !deployV2.System().ZoneHasCapability(*requestBody.Zone, configModels.ZoneCapabilityDRA) {
+				context.Forbidden("Zone does not have dra capability")
+				return
+			}
 		}
 	}
 
@@ -391,6 +405,20 @@ func UpdateDeployment(c *gin.Context) {
 
 		if !available {
 			context.UserError("Name already taken")
+			return
+		}
+	}
+
+	if requestBody.GPUs != nil {
+		for _, gpu := range *requestBody.GPUs {
+			if strings.TrimSpace(gpu.ClaimName) == "" || strings.TrimSpace(gpu.Name) == "" {
+				context.UserError("Invalid gpu claim reference, requires both ClaimName and Name")
+				return
+			}
+		}
+
+		if !deployV2.System().ZoneHasCapability(deployment.Zone, configModels.ZoneCapabilityDRA) {
+			context.Forbidden("Zone does not have dra capability")
 			return
 		}
 	}

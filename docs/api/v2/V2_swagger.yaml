@@ -225,8 +225,6 @@ components:
           type: string
         name:
           type: string
-        templateName:
-          type: string
       type: object
     body.DeploymentRead:
       properties:
@@ -457,6 +455,11 @@ components:
       type: object
     body.GpuClaimCreate:
       properties:
+        allowedRoles:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
         name:
           maxLength: 30
           minLength: 3
@@ -485,9 +488,17 @@ components:
       properties:
         allocated:
           additionalProperties:
-            $ref: '#/components/schemas/body.AllocatedGpu'
+            items:
+              $ref: '#/components/schemas/body.AllocatedGpu'
+            type: array
           description: Allocated contains the GPUs that have been successfully bound/allocated.
           type: object
+        allowedRoles:
+          description: Roles allowed to use this GpuClaim, empty means all
+          items:
+            type: string
+          type: array
+          uniqueItems: false
         consumers:
           description: Consumers are the workloads currently using this claim.
           items:
@@ -688,49 +699,25 @@ components:
       properties:
         cpuCore:
           $ref: '#/components/schemas/body.CpuCoreCapacities'
-        displayName:
-          type: string
         gpu:
           $ref: '#/components/schemas/body.GpuCapacities'
-        name:
-          type: string
         ram:
           $ref: '#/components/schemas/body.RamCapacities'
-        zone:
-          description: Zone is the name of the zone where the host is located.
-          type: string
       type: object
     body.HostRead:
-      properties:
-        displayName:
-          type: string
-        name:
-          type: string
-        zone:
-          description: Zone is the name of the zone where the host is located.
-          type: string
       type: object
     body.HostStatus:
       properties:
         cpu:
           $ref: '#/components/schemas/body.CpuStatus'
-        displayName:
-          type: string
         gpu:
           $ref: '#/components/schemas/body.GpuStatus'
-        name:
-          type: string
         ram:
           $ref: '#/components/schemas/body.RamStatus'
-        zone:
-          description: Zone is the name of the zone where the host is located.
-          type: string
       type: object
     body.HostVerboseRead:
       properties:
         deactivatedUntil:
-          type: string
-        displayName:
           type: string
         enabled:
           type: boolean
@@ -738,17 +725,12 @@ components:
           type: string
         lastSeenAt:
           type: string
-        name:
-          type: string
         port:
           type: integer
         registeredAt:
           type: string
         schedulable:
           type: boolean
-        zone:
-          description: Zone is the name of the zone where the host is located.
-          type: string
       type: object
     body.HttpProxyCreate:
       properties:
@@ -999,33 +981,11 @@ components:
       type: object
     body.RequestedGpuCreate:
       properties:
-        allocationMode:
-          enum:
-          - All
-          - ExactCount
-          type: string
-        capacity:
-          additionalProperties:
-            type: string
-          type: object
-        config:
-          $ref: '#/components/schemas/body.GpuDeviceConfigurationWrapper'
-        count:
-          type: integer
-        deviceClassName:
-          type: string
         name:
           maxLength: 30
           minLength: 3
           type: string
-        selectors:
-          items:
-            type: string
-          type: array
-          uniqueItems: false
       required:
-      - allocationMode
-      - deviceClassName
       - name
       type: object
     body.ResourceMigrationCreate:
@@ -1070,52 +1030,10 @@ components:
       type: object
     body.ResourceMigrationCreated:
       properties:
-        createdAt:
-          type: string
-        deletedAt:
-          type: string
-        id:
-          type: string
         jobId:
           description: |-
             JobID is the ID of the job that was created for the resource migration.
             It will only be set if the migration was created with status 'accepted'.
-          type: string
-        resourceId:
-          description: |-
-            ResourceID is the ID of the resource that is being migrated.
-            This can be a VM ID, deployment ID, etc. depending on the type of the migration.
-          type: string
-        resourceType:
-          description: |-
-            ResourceType is the type of the resource that is being migrated.
-
-            Possible values:
-            - vm
-            - deployment
-          type: string
-        status:
-          description: |-
-            Status is the status of the resource migration.
-            When this field is set to 'accepted', the migration will take place and then automatically be deleted.
-          type: string
-        type:
-          description: |-
-            Type is the type of the resource migration.
-
-            Possible values:
-            - updateOwner
-          type: string
-        updateOwner:
-          description: |-
-            UpdateOwner is the set of parameters that are required for the updateOwner migration type.
-            It is empty if the migration type is not updateOwner.
-          properties:
-            ownerId:
-              type: string
-          type: object
-        userId:
-          description: UserID is the ID of the user who initiated the migration.
           type: string
       type: object
     body.ResourceMigrationRead:
@@ -1185,52 +1103,10 @@ components:
       type: object
     body.ResourceMigrationUpdated:
       properties:
-        createdAt:
-          type: string
-        deletedAt:
-          type: string
-        id:
-          type: string
         jobId:
           description: |-
             JobID is the ID of the job that was created for the resource migration.
             It will only be set if the migration was updated with status 'accepted'.
-          type: string
-        resourceId:
-          description: |-
-            ResourceID is the ID of the resource that is being migrated.
-            This can be a VM ID, deployment ID, etc. depending on the type of the migration.
-          type: string
-        resourceType:
-          description: |-
-            ResourceType is the type of the resource that is being migrated.
-
-            Possible values:
-            - vm
-            - deployment
-          type: string
-        status:
-          description: |-
-            Status is the status of the resource migration.
-            When this field is set to 'accepted', the migration will take place and then automatically be deleted.
-          type: string
-        type:
-          description: |-
-            Type is the type of the resource migration.
-
-            Possible values:
-            - updateOwner
-          type: string
-        updateOwner:
-          description: |-
-            UpdateOwner is the set of parameters that are required for the updateOwner migration type.
-            It is empty if the migration type is not updateOwner.
-          properties:
-            ownerId:
-              type: string
-          type: object
-        userId:
-          description: UserID is the ID of the user who initiated the migration.
           type: string
       type: object
     body.Role:
@@ -1331,23 +1207,11 @@ components:
       properties:
         addedAt:
           type: string
-        email:
-          type: string
-        firstName:
-          type: string
-        gravatarUrl:
-          type: string
-        id:
-          type: string
         joinedAt:
-          type: string
-        lastName:
           type: string
         memberStatus:
           type: string
         teamRole:
-          type: string
-        username:
           type: string
       type: object
     body.TeamMemberCreate:
@@ -1908,7 +1772,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.DeploymentCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.DeploymentCreate'
+                description: Deployment body
+                summary: body
         description: Deployment body
         required: true
       responses:
@@ -2053,7 +1921,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.DeploymentUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.DeploymentUpdate'
+                description: Deployment update
+                summary: body
         description: Deployment update
         required: true
       responses:
@@ -2142,7 +2014,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.DeploymentCommand'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.DeploymentCommand'
+                description: Command body
+                summary: body
         description: Command body
         required: true
       responses:
@@ -2302,7 +2178,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.GpuClaimCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.GpuClaimCreate'
+                description: GpuClaim body
+                summary: body
         description: GpuClaim body
         required: true
       responses:
@@ -2610,7 +2490,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.GpuLeaseCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.GpuLeaseCreate'
+                description: GPU lease
+                summary: body
         description: GPU lease
         required: true
       responses:
@@ -2749,7 +2633,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.GpuLeaseUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.GpuLeaseUpdate'
+                description: GPU lease
+                summary: body
         description: GPU lease
         required: true
       responses:
@@ -2796,7 +2684,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.HarborWebhook'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.HarborWebhook'
+                description: Harbor webhook body
+                summary: body
         description: Harbor webhook body
         required: true
       responses:
@@ -2999,7 +2891,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.JobUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.JobUpdate'
+                description: Job update
+                summary: body
         description: Job update
         required: true
       responses:
@@ -3164,7 +3060,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.NotificationUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.NotificationUpdate'
+                description: Notification update
+                summary: body
         description: Notification update
         required: true
       responses:
@@ -3266,7 +3166,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.ResourceMigrationCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.ResourceMigrationCreate'
+                description: Resource Migration Create
+                summary: body
         description: Resource Migration Create
         required: true
       responses:
@@ -3395,7 +3299,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.ResourceMigrationUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.ResourceMigrationUpdate'
+                description: Resource Migration Update
+                summary: body
         description: Resource Migration Update
         required: true
       responses:
@@ -3839,7 +3747,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.TeamCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.TeamCreate'
+                description: Team
+                summary: body
         description: Team
         required: true
       responses:
@@ -3955,7 +3867,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.TeamUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.TeamUpdate'
+                description: Team
+                summary: body
         description: Team
         required: true
       responses:
@@ -4092,7 +4008,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.UserUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.UserUpdate'
+                description: User update
+                summary: body
         description: User update
         required: true
       responses:
@@ -4134,7 +4054,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.ApiKeyCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.ApiKeyCreate'
+                description: API key create body
+                summary: body
         description: API key create body
         required: true
       responses:
@@ -4176,7 +4100,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.VmActionCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.VmActionCreate'
+                description: actions body
+                summary: body
         description: actions body
         required: true
       responses:
@@ -4279,7 +4207,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.VmCreate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.VmCreate'
+                description: VM body
+                summary: body
         description: VM body
         required: true
       responses:
@@ -4430,7 +4362,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/body.VmUpdate'
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/body.VmUpdate'
+                description: VM update
+                summary: body
         description: VM update
         required: true
       responses:

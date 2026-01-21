@@ -113,8 +113,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			Request: []string{gpu.Name},
 		}
 
-		if gpu.ClaimName != nil {
-			rc.ResourceClaimName = utils.StrPtr(*gpu.ClaimName)
+		if gpu.ClaimName != "" {
+			rc.ResourceClaimName = &gpu.ClaimName
 		} else {
 			// needs to have one of them
 			continue

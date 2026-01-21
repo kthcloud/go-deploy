@@ -301,12 +301,20 @@ func (g GpuClaim) ToDTO() body.GpuClaimRead {
 }
 
 func (g GpuClaim) ToBriefDTO() body.GpuClaimRead {
+	req := make(map[string]body.RequestedGpu, len(g.Requested))
+	for k, v := range g.Requested {
+		req[k] = body.RequestedGpu{
+			AllocationMode:  string(v.AllocationMode),
+			DeviceClassName: v.DeviceClassName,
+		}
+	}
 	dto := body.GpuClaimRead{
 		ID:        g.ID,
 		Name:      g.Name,
 		Zone:      g.Zone,
 		CreatedAt: g.CreatedAt,
 		UpdatedAt: g.UpdatedAt,
+		Requested: req,
 	}
 
 	return dto
