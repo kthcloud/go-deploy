@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 
 	modelConfig "github.com/kthcloud/go-deploy/models/config"
@@ -49,7 +50,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.GpuClaim, error) {
 		gcrc.WithZone(*o.Zone)
 	}
 
-	if o.Roles != nil {
+	if o.Roles != nil && !slices.Contains(*o.Roles, "admin") {
 		gcrc.WithRoles(*o.Roles)
 	}
 
@@ -123,6 +124,11 @@ func (c *Client) Delete(id string) error {
 		}
 	}
 
+	// TODO: cascade references, schedule update jobs that remove the gpuClaim requests.
+	/*depls, err := c.V2.Deployments().List(deploymentOpts.ListOpts{
+		GpuClaim: claim.Name,
+	})*/
+
 	err = k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeErr(err)
@@ -160,6 +166,7 @@ func (c *Client) Update(id string, params *model.GpuClaimUpdateParams) error {
 	}
 
 	if needsK8sUpdate {
+		// TODO: impl update for k8s
 	}
 
 	return nil

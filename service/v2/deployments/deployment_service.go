@@ -130,6 +130,14 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 		drc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
+	if o.GpuClaimName != nil {
+		if o.GpuClaimRequest != nil {
+			drc.WithGpuClaimRequest(*o.GpuClaimName, *o.GpuClaimRequest)
+		} else {
+			drc.WithGpuClaim(*o.GpuClaimName)
+		}
+	}
+
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's deployments are requested

@@ -80,16 +80,9 @@ func (client *Client) WithRoles(roles []string) *Client {
 		{
 			Key: "$or",
 			Value: bson.A{
-				bson.M{
-					"rolesAllowed": bson.M{
-						"$exists": false,
-					},
-				},
-				bson.M{
-					"rolesAllowed": bson.M{
-						"$in": roles,
-					},
-				},
+				bson.M{"allowedRoles": bson.M{"$exists": false}},
+				bson.M{"allowedRoles": bson.M{"$size": 0}},
+				bson.M{"allowedRoles": bson.M{"$in": roles}},
 			},
 		},
 	}

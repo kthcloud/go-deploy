@@ -29,6 +29,8 @@ type ListOpts struct {
 	GitHubWebhookID *int64
 	UserID          *string
 	Shared          bool
+	GpuClaimName    *string
+	GpuClaimRequest *string
 }
 
 // GetOpts is used to specify the options when getting a deployment.

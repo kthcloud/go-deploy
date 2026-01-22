@@ -17,9 +17,10 @@ func (client *Client) Create(id string, params *model.GpuClaimCreateParams) erro
 	}
 
 	claim := model.GpuClaim{
-		ID:   id,
-		Name: params.Name,
-		Zone: params.Zone,
+		ID:           id,
+		Name:         params.Name,
+		Zone:         params.Zone,
+		AllowedRoles: params.AllowedRoles,
 		Requested: convutils.ToNameMap(params.Requested, func(r model.RequestedGpuCreate) string { return r.Name }, func(r model.RequestedGpuCreate) model.RequestedGpu {
 			return r.RequestedGpu
 		}),
