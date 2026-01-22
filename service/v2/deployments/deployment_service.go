@@ -251,6 +251,19 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		return sErrors.NewZoneCapabilityMissingError(params.Zone, configModels.ZoneCapabilityDeployment)
 	}
 
+	if len(params.GPUs) > 0 {
+		if !c.V2.System().ZoneHasCapability(params.Zone, configModels.ZoneCapabilityDRA) {
+			return sErrors.NewZoneCapabilityMissingError(params.Zone, configModels.ZoneCapabilityDRA)
+		}
+
+		// TODO: get the roles of the user to verify that the claims exist
+		/*var roles = make([]string, 0, 2)
+
+		c.V2.GpuClaims().List(gpuClaimOpts.List{
+			Roles:
+		})*/
+	}
+
 	deployment, err := deployment_repo.New().Create(id, ownerID, params)
 	if err != nil {
 		if errors.Is(err, rErrors.ErrNonUniqueField) {

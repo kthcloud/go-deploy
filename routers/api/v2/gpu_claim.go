@@ -1,8 +1,6 @@
 package v2
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -48,6 +46,11 @@ func GetGpuClaim(c *gin.Context) {
 		return
 	}
 
+	if auth.User == nil || !auth.User.IsAdmin {
+		context.Forbidden("User is not allowed to get GpuClaim")
+		return
+	}
+
 	deployV2 := service.V2(auth)
 
 	GpuClaim, err := deployV2.GpuClaims().Get(requestURI.GpuClaimID)
@@ -57,11 +60,6 @@ func GetGpuClaim(c *gin.Context) {
 	}
 
 	if GpuClaim == nil {
-		context.NotFound("GPU claim not found")
-		return
-	}
-
-	if !auth.User.IsAdmin && !GpuClaim.HasAccess(auth.User.EffectiveRole.Name) {
 		context.NotFound("GPU claim not found")
 		return
 	}
@@ -110,10 +108,19 @@ func ListGpuClaims(c *gin.Context) {
 		context.ErrorResponse(http.StatusForbidden, 403, "only admins can access detailed view of gpu claims")
 	}
 
+	roles := make([]string, 0, 2)
+	if role := auth.GetEffectiveRole(); role != nil {
+		roles = append(roles, role.Name)
+	}
+	if auth.User.IsAdmin {
+		roles = append(roles, "admin")
+	}
+
 	deployV2 := service.V2(auth)
 
 	GpuClaims, err := deployV2.GpuClaims().List(opts.ListOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
+		Roles:      &roles,
 	})
 	if err != nil {
 		context.ServerError(err, ErrInternal)
@@ -125,19 +132,12 @@ func ListGpuClaims(c *gin.Context) {
 		return
 	}
 
-	roles := make([]string, 0, 1)
-	if auth.User != nil && auth.User.EffectiveRole.Name != "" {
-		roles = append(roles, auth.User.EffectiveRole.Name)
-	}
-
 	dtoGpuClaims := make([]body.GpuClaimRead, len(GpuClaims))
 	for i, GpuClaim := range GpuClaims {
-		if auth.User.IsAdmin || GpuClaim.HasAccess(roles...) {
-			if requestQuery.Detailed {
-				dtoGpuClaims[i] = GpuClaim.ToDTO()
-			} else {
-				dtoGpuClaims[i] = GpuClaim.ToBriefDTO()
-			}
+		if requestQuery.Detailed {
+			dtoGpuClaims[i] = GpuClaim.ToDTO()
+		} else {
+			dtoGpuClaims[i] = GpuClaim.ToBriefDTO()
 		}
 	}
 
@@ -166,13 +166,6 @@ func CreateGpuClaim(c *gin.Context) {
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
-	}
-
-	// TODO: this should be removed
-	if pretty, err := json.MarshalIndent(requestBody, "", "  "); err == nil {
-		fmt.Println(string(pretty))
-	} else {
-		fmt.Println("failed to pretty-print:", err)
 	}
 
 	auth, err := WithAuth(&context)

@@ -2,6 +2,9 @@ package v2
 
 import (
 	"errors"
+	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -16,8 +19,11 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/sys"
 	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	gpuClaimOpts "github.com/kthcloud/go-deploy/service/v2/gpu_claims/opts"
 	teamOpts "github.com/kthcloud/go-deploy/service/v2/teams/opts"
 	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
 )
@@ -198,6 +204,10 @@ func CreateDeployment(c *gin.Context) {
 		}
 	}
 
+	if requestBody.Zone == nil {
+		requestBody.Zone = &config.Config.Deployment.DefaultZone
+	}
+
 	if requestBody.Zone != nil {
 		zone := deployV2.System().GetZone(*requestBody.Zone)
 		if zone == nil {
@@ -230,6 +240,19 @@ func CreateDeployment(c *gin.Context) {
 
 	if requestBody.NeverStale && !auth.User.IsAdmin {
 		context.Forbidden("User is not allowed to create deployment with neverStale attribute set as true")
+		return
+	}
+
+	if err := validateGpuRequests(&requestBody.GPUs, *requestBody.Zone, auth, deployV2); err != nil {
+		if errors.Is(err, ErrCouldNotGetGpuClaims) {
+			context.ServerError(err, ErrCouldNotGetGpuClaims)
+			return
+		}
+		if errors.Is(err, sErrors.NewZoneCapabilityMissingError(*requestBody.Zone, configModels.ZoneCapabilityDRA)) {
+			context.Forbidden("Zone lacks DRA capability")
+			return
+		}
+		context.UserError(err.Error())
 		return
 	}
 
@@ -409,18 +432,17 @@ func UpdateDeployment(c *gin.Context) {
 		}
 	}
 
-	if requestBody.GPUs != nil {
-		for _, gpu := range *requestBody.GPUs {
-			if strings.TrimSpace(gpu.ClaimName) == "" || strings.TrimSpace(gpu.Name) == "" {
-				context.UserError("Invalid gpu claim reference, requires both ClaimName and Name")
-				return
-			}
-		}
-
-		if !deployV2.System().ZoneHasCapability(deployment.Zone, configModels.ZoneCapabilityDRA) {
-			context.Forbidden("Zone does not have dra capability")
+	if err := validateGpuRequests(requestBody.GPUs, deployment.Zone, auth, deployV2); err != nil {
+		if errors.Is(err, ErrCouldNotGetGpuClaims) {
+			context.ServerError(err, ErrCouldNotGetGpuClaims)
 			return
 		}
+		if errors.Is(err, sErrors.NewZoneCapabilityMissingError(deployment.Zone, configModels.ZoneCapabilityDRA)) {
+			context.Forbidden("Zone lacks DRA capability")
+			return
+		}
+		context.UserError(err.Error())
+		return
 	}
 
 	if requestBody.NeverStale != nil && !auth.User.IsAdmin {
@@ -461,6 +483,87 @@ func UpdateDeployment(c *gin.Context) {
 		ID:    deployment.ID,
 		JobID: &jobID,
 	})
+}
+
+func validateGpuRequests(gpus *[]body.DeploymentGPU, zone string, auth *core.AuthInfo, deployV2 clients.V2) error {
+	if gpus != nil {
+		if len(*gpus) > 0 {
+
+			if !deployV2.System().ZoneHasCapability(zone, configModels.ZoneCapabilityDRA) {
+				return sErrors.NewZoneCapabilityMissingError(zone, configModels.ZoneCapabilityDRA)
+			}
+
+			roles := make([]string, 0, 2)
+			if role := auth.GetEffectiveRole(); role != nil {
+				roles = append(roles, role.Name)
+			}
+			if auth.User != nil && auth.User.IsAdmin {
+				roles = append(roles, "admin")
+			}
+			claimReqMap := make(map[string][]string, len(*gpus))
+			for _, gpu := range *gpus {
+				if reqs, found := claimReqMap[gpu.ClaimName]; found {
+					claimReqMap[gpu.ClaimName] = append(reqs, gpu.Name)
+				} else {
+					claimReqMap[gpu.ClaimName] = []string{gpu.Name}
+				}
+			}
+			names := slices.AppendSeq(make([]string, 0, len(claimReqMap)), maps.Keys(claimReqMap))
+			claims, err := deployV2.GpuClaims().List(gpuClaimOpts.ListOpts{
+				Names: &names,
+				Zone:  &zone,
+				Roles: &roles,
+			})
+			if err != nil {
+				return errors.Join(err, ErrCouldNotGetGpuClaims)
+			}
+			availableClaimReqMap := make(map[string][]string, len(claims))
+			for _, claim := range claims {
+				if reqs, found := availableClaimReqMap[claim.Name]; found {
+					availableClaimReqMap[claim.Name] = append(reqs, slices.AppendSeq(make([]string, 0, len(claim.Requested)), maps.Keys(claim.Requested))...)
+				} else {
+					availableClaimReqMap[claim.Name] = slices.AppendSeq(make([]string, 0, len(claim.Requested)), maps.Keys(claim.Requested))
+				}
+			}
+			missingClaims := make([]string, 0)
+			missingRequests := make([]string, 0)
+			for claimName, reqsName := range claimReqMap {
+				if availableReqs, found := availableClaimReqMap[claimName]; found {
+					for _, req := range reqsName {
+						if !slices.Contains(availableReqs, req) {
+							missingRequests = append(missingRequests,
+								fmt.Sprintf("%s:%s", claimName, req),
+							)
+						}
+					}
+				} else {
+					missingClaims = append(missingClaims, claimName)
+				}
+			}
+			var errs []error
+
+			if len(missingClaims) > 0 {
+				for _, c := range missingClaims {
+					errs = append(errs,
+						fmt.Errorf("missing GPU claim: %s", c),
+					)
+				}
+			}
+
+			if len(missingRequests) > 0 {
+				for _, r := range missingRequests {
+					errs = append(errs,
+						fmt.Errorf("missing GPU request in claim: %s", r),
+					)
+				}
+			}
+
+			if len(errs) > 0 {
+				return errors.Join(errs...)
+			}
+		}
+	}
+	return nil
 }
 
 func getDeploymentExternalPort(zoneName string) *int {

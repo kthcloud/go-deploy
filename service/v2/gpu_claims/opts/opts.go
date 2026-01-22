@@ -24,8 +24,10 @@ type ExtraOpts struct {
 type ListOpts struct {
 	Pagination *utils.Pagination
 	All        bool
+	Roles      *[]string
+	Zone       *string
+	Names      *[]string
 }
 
 // GetOpts is used to specify the options when getting a gpu claim.
-type GetOpts struct {
-}
+type GetOpts struct{}

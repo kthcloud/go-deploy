@@ -143,6 +143,9 @@ func jobMapper() map[string]map[string]JobDefinition {
 		model.JobDeleteGpuClaim: {
 			JobFunc: v2.DeleteGpuClaim,
 		},
+		model.JobUpdateGpuClaim: {
+			JobFunc: v2.UpdateGpuClaim,
+		},
 	}
 
 	return map[string]map[string]JobDefinition{

@@ -166,8 +166,7 @@ type Snapshots interface {
 	Apply(vmID, id string) error
 }
 
-type GPUs interface {
-}
+type GPUs interface{}
 
 type GpuLeases interface {
 	Get(id string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
@@ -210,6 +209,7 @@ type GpuClaims interface {
 	List(opts ...gpuClaimOpts.ListOpts) ([]model.GpuClaim, error)
 	Create(id string, gpuClaimsCreateParams *model.GpuClaimCreateParams) error
 	Delete(id string) error
+	Update(id string, gpuClaimsUpdateParams *model.GpuClaimUpdateParams) error
 
 	K8s() *gpuClaimsK8sService.Client
 }

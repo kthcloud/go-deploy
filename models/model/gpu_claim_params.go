@@ -6,8 +6,7 @@ type GpuClaimCreateParams struct {
 
 	Requested []RequestedGpuCreate `json:"requested" bson:"requested"`
 
-	// TODO: add rbac
-	//AllowedRoles []string `bson:"allowedRoles,omitempty"`
+	AllowedRoles []string `bson:"allowedRoles,omitempty"`
 }
 
 type GpuClaimUpdateParams struct {
@@ -16,6 +15,5 @@ type GpuClaimUpdateParams struct {
 
 	Requested *[]RequestedGpuCreate `json:"requested" bson:"requested"`
 
-	// TODO: add rbac
-	//AllowedRoles []string `bson:"allowedRoles,omitempty"`
+	AllowedRoles *[]string `bson:"allowedRoles,omitempty"`
 }

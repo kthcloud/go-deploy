@@ -73,6 +73,48 @@ func (client *Client) WithNoActivities() *Client {
 	return client
 }
 
+// WithRoles adds a filter to only get GpuClaims where there are no role requirements
+// or the allowedRoles contains any of the provided role values.
+func (client *Client) WithRoles(roles []string) *Client {
+	filter := bson.D{
+		{
+			Key: "$or",
+			Value: bson.A{
+				bson.M{
+					"rolesAllowed": bson.M{
+						"$exists": false,
+					},
+				},
+				bson.M{
+					"rolesAllowed": bson.M{
+						"$in": roles,
+					},
+				},
+			},
+		},
+	}
+
+	client.ResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+// WithNames adds a filter to match name to one of the provided names
+func (client *Client) WithNames(names []string) *Client {
+	filter := bson.D{
+		{
+			Key: "name",
+			Value: bson.M{
+				"$in": names,
+			},
+		},
+	}
+
+	client.ResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
 // IncludeDeletedResources makes the client include deleted gpu claims.
 func (client *Client) IncludeDeletedResources() *Client {
 	client.ResourceClient.IncludeDeleted = true

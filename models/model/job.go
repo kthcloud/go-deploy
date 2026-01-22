@@ -52,6 +52,8 @@ const (
 	JobCreateGpuClaim = "createGpuClaim"
 	// JobCreateGpuClaim is used when deleting a gpu claim.
 	JobDeleteGpuClaim = "deleteGpuClaim"
+	// JobUpdateGpuClaim is used when updating a gpu claim
+	JobUpdateGpuClaim = "updateGpuClaim"
 )
 
 const (
