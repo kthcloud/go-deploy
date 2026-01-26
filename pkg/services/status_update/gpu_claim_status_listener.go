@@ -17,7 +17,7 @@ import (
 
 func GpuClaimStatusListener(ctx context.Context) error {
 	for _, zone := range config.Config.EnabledZones() {
-		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) {
+		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) && !zone.HasCapability(configModels.ZoneCapabilityDRA) {
 			continue
 		}
 
@@ -25,7 +25,6 @@ func GpuClaimStatusListener(ctx context.Context) error {
 
 		z := zone
 		err := k8s_service.New().SetupResourceClaimWatcher(ctx, &z, func(name string, status models.ResourceClaimStatus, action string) {
-
 			log.Println("New gpu claim event!")
 
 			err := gpu_claim_repo.New().ReconcileStateByName(name,
@@ -38,7 +37,6 @@ func GpuClaimStatusListener(ctx context.Context) error {
 				log.Println("Failed to set reconcile state for gpu claim", name, "details:", err)
 				return
 			}
-
 		})
 		if err != nil {
 			return fmt.Errorf("failed to set up gpu claim state reconciler for zone %s. details: %w", zone.Name, err)
@@ -60,7 +58,7 @@ func parseGpuClaimStatus(status models.ResourceClaimStatus) *model.GpuClaimStatu
 }
 
 func convertGpuClaimConsumers(consumers []models.ResourceClaimConsumerPublic) []model.GpuClaimConsumer {
-	var res = make([]model.GpuClaimConsumer, len(consumers))
+	res := make([]model.GpuClaimConsumer, len(consumers))
 	for i, consumer := range consumers {
 		res[i] = model.GpuClaimConsumer{
 			APIGroup: consumer.APIGroup,
@@ -73,7 +71,7 @@ func convertGpuClaimConsumers(consumers []models.ResourceClaimConsumerPublic) []
 }
 
 func convertGpuClaimAllocations(allocations []models.ResourceClaimAllocationResultPublic) map[string][]model.AllocatedGpu {
-	var res = make(map[string][]model.AllocatedGpu)
+	res := make(map[string][]model.AllocatedGpu)
 	for _, alloc := range allocations {
 		res[alloc.Request] = append(res[alloc.Request], model.AllocatedGpu{
 			Pool:        alloc.Pool,

@@ -3,19 +3,24 @@ package gpu_claims
 import (
 	"errors"
 	"fmt"
-	"log"
 	"slices"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
 	modelConfig "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_claim_repo"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra/nvidia"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	serviceUtils "github.com/kthcloud/go-deploy/service/utils"
+	deploymentOpts "github.com/kthcloud/go-deploy/service/v2/deployments/opts"
 	"github.com/kthcloud/go-deploy/service/v2/gpu_claims/k8s_service"
 	"github.com/kthcloud/go-deploy/service/v2/gpu_claims/opts"
+
+	"github.com/kthcloud/go-deploy/pkg/log"
 )
 
 // Get detailed gpu claims
@@ -107,6 +112,7 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 }
 
 // Delete deletes an existing gpu claim
+// It will best effort delete references to the claim from deployments.
 func (c *Client) Delete(id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to delete gpu claim. details: %w", err)
@@ -124,10 +130,48 @@ func (c *Client) Delete(id string) error {
 		}
 	}
 
-	// TODO: cascade references, schedule update jobs that remove the gpuClaim requests.
-	/*depls, err := c.V2.Deployments().List(deploymentOpts.ListOpts{
-		GpuClaim: claim.Name,
-	})*/
+	// Best effort remove references to the resourceClaims when deleting the claim
+	// We do this because otherwise the pods of the deployment will be struck on
+	// creating when the claims are removed from k8s.
+	depls, err := c.V2.Deployments().List(deploymentOpts.ListOpts{
+		GpuClaimName: &claim.Name,
+	})
+	if err != nil {
+		log.Warnf("Could not cascade references to resourceclaim, err: %s", err.Error())
+	}
+	if len(depls) > 0 {
+		for _, depl := range depls {
+			mainApp := depl.GetMainApp()
+			gpusToKeep := make([]body.DeploymentGPU, 0, len(mainApp.GPUs))
+
+			for _, gpu := range mainApp.GPUs {
+				if gpu.ClaimName != claim.Name {
+					gpusToKeep = append(gpusToKeep, body.DeploymentGPU{
+						Name:      gpu.Name,
+						ClaimName: gpu.ClaimName,
+					})
+				}
+			}
+
+			update := body.DeploymentUpdate{
+				GPUs: &gpusToKeep,
+			}
+
+			jobUUID, err := uuid.NewRandom()
+			if err != nil {
+				log.Errorf("Could not generate uuid v4 for update job, err: %s", err.Error())
+				continue
+			}
+			if err := c.V2.Jobs().Create(jobUUID.String(), depl.OwnerID, model.JobUpdateDeployment, version.V2, map[string]any{
+				"id":     depl.ID,
+				"params": update,
+			}); err != nil {
+				log.Warnf("Could not create update job for deployment: %s, reason: %s", depl.ID, err)
+				continue
+			}
+
+		}
+	}
 
 	err = k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
@@ -158,7 +202,7 @@ func (c *Client) Update(id string, params *model.GpuClaimUpdateParams) error {
 	}
 
 	// Prevent unneccesary k8s updates
-	var needsK8sUpdate bool = false
+	needsK8sUpdate := false
 	if params.Name != nil && *params.Name != claim.Name || params.Zone != nil && *params.Zone != claim.Zone {
 		needsK8sUpdate = true
 	} else if params.Requested != nil && requestDiff(*params.Requested, claim.Requested) {

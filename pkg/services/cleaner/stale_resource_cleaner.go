@@ -64,7 +64,6 @@ func staleResourceCleaner() error {
 		err = service.V2().VMs().DoAction(vm.ID, &bodyV2.VmActionCreate{
 			Action: model.ActionStop,
 		})
-
 		if err != nil {
 			return err
 		}
