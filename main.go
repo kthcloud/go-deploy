@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/kthcloud/go-deploy/cmd"
 )
@@ -28,6 +31,9 @@ import (
 // @Name Authorization
 func main() {
 	options := cmd.ParseFlags()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	options.Ctx = ctx
 
 	deployApp := cmd.Create(options)
 	if deployApp == nil {
@@ -35,6 +41,5 @@ func main() {
 	}
 	defer deployApp.Stop()
 
-	quit := make(chan os.Signal)
-	<-quit
+	<-ctx.Done()
 }
