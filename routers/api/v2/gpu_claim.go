@@ -153,7 +153,7 @@ func ListGpuClaims(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param body body body.GpuClaimCreate true "GpuClaim body"
-// @Success 200 {object} body.GpuClaimRead
+// @Success 200 {object} body.GpuClaimCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 403 {object} sys.ErrorResponse
