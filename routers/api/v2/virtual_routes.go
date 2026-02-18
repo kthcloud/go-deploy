@@ -10,7 +10,7 @@ import "github.com/gin-gonic/gin"
 // @Summary Get metrics
 // @Description Get metrics
 // @Tags Metrics
-// @Produce  json
+// @Produce json
 // @Success 200 {object}  string
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/metrics [get]

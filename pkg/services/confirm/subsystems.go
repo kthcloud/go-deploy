@@ -25,6 +25,13 @@ func getVmDeletedConfirmers() []func(*model.VM) (bool, error) {
 	}
 }
 
+// getGCDeletedConfirmers gets the confirmers for GC deletion.
+func getGCDeletedConfirmers() []func(*model.GpuClaim) (bool, error) {
+	return []func(*model.GpuClaim) (bool, error){
+		k8sDeletedGC,
+	}
+}
+
 // DeploymentDeleted checks if the deployment is deleted by checking all confirmers.
 func DeploymentDeleted(deployment *model.Deployment) bool {
 	confirmers := getDeploymentDeletedConfirmers()
@@ -54,6 +61,18 @@ func VmDeleted(vm *model.VM) bool {
 	confirmers := getVmDeletedConfirmers()
 	for _, confirmer := range confirmers {
 		deleted, _ := confirmer(vm)
+		if !deleted {
+			return false
+		}
+	}
+	return true
+}
+
+// GCDeleted checks if the GC is deleted by checking all confirmers.
+func GCDeleted(gc *model.GpuClaim) bool {
+	confirmers := getGCDeletedConfirmers()
+	for _, confirmer := range confirmers {
+		deleted, _ := confirmer(gc)
 		if !deleted {
 			return false
 		}

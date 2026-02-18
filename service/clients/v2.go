@@ -20,4 +20,5 @@ type V2 interface {
 	ResourceMigrations() apiV2.ResourceMigrations
 	System() apiV2.System
 	VMs() apiV2.VMs
+	GpuClaims() apiV2.GpuClaims
 }

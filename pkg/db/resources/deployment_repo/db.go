@@ -39,6 +39,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		CpuCores: params.CpuCores,
 		RAM:      params.RAM,
 		Replicas: params.Replicas,
+		GPUs:     params.GPUs,
 
 		Image:         params.Image,
 		InternalPort:  params.InternalPort,
@@ -144,6 +145,7 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "apps.main.cpuCores", params.CpuCores)
 	db.AddIfNotNil(&setUpdate, "apps.main.ram", params.RAM)
 	db.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
+	db.AddIfNotNil(&setUpdate, "apps.main.gpus", params.GPUs)
 	db.AddIfNotNil(&setUpdate, "apps.main.visibility", params.Visibility)
 	db.AddIfNotNil(&setUpdate, "neverStale", params.NeverStale)
 
@@ -250,6 +252,7 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 		{Key: "apps.main.replicas", Value: 1},
 		{Key: "apps.main.cpuCores", Value: 1},
 		{Key: "apps.main.ram", Value: 1},
+		{Key: "apps.main.gpus", Value: 1},
 	}
 
 	deployments, err := client.ListWithFilterAndProjection(bson.D{}, projection)
@@ -263,6 +266,9 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 		for _, app := range deployment.Apps {
 			usage.CpuCores += app.CpuCores * float64(app.Replicas)
 			usage.RAM += app.RAM * float64(app.Replicas)
+			if app.GPUs != nil {
+				usage.Gpus += len(app.GPUs) * app.Replicas
+			}
 		}
 	}
 

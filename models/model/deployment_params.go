@@ -7,6 +7,7 @@ type DeploymentCreateParams struct {
 	CpuCores float64
 	RAM      float64
 	Replicas int
+	GPUs     []DeploymentGPU
 
 	Image         string
 	InternalPort  int
@@ -30,6 +31,7 @@ type DeploymentUpdateParams struct {
 
 	CpuCores *float64
 	RAM      *float64
+	GPUs     *[]DeploymentGPU
 
 	Envs          *[]DeploymentEnv
 	InternalPort  *int

@@ -13,7 +13,7 @@ import (
 // @Summary List system capacities
 // @Description List system capacities
 // @Tags System
-// @Produce  json
+// @Produce json
 // @Param n query int false "n"
 // @Success 200 {array} body.TimestampedSystemCapacities
 // @Failure 400 {object} body.BindingError
@@ -46,7 +46,7 @@ func ListSystemCapacities(c *gin.Context) {
 // @Summary List system stats
 // @Description List system stats
 // @Tags System
-// @Produce  json
+// @Produce json
 // @Param n query int false "n"
 // @Success 200 {array} body.TimestampedSystemStats
 // @Failure 400 {object} body.BindingError
@@ -79,7 +79,7 @@ func ListSystemStats(c *gin.Context) {
 // @Summary List system stats
 // @Description List system stats
 // @Tags System
-// @Produce  json
+// @Produce json
 // @Param n query int false "n"
 // @Success 200 {array} body.TimestampedSystemStatus
 // @Failure 400 {object} body.BindingError

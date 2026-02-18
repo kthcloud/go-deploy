@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -8,13 +9,16 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/utils"
+	"github.com/kthcloud/go-deploy/utils/hashutils"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	resourcev1 "k8s.io/api/resource/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	snapshotalpha1 "kubevirt.io/api/snapshot/v1alpha1"
@@ -62,8 +66,8 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 		}
 	}
 
-	volumes := make([]apiv1.Volume, 0)
-	usedNames := make(map[string]bool)
+	volumes := make([]apiv1.Volume, 0, len(public.Volumes))
+	usedNames := make(map[string]bool, len(public.Volumes))
 	for _, volume := range public.Volumes {
 		if usedNames[volume.Name] {
 			continue
@@ -102,6 +106,61 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			normalContainerMounts = append(normalContainerMounts, apiv1.VolumeMount{
 				Name:      volume.Name,
 				MountPath: volume.MountPath,
+			})
+		}
+	}
+
+	resourceClaims := make([]apiv1.PodResourceClaim, 0, len(public.ResourceClaims))
+	usedResourceClaimName := make(map[string]bool, len(public.ResourceClaims))
+	for _, resourceClaim := range public.ResourceClaims {
+		if usedResourceClaimName[resourceClaim.Name] {
+			continue
+		}
+		usedResourceClaimName[resourceClaim.Name] = true
+
+		rc := apiv1.PodResourceClaim{
+			Name: resourceClaim.Name,
+		}
+
+		if resourceClaim.ResourceClaimTemplateName != nil {
+			rc.ResourceClaimTemplateName = utils.StrPtr(*resourceClaim.ResourceClaimTemplateName)
+		} else if resourceClaim.ResourceClaimName != nil {
+			rc.ResourceClaimName = utils.StrPtr(*resourceClaim.ResourceClaimName)
+		} else {
+			continue
+		}
+
+		resourceClaims = append(resourceClaims, rc)
+	}
+
+	tolerations := make([]apiv1.Toleration, 0, len(public.Tolerations))
+	for _, toleration := range public.Tolerations {
+		tolerations = append(tolerations, apiv1.Toleration{
+			Key:      toleration.Key,
+			Operator: apiv1.TolerationOperator(toleration.Operator),
+			Effect:   apiv1.TaintEffect(toleration.Effect),
+		})
+	}
+
+	// Add toleration if there is a resourceclaim
+	// TODO: make this more dynamic
+	if len(resourceClaims) > 0 && len(tolerations) < 1 {
+		tolerations = append(tolerations, apiv1.Toleration{
+			Key:      "nvidia.com/gpu",
+			Operator: apiv1.TolerationOperator("Exists"),
+			Effect:   apiv1.TaintEffect("NoSchedule"),
+		})
+	}
+
+	// will most likely have only one req per claim, thus we allocate that size
+	// on the off-chance we need more, we can accept the extra time needed to expand
+	resourceClaimUsages := make([]apiv1.ResourceClaim, 0, len(public.ResourceClaims))
+
+	for _, claim := range public.ResourceClaims {
+		for _, req := range claim.Request {
+			resourceClaimUsages = append(resourceClaimUsages, apiv1.ResourceClaim{
+				Name:    claim.Name,
+				Request: req,
 			})
 		}
 	}
@@ -161,7 +220,9 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 					},
 				},
 				Spec: apiv1.PodSpec{
-					Volumes: volumes,
+					Volumes:        volumes,
+					ResourceClaims: resourceClaims,
+					Tolerations:    tolerations,
 					Containers: []apiv1.Container{
 						{
 							Name:    public.Name,
@@ -172,6 +233,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 							Resources: apiv1.ResourceRequirements{
 								Limits:   limits,
 								Requests: requests,
+								Claims:   resourceClaimUsages,
 							},
 							Lifecycle:    lifecycle,
 							VolumeMounts: normalContainerMounts,
@@ -784,6 +846,135 @@ func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networking
 			},
 			Egress:  egressRules,
 			Ingress: ingressRules,
+		},
+	}
+}
+
+func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1.ResourceClaim {
+
+	var deviceClaim resourcev1.DeviceClaim = resourcev1.DeviceClaim{
+		Requests: make([]resourcev1.DeviceRequest, 0, len(public.DeviceRequests)),
+		// TODO: add constraints
+		//Constraints: []resourcev1.DeviceConstraint{},
+		Config: make([]resourcev1.DeviceClaimConfiguration, 0, len(public.DeviceRequests)),
+	}
+
+	cfgReqMap := make(map[string][]string, len(public.DeviceRequests))
+	for _, req := range public.DeviceRequests {
+		if req.Config != nil {
+
+			raw, err := json.Marshal(req.Config.Parameters)
+			if err != nil {
+				// TODO: handle somwhow
+				continue
+			}
+			dcc := resourcev1.DeviceClaimConfiguration{
+				DeviceConfiguration: resourcev1.DeviceConfiguration{
+					Opaque: &resourcev1.OpaqueDeviceConfiguration{
+						Driver: req.Config.Driver,
+						Parameters: runtime.RawExtension{
+							Raw: raw,
+							// TODO: test if this is needed
+							//Object: req.Config.Parameters,
+						},
+					},
+				},
+			}
+
+			key, _ := hashutils.HashDeterministicJSON(dcc.DeviceConfiguration)
+			if strings.TrimSpace(key) == "" {
+				continue
+			}
+			if v, found := cfgReqMap[key]; found {
+				cfgReqMap[key] = append(v, req.Name)
+				// already present
+				continue
+			} else {
+				cfgReqMap[key] = []string{req.Name}
+			}
+
+			deviceClaim.Config = append(deviceClaim.Config, dcc)
+		}
+
+		var dr resourcev1.DeviceRequest
+
+		dr.Name = req.Name
+
+		if req.RequestsExactly != nil {
+			dr.Exactly = &resourcev1.ExactDeviceRequest{
+				DeviceClassName: req.RequestsExactly.DeviceClassName,
+				AllocationMode:  resourcev1.DeviceAllocationMode(req.RequestsExactly.AllocationMode),
+				Count:           req.RequestsExactly.Count,
+				AdminAccess:     req.RequestsExactly.AdminAccess,
+				Capacity: &resourcev1.CapacityRequirements{
+					Requests: req.RequestsExactly.CapacityRequests,
+				},
+				// TODO: add tolerations
+			}
+			for _, sel := range req.RequestsExactly.SelectorCelExprs {
+				dr.Exactly.Selectors = append(dr.Exactly.Selectors, resourcev1.DeviceSelector{
+					CEL: &resourcev1.CELDeviceSelector{
+						Expression: sel,
+					},
+				})
+			}
+		}
+
+		if len(req.RequestsFirstAvaliable) > 0 {
+			for _, fa := range req.RequestsFirstAvaliable {
+				dsr := resourcev1.DeviceSubRequest{
+					DeviceClassName: fa.DeviceClassName,
+					AllocationMode:  resourcev1.DeviceAllocationMode(fa.AllocationMode),
+					Count:           fa.Count,
+					Capacity: &resourcev1.CapacityRequirements{
+						Requests: fa.CapacityRequests,
+					},
+					// TODO: add tolerations
+				}
+				for _, sel := range fa.SelectorCelExprs {
+					dsr.Selectors = append(dsr.Selectors, resourcev1.DeviceSelector{
+						CEL: &resourcev1.CELDeviceSelector{
+							Expression: sel,
+						},
+					})
+				}
+				dr.FirstAvailable = append(dr.FirstAvailable, dsr)
+			}
+		}
+
+		deviceClaim.Requests = append(deviceClaim.Requests, dr)
+	}
+
+	for i, cfg := range deviceClaim.Config {
+		if cfg.Opaque == nil {
+			continue
+		}
+		key, _ := hashutils.HashDeterministicJSON(cfg.DeviceConfiguration)
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		if v, found := cfgReqMap[key]; found {
+			deviceClaim.Config[i].Requests = v
+		} else {
+			// Public input contains a config without any requests,
+			// just leave it in for now, k8s will probably return error for it
+			// TODO: check this behavior
+		}
+	}
+
+	return &resourcev1.ResourceClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.LabelDeployName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Spec: resourcev1.ResourceClaimSpec{
+			Devices: deviceClaim,
 		},
 	}
 }

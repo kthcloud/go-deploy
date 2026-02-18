@@ -13,7 +13,7 @@ import (
 // @Summary List Hosts
 // @Description List Hosts
 // @Tags Host
-// @Produce  json
+// @Produce json
 // @Success 200 {array} body.HostRead
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/hosts [get]
@@ -35,7 +35,7 @@ func ListHosts(c *gin.Context) {
 // @Summary List Hosts verbose
 // @Description List Hosts verbose
 // @Tags Host
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Success 200 {array} body.HostVerboseRead

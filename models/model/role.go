@@ -1,9 +1,10 @@
 package model
 
 import (
+	"sort"
+
 	"github.com/fatih/structs"
 	body2 "github.com/kthcloud/go-deploy/dto/v2/body"
-	"sort"
 )
 
 type Role struct {
@@ -23,6 +24,11 @@ func (r *Role) ToDTO(includeQuota bool) body2.Role {
 		if ok && hasPermission {
 			permissions = append(permissions, name)
 		}
+	}
+
+	// If we dont explicitly disallow it they have the perm
+	if r.Permissions.UseVms == nil {
+		permissions = append(permissions, "useVms")
 	}
 
 	var quota *body2.Quota

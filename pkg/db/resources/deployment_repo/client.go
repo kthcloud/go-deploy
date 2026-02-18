@@ -199,3 +199,44 @@ func (client *Client) Disabled() *Client {
 
 	return client
 }
+
+// WithGpuClaim adds a filter to the client to only include deployments where the provided gpuClaim is referenced.
+func (client *Client) WithGpuClaim(claimName string) *Client {
+	filter := bson.D{
+		{
+			Key: "gpus",
+			Value: bson.D{
+				{
+					Key: "$elemMatch",
+					Value: bson.D{
+						{Key: "claimName", Value: claimName},
+					},
+				},
+			},
+		},
+	}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	return client
+}
+
+// WithGpuClaim adds a filter to the client to only include deployments where the provided gpuClaim and request is referenced.
+func (client *Client) WithGpuClaimRequest(claimName string, request string) *Client {
+	filter := bson.D{
+		{
+			Key: "gpus",
+			Value: bson.D{
+				{
+					Key: "$elemMatch",
+					Value: bson.D{
+						{Key: "claimName", Value: claimName},
+						{Key: "name", Value: request},
+					},
+				},
+			},
+		},
+	}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	return client
+}

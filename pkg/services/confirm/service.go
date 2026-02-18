@@ -2,6 +2,7 @@ package confirm
 
 import (
 	"context"
+
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/services"
@@ -16,4 +17,5 @@ func Setup(ctx context.Context) {
 	go services.PeriodicWorker(ctx, "smDeletionConfirmer", SmDeletionConfirmer, config.Config.Timer.SmDeletionConfirm)
 	go services.PeriodicWorker(ctx, "vmDeletionConfirmer", VmDeletionConfirmer, config.Config.Timer.VmDeletionConfirm)
 	go services.PeriodicWorker(ctx, "customDomainConfirmer", CustomDomainConfirmer, config.Config.Timer.CustomDomainConfirm)
+	go services.PeriodicWorker(ctx, "gpClaimDeletionConfirmer", GcDeletionConfirmer, config.Config.Timer.DeploymentDeletionConfirm)
 }

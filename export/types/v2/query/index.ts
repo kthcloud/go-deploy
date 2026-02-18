@@ -36,6 +36,14 @@ export interface DeploymentUpdate {
 }
 
 //////////
+// source: gpu_claim.go
+
+export interface GpuClaimList {
+  Pagination?: Pagination;
+  Detailed: boolean;
+}
+
+//////////
 // source: gpu_group.go
 
 export interface GpuGroupList {

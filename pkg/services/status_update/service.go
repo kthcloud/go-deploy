@@ -2,6 +2,7 @@ package status_update
 
 import (
 	"context"
+
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/services"
@@ -14,6 +15,7 @@ func Setup(ctx context.Context) {
 	go services.Worker(ctx, "deploymentStatusListener", DeploymentStatusListener)
 	go services.Worker(ctx, "vmStatusListener", VmStatusListener)
 	go services.Worker(ctx, "eventListener", DeploymentEventListener)
+	go services.Worker(ctx, "gpuClaimStatusListener", GpuClaimStatusListener)
 
 	go services.PeriodicWorker(ctx, "deploymentStatusFetcher", DeploymentStatusFetcher, config.Config.Timer.DeploymentStatusUpdate)
 	go services.PeriodicWorker(ctx, "vmStatusFetcher", VmStatusFetcher, config.Config.Timer.VmStatusUpdate)

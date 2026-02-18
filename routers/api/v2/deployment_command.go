@@ -13,8 +13,8 @@ import (
 // @Summary Do command
 // @Description Do command
 // @Tags Deployment
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"

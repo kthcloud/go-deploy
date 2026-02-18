@@ -25,16 +25,15 @@ const (
 	VisibilityAuth = "auth"
 )
 
-var (
-	EmptyReplicaStatus = &ReplicaStatus{}
-)
+var EmptyReplicaStatus = &ReplicaStatus{}
 
 type App struct {
 	Name string `bson:"name"`
 
-	CpuCores float64 `bson:"cpuCores,omitempty"`
-	RAM      float64 `bson:"ram,omitempty"`
-	Replicas int     `bson:"replicas"`
+	CpuCores float64         `bson:"cpuCores,omitempty"`
+	RAM      float64         `bson:"ram,omitempty"`
+	Replicas int             `bson:"replicas"`
+	GPUs     []DeploymentGPU `bson:"gpus,omitempty"`
 
 	Image         string             `bson:"image"`
 	InternalPort  int                `bson:"internalPort"`
@@ -94,9 +93,15 @@ type DeploymentVolume struct {
 	ServerPath string `bson:"serverPath"`
 }
 
+type DeploymentGPU struct {
+	Name      string `bson:"name"`
+	ClaimName string `bson:"claimName"`
+}
+
 type DeploymentUsage struct {
 	CpuCores float64
 	RAM      float64
+	Gpus     int
 }
 
 type DeploymentError struct {

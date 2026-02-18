@@ -1,10 +1,11 @@
 package config
 
 import (
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt"
 	"k8s.io/client-go/kubernetes"
-	"time"
 )
 
 // The following structs are used to parse the config.yaml file
@@ -13,6 +14,7 @@ import (
 const (
 	ZoneCapabilityDeployment = "deployment"
 	ZoneCapabilityVM         = "vm"
+	ZoneCapabilityDRA        = "dra"
 )
 
 type ConfigType struct {

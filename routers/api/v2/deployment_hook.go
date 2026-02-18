@@ -20,10 +20,10 @@ import (
 // @Summary Handle Harbor hook
 // @Description Handle Harbor hook
 // @Tags Deployment
-// @Accept  json
+// @Accept json
 // @Param Authorization header string false "Basic auth token"
 // @Param body body body.HarborWebhook true "Harbor webhook body"
-// @Produce  json
+// @Produce json
 // @Success 204 "No Content"
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
@@ -34,7 +34,6 @@ func HandleHarborHook(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	token, err := getHarborTokenFromAuthHeader(context)
-
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return

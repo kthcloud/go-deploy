@@ -27,7 +27,6 @@ import (
 // @Summary Get team
 // @Description Get team
 // @Tags Team
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -64,7 +63,6 @@ func GetTeam(c *gin.Context) {
 // @Summary List teams
 // @Description List teams
 // @Tags Team
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -366,5 +364,4 @@ func getResourceName(resource *model.TeamResource) *string {
 	}
 
 	return nil
-
 }

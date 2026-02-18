@@ -5,6 +5,7 @@ import (
 	"errors"
 	argFlag "flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -19,9 +20,11 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/metrics"
 	"github.com/kthcloud/go-deploy/routers"
+	"github.com/kthcloud/go-deploy/service/utils"
 )
 
 type Options struct {
+	Ctx   context.Context
 	Flags FlagDefinitionList
 	Mode  string
 }
@@ -74,8 +77,7 @@ func Create(opts *Options) *App {
 	}
 	log.Printf("%sInitialization completed%s", log.Orange, log.Reset)
 
-	ctx, cancel := context.WithCancel(context.Background())
-
+	ctx, cancel := context.WithCancel(utils.FirstNonZero(opts.Ctx, context.Background()))
 	for _, flag := range opts.Flags {
 		// Handle api worker separately
 		if flag.Name == "api" {
@@ -100,6 +102,9 @@ func Create(opts *Options) *App {
 		httpServer = &http.Server{
 			Addr:    fmt.Sprintf("0.0.0.0:%d", config.Config.Port),
 			Handler: routers.NewRouter(),
+			BaseContext: func(_ net.Listener) context.Context {
+				return ctx
+			},
 		}
 
 		go func() {
@@ -126,11 +131,14 @@ func (app *App) Stop() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := app.httpServer.Shutdown(ctx); err != nil {
-			log.Fatalln(fmt.Errorf("failed to shutdown server. details: %w", err))
+			log.Errorln(fmt.Errorf("failed to gracefully shutdown server. details: %w", err))
+			if closeErr := app.httpServer.Close(); closeErr != nil {
+				log.Fatalln("Force close failed:", closeErr)
+			}
 		}
 
 		<-ctx.Done()
-		log.Println("Saiting for http server to shutdown...")
+		log.Println("Waiting for http server to shutdown...")
 	}
 
 	shutdown()

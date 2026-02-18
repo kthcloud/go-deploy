@@ -10,6 +10,7 @@ type Quotas struct {
 	DiskSize         float64 `yaml:"diskSize" structs:"diskSize"`
 	Snapshots        int     `yaml:"snapshots" structs:"snapshots"`
 	GpuLeaseDuration float64 `yaml:"gpuLeaseDuration" structs:"gpuLeaseDuration"` // in hours
+	Gpus             int     `yaml:"gpus" structs:"gpus"`
 }
 
 // ToDTO converts a Quotas to a body.Quota DTO.
@@ -20,5 +21,6 @@ func (q *Quotas) ToDTO() body.Quota {
 		DiskSize:         q.DiskSize,
 		Snapshots:        q.Snapshots,
 		GpuLeaseDuration: q.GpuLeaseDuration,
+		Gpus:             q.Gpus,
 	}
 }
