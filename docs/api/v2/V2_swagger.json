@@ -323,6 +323,10 @@
                         "type": "string"
                     }
                 },
+                "required": [
+                    "claimName",
+                    "name"
+                ],
                 "type": "object"
             },
             "body.DeploymentRead": {
@@ -1289,6 +1293,9 @@
                         "description": "in hours",
                         "type": "number"
                     },
+                    "gpus": {
+                        "type": "integer"
+                    },
                     "ram": {
                         "type": "number"
                     },
@@ -1813,6 +1820,9 @@
                         "type": "number"
                     },
                     "diskSize": {
+                        "type": "integer"
+                    },
+                    "gpus": {
                         "type": "integer"
                     },
                     "ram": {
@@ -3181,7 +3191,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/body.GpuClaimRead"
+                                    "$ref": "#/components/schemas/body.GpuClaimCreated"
                                 }
                             }
                         },

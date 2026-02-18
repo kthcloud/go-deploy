@@ -165,7 +165,7 @@ export interface DeploymentUpdated {
   jobId?: string;
 }
 export interface DeploymentGPU {
-  name: string;
+  name?: string;
   claimName?: string;
 }
 export interface DeploymentSpecs {
@@ -878,11 +878,13 @@ export interface Quota {
   diskSize: number /* float64 */;
   snapshots: number /* int */;
   gpuLeaseDuration: number /* float64 */; // in hours
+  gpus: number /* int */;
 }
 export interface Usage {
   cpuCores: number /* float64 */;
   ram: number /* float64 */;
   diskSize: number /* int */;
+  gpus: number /* int */;
 }
 
 //////////

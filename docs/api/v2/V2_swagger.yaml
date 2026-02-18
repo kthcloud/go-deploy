@@ -225,6 +225,9 @@ components:
           type: string
         name:
           type: string
+      required:
+      - claimName
+      - name
       type: object
     body.DeploymentRead:
       properties:
@@ -917,6 +920,8 @@ components:
         gpuLeaseDuration:
           description: in hours
           type: number
+        gpus:
+          type: integer
         ram:
           type: number
         snapshots:
@@ -1318,6 +1323,8 @@ components:
         cpuCores:
           type: number
         diskSize:
+          type: integer
+        gpus:
           type: integer
         ram:
           type: number
@@ -2190,7 +2197,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/body.GpuClaimRead'
+                $ref: '#/components/schemas/body.GpuClaimCreated'
           description: OK
         "400":
           content:

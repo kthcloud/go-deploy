@@ -330,6 +330,10 @@ const docTemplateV2 = `{
                         "type": "string"
                     }
                 },
+                "required": [
+                    "claimName",
+                    "name"
+                ],
                 "type": "object"
             },
             "body.DeploymentRead": {
@@ -1296,6 +1300,9 @@ const docTemplateV2 = `{
                         "description": "in hours",
                         "type": "number"
                     },
+                    "gpus": {
+                        "type": "integer"
+                    },
                     "ram": {
                         "type": "number"
                     },
@@ -1820,6 +1827,9 @@ const docTemplateV2 = `{
                         "type": "number"
                     },
                     "diskSize": {
+                        "type": "integer"
+                    },
+                    "gpus": {
                         "type": "integer"
                     },
                     "ram": {
@@ -3188,7 +3198,7 @@ const docTemplateV2 = `{
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/body.GpuClaimRead"
+                                    "$ref": "#/components/schemas/body.GpuClaimCreated"
                                 }
                             }
                         },
