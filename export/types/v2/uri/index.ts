@@ -26,6 +26,18 @@ export interface BuildGet {
 }
 
 //////////
+// source: gpu_claim.go
+
+export interface GpuClaimList {
+}
+export interface GpuClaimGet {
+  GpuClaimID: string;
+}
+export interface GpuClaimDelete {
+  GpuClaimID: string;
+}
+
+//////////
 // source: gpu_group.go
 
 export interface GpuGroupList {

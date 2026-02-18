@@ -106,6 +106,33 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 	}
 
+	k8sResClaims := make([]models.DynamicResourceClaim, 0, len(mainApp.GPUs))
+	for _, gpu := range mainApp.GPUs {
+		rc := models.DynamicResourceClaim{
+			Name:    fmt.Sprintf("%s-%s", kg.deployment.Name, makeValidK8sName(gpu.Name)),
+			Request: []string{gpu.Name},
+		}
+
+		if gpu.ClaimName != "" {
+			rc.ResourceClaimName = &gpu.ClaimName
+		} else {
+			// needs to have one of them
+			continue
+		}
+
+		k8sResClaims = append(k8sResClaims, rc)
+	}
+
+	// TODO: make this more dynamic, dont just support nvidia
+	tolerations := make([]models.Toleration, 0, max(1, len(mainApp.GPUs)))
+	if len(mainApp.GPUs) > 0 {
+		tolerations = append(tolerations, models.Toleration{
+			Key:      "nvidia.com/gpu",
+			Operator: "Exists",
+			Effect:   "NoSchedule",
+		})
+	}
+
 	res := make([]models.DeploymentPublic, 0)
 
 	dep := models.DeploymentPublic{
@@ -130,6 +157,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		InitCommands:   mainApp.InitCommands,
 		InitContainers: make([]models.InitContainer, 0),
 		Volumes:        k8sVolumes,
+		ResourceClaims: k8sResClaims,
+		Tolerations:    tolerations,
 		Disabled:       mainApp.Replicas == 0,
 	}
 
@@ -737,7 +766,7 @@ func encodeDockerConfig(registry, username, password string) []byte {
 // getExternalFQDN returns the external FQDN for a deployment in a given zone
 func getExternalFQDN(name string, zone *configModels.Zone) string {
 	// Remove protocol:// and :port from the zone.Domains.ParentDeployment
-	var fqdn = zone.Domains.ParentDeployment
+	fqdn := zone.Domains.ParentDeployment
 
 	split := strings.Split(zone.Domains.ParentDeployment, "://")
 	if len(split) > 1 {

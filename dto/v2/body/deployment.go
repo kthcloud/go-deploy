@@ -53,9 +53,10 @@ type DeploymentRead struct {
 type DeploymentCreate struct {
 	Name string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30,deployment_name"`
 
-	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
-	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
-	Replicas *int     `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
+	CpuCores *float64        `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
+	RAM      *float64        `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
+	Replicas *int            `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
+	GPUs     []DeploymentGPU `json:"gpus,omitempty" bson:"gpus,omitempty" binding:"omitempty,min=0"`
 
 	Envs         []Env    `json:"envs" bson:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      []Volume `json:"volumes" bson:"volumes" binding:"omitempty,min=0,max=100,dive"`
@@ -83,9 +84,10 @@ type DeploymentCreate struct {
 type DeploymentUpdate struct {
 	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30,deployment_name"`
 
-	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
-	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
-	Replicas *int     `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
+	CpuCores *float64         `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
+	RAM      *float64         `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
+	Replicas *int             `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
+	GPUs     *[]DeploymentGPU `json:"gpus,omitempty" bson:"gpus,omitempty" binding:"omitempty,min=0"`
 
 	Envs         *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`
@@ -149,10 +151,16 @@ type DeploymentUpdated struct {
 	JobID *string `json:"jobId,omitempty"`
 }
 
+type DeploymentGPU struct {
+	Name      string `json:"name,omitempty" binding:"required"`
+	ClaimName string `json:"claimName,omitempty" binding:"required"`
+}
+
 type DeploymentSpecs struct {
-	CpuCores float64 `json:"cpuCores"`
-	RAM      float64 `json:"ram"`
-	Replicas int     `json:"replicas"`
+	CpuCores float64         `json:"cpuCores"`
+	RAM      float64         `json:"ram"`
+	Replicas int             `json:"replicas"`
+	GPUs     []DeploymentGPU `json:"gpus,omitempty"`
 }
 
 type CiConfig struct {

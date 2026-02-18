@@ -4,12 +4,10 @@ import (
 	"time"
 )
 
-var (
-	// FetchGravatarInterval is the interval at which we fetch the gravatar
-	// image for a user. This is done to prevent fetching the image on every
-	// request.
-	FetchGravatarInterval = 10 * time.Minute
-)
+// FetchGravatarInterval is the interval at which we fetch the gravatar
+// image for a user. This is done to prevent fetching the image on every
+// request.
+var FetchGravatarInterval = 10 * time.Minute
 
 const (
 	TestAdminUserID   = "955f0f87-37fd-4792-90eb-9bf6989e698a"
@@ -64,6 +62,7 @@ type UserUsage struct {
 	RAM       float64 `bson:"ram"`
 	DiskSize  int     `bson:"diskSize"`
 	Snapshots int     `bson:"snapshots"`
+	Gpus      int     `bson:"gpus"`
 }
 
 type EffectiveRole struct {

@@ -142,6 +142,19 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		}
 	}
 
+	var gpus []body.DeploymentGPU = make([]body.DeploymentGPU, 0, len(app.GPUs))
+	for _, gpu := range app.GPUs {
+		dto := body.DeploymentGPU{
+			Name:      gpu.Name,
+			ClaimName: gpu.ClaimName,
+		}
+		if gpu.ClaimName == "" {
+			continue
+		}
+
+		gpus = append(gpus, dto)
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -160,6 +173,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 			CpuCores: app.CpuCores,
 			RAM:      app.RAM,
 			Replicas: app.Replicas,
+			GPUs:     gpus,
 		},
 
 		Envs:            envs,
@@ -250,6 +264,18 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 	p.InitCommands = dto.InitCommands
 	p.Args = dto.Args
 
+	p.GPUs = make([]DeploymentGPU, 0, len(dto.GPUs))
+	for _, gpu := range dto.GPUs {
+		gpuM := DeploymentGPU{
+			Name:      gpu.Name,
+			ClaimName: gpu.ClaimName,
+		}
+		if gpu.ClaimName == "" {
+			continue
+		}
+		p.GPUs = append(p.GPUs, gpuM)
+	}
+
 	if dto.HealthCheckPath == nil {
 		p.PingPath = "/healthz"
 	} else {
@@ -326,6 +352,23 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 			}
 		}
 		p.Volumes = &volumes
+	}
+
+	if dto.GPUs != nil {
+		gpus := make([]DeploymentGPU, 0, len(*dto.GPUs))
+		for _, gpu := range *dto.GPUs {
+			var gpuM DeploymentGPU = DeploymentGPU{
+				Name:      gpu.Name,
+				ClaimName: gpu.ClaimName,
+			}
+
+			if gpu.ClaimName == "" {
+				continue
+			}
+
+			gpus = append(gpus, gpuM)
+		}
+		p.GPUs = &gpus
 	}
 
 	// Convert custom domain to puny encoded

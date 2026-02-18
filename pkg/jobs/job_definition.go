@@ -4,7 +4,7 @@ import (
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
 	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
-	"github.com/kthcloud/go-deploy/pkg/jobs/v2"
+	v2 "github.com/kthcloud/go-deploy/pkg/jobs/v2"
 )
 
 // JobDefinition is a definition of a job.
@@ -134,6 +134,17 @@ func jobMapper() map[string]map[string]JobDefinition {
 		model.JobRepairVM: {
 			JobFunc:       v2.RepairVM,
 			TerminateFunc: leafJobVM.Build(),
+		},
+
+		// GpuClaim
+		model.JobCreateGpuClaim: {
+			JobFunc: v2.CreateGpuClaim,
+		},
+		model.JobDeleteGpuClaim: {
+			JobFunc: v2.DeleteGpuClaim,
+		},
+		model.JobUpdateGpuClaim: {
+			JobFunc: v2.UpdateGpuClaim,
 		},
 	}
 

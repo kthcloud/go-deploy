@@ -8,6 +8,7 @@ type Cache struct {
 	deploymentStore   map[string]*model.Deployment
 	vmStore           map[string]*model.VM
 	gpuLeaseStore     map[string]*model.GpuLease
+	gpuClaimStore     map[string]*model.GpuClaim
 	smStore           map[string]*model.SM
 	userStore         map[string]*model.User
 	teamStore         map[string]*model.Team
@@ -23,6 +24,7 @@ func NewCache() *Cache {
 		deploymentStore:   make(map[string]*model.Deployment),
 		vmStore:           make(map[string]*model.VM),
 		gpuLeaseStore:     make(map[string]*model.GpuLease),
+		gpuClaimStore:     make(map[string]*model.GpuClaim),
 		smStore:           make(map[string]*model.SM),
 		userStore:         make(map[string]*model.User),
 		teamStore:         make(map[string]*model.Team),
@@ -124,6 +126,29 @@ func (c *Cache) StoreGpuLease(gpuLease *model.GpuLease) {
 // It returns nil if the GpuLease is not in the cache.
 func (c *Cache) GetGpuLease(id string) *model.GpuLease {
 	r, ok := c.gpuLeaseStore[id]
+	if !ok {
+		return nil
+	}
+
+	return r
+}
+
+// StoreGpuLease stores a GpuClaim in the cache.
+// It only stores the GpuClaim if it is not nil.
+func (c *Cache) StoreGpuClaim(gpuClaim *model.GpuClaim) {
+	if gpuClaim != nil {
+		if g, ok := c.gpuClaimStore[gpuClaim.ID]; ok {
+			*g = *gpuClaim
+		} else {
+			c.gpuClaimStore[gpuClaim.ID] = gpuClaim
+		}
+	}
+}
+
+// GetGpuClaim gets a GpuClaim from the cache.
+// It returns nil if the GpuClaim is not in the cache.
+func (c *Cache) GetGpuClaim(id string) *model.GpuClaim {
+	r, ok := c.gpuClaimStore[id]
 	if !ok {
 		return nil
 	}

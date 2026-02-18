@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 	"net/http"
@@ -19,10 +20,10 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/config"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/glog"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/oauth2"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 // VarianceTimer controls the max runtime of SetupKeycloakChain() and AuthChain() middleware
@@ -153,25 +154,47 @@ func getPublicKeyFromCacheOrBackend(keyId string, config KeycloakConfig) (KeyEnt
 }
 
 func decodeToken(token *oauth2.Token, config KeycloakConfig) (*KeycloakToken, error) {
-	keyCloakToken := KeycloakToken{}
-	var err error
-	parsedJWT, err := jwt.ParseSigned(token.AccessToken)
+	var keycloakToken KeycloakToken
+
+	// Parse the token and extract the kid
+	parsed, err := jwt.Parse(token.AccessToken, func(t *jwt.Token) (any, error) {
+		// Ensure the signing method is as expected (RSA)
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+
+		// Extract Key ID (kid) and fetch the appropriate public key
+		kid, _ := t.Header["kid"].(string)
+		key, err := getPublicKey(kid, config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get public key: %w", err)
+		}
+		return key, nil
+	})
 	if err != nil {
-		glog.Errorf("[Gin-OAuth] jwt not decodable: %s", err)
-		return nil, err
-	}
-	key, err := getPublicKey(parsedJWT.Headers[0].KeyID, config)
-	if err != nil {
-		glog.Errorf("Failed to get publickey %v", err)
+		glog.Errorf("[Gin-OAuth] jwt not decodable: %v", err)
 		return nil, err
 	}
 
-	err = parsedJWT.Claims(key, &keyCloakToken)
-	if err != nil {
-		glog.Errorf("Failed to get claims JWT:%+v", err)
-		return nil, err
+	// Validate token and extract claims
+	if claims, ok := parsed.Claims.(jwt.MapClaims); ok && parsed.Valid {
+		if err := mapToStruct(claims, &keycloakToken); err != nil {
+			glog.Errorf("Failed to parse claims into KeycloakToken: %v", err)
+			return nil, err
+		}
+		return &keycloakToken, nil
 	}
-	return &keyCloakToken, nil
+
+	glog.Errorf("Invalid JWT or unexpected claims structure")
+	return nil, fmt.Errorf("invalid JWT or claims")
+}
+
+func mapToStruct(m jwt.MapClaims, v interface{}) error {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
 }
 
 func isExpired(token *KeycloakToken) bool {

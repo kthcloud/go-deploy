@@ -24,6 +24,7 @@ func RoutingGroups() []RoutingGroup {
 	return []RoutingGroup{
 		DiscoverRoutes(),
 		DeploymentRoutes(),
+		GpuClaimRoutes(),
 		GpuGroupRoutes(),
 		GpuLeaseRoutes(),
 		HostRoutes(),

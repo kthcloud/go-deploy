@@ -16,8 +16,8 @@ import (
 // @Summary Creates a new action
 // @Description Creates a new action
 // @Tags VmAction
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
@@ -26,7 +26,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/vmActions [post]
+// @Router /v2/vmActions/{vmId} [post]
 func CreateVmAction(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -72,7 +72,6 @@ func CreateVmAction(c *gin.Context) {
 		"params":   requestBody,
 		"authInfo": auth,
 	})
-
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return

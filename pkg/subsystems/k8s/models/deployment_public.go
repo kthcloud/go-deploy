@@ -1,8 +1,9 @@
 package models
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 type DeploymentPublic struct {
@@ -10,16 +11,18 @@ type DeploymentPublic struct {
 	Namespace string            `bson:"namespace"`
 	Labels    map[string]string `bson:"labels"`
 
-	Image            string          `bson:"image"`
-	ImagePullSecrets []string        `bson:"imagePullSecrets"`
-	EnvVars          []EnvVar        `bson:"envVars"`
-	Resources        Resources       `bson:"resources"`
-	Command          []string        `bson:"command"`
-	Args             []string        `bson:"args"`
-	InitCommands     []string        `bson:"initCommands"`
-	InitContainers   []InitContainer `bson:"initContainers"`
-	Volumes          []Volume        `bson:"volumes"`
-	CreatedAt        time.Time       `bson:"createdAt"`
+	Image            string                 `bson:"image"`
+	ImagePullSecrets []string               `bson:"imagePullSecrets"`
+	EnvVars          []EnvVar               `bson:"envVars"`
+	Resources        Resources              `bson:"resources"`
+	Command          []string               `bson:"command"`
+	Args             []string               `bson:"args"`
+	InitCommands     []string               `bson:"initCommands"`
+	InitContainers   []InitContainer        `bson:"initContainers"`
+	Volumes          []Volume               `bson:"volumes"`
+	ResourceClaims   []DynamicResourceClaim `bson:"resourcClaims,omitempty"`
+	Tolerations      []Toleration           `bson:"tolerations,omitempty"`
+	CreatedAt        time.Time              `bson:"createdAt"`
 
 	// Disabled is a flag that can be set to true to disable the deployment.
 	// This is useful for deployments that should not be running, but should still exist.
@@ -48,6 +51,8 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	var command []string
 	var args []string
 	var volumes []Volume
+	var claims []DynamicResourceClaim
+	var tolerations []Toleration
 	var image string
 
 	for _, k8sVolume := range deployment.Spec.Template.Spec.Volumes {
@@ -60,6 +65,35 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			Name:    k8sVolume.Name,
 			PvcName: pvcName,
 			Init:    false,
+		})
+	}
+
+	for _, k8sResourceClaim := range deployment.Spec.Template.Spec.ResourceClaims {
+		var (
+			resourceClaimTemplateName, resourceClaimName *string
+		)
+
+		if k8sResourceClaim.ResourceClaimTemplateName != nil {
+			resourceClaimTemplateName = k8sResourceClaim.ResourceClaimName
+		}
+
+		if k8sResourceClaim.ResourceClaimName != nil {
+			resourceClaimName = k8sResourceClaim.ResourceClaimName
+		}
+
+		claims = append(claims, DynamicResourceClaim{
+			Name:                      k8sResourceClaim.Name,
+			ResourceClaimName:         resourceClaimName,
+			ResourceClaimTemplateName: resourceClaimTemplateName,
+		})
+	}
+
+	// TODO: figure out how this can be done better
+	for _, k8sToleration := range deployment.Spec.Template.Spec.Tolerations {
+		tolerations = append(tolerations, Toleration{
+			Key:      k8sToleration.Key,
+			Operator: string(k8sToleration.Operator),
+			Effect:   string(k8sToleration.Effect),
 		})
 	}
 
@@ -99,6 +133,15 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			for idx, volume := range volumes {
 				if volume.Name == volumeMount.Name {
 					volumes[idx].MountPath = volumeMount.MountPath
+					break
+				}
+			}
+		}
+
+		for _, resourceClaim := range resources.Claims {
+			for idx, claim := range claims {
+				if claim.Name == resourceClaim.Name {
+					claims[idx].Request = append(claims[idx].Request, resourceClaim.Request)
 					break
 				}
 			}
@@ -164,6 +207,8 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		InitCommands:   initCommands,
 		InitContainers: initContainers,
 		Volumes:        volumes,
+		ResourceClaims: claims,
+		Tolerations:    tolerations,
 		CreatedAt:      formatCreatedAt(deployment.Annotations),
 	}
 }

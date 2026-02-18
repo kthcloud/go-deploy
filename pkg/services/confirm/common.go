@@ -3,10 +3,11 @@ package confirm
 import (
 	"errors"
 	"fmt"
+	"net"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_port_repo"
-	"net"
 )
 
 // appDeletedK8s checks if the K8s setup for the given app is deleted.
@@ -172,6 +173,17 @@ func portsCleared(vm *model.VM) (bool, error) {
 	}
 
 	return !exists, nil
+}
+
+// k8sDeleted checks if the K8s setup for the given GC is deleted.
+func k8sDeletedGC(gc *model.GpuClaim) (bool, error) {
+	k8s := &gc.Subsystems.K8s
+
+	if len(k8s.ResourceClaimMap) > 0 {
+		return false, nil
+	}
+
+	return !k8s.Namespace.Created(), nil
 }
 
 // checkCustomDomain checks if the custom domain is setup.

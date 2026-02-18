@@ -1,12 +1,13 @@
 package utils
 
 import (
+	"reflect"
+	"time"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems"
-	"reflect"
-	"time"
 )
 
 // UpdateDbSubsystem is a common interface that services use to update subsystem resources
@@ -149,4 +150,14 @@ func GetFirstOrDefault[T any](variable []T) T {
 	}
 	defaultVal := new(T)
 	return *defaultVal
+}
+
+func FirstNonZero[T comparable](vars ...T) T {
+	var zero T
+	for _, v := range vars {
+		if v != zero {
+			return v
+		}
+	}
+	return zero
 }

@@ -19,8 +19,8 @@ import (
 // @Summary Get notification
 // @Description Get notification
 // @Tags Notification
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
@@ -55,8 +55,8 @@ func GetNotification(c *gin.Context) {
 // @Summary List notifications
 // @Description List notifications
 // @Tags Notification
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param all query bool false "List all notifications"
@@ -109,8 +109,8 @@ func ListNotifications(c *gin.Context) {
 // @Summary Update notification
 // @Description Update notification
 // @Tags Notification
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
@@ -157,8 +157,8 @@ func UpdateNotification(c *gin.Context) {
 // @Summary Delete notification
 // @Description Delete notification
 // @Tags Notification
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"

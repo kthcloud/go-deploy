@@ -20,8 +20,8 @@ import (
 // @Summary GetJob job by id
 // @Description GetJob job by id
 // @Tags Job
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param jobId path string true "Job ID"
@@ -64,8 +64,8 @@ func GetJob(c *gin.Context) {
 // @Summary List jobs
 // @Description List jobs
 // @Tags Job
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param all query bool false "List all"
@@ -123,8 +123,8 @@ func ListJobs(c *gin.Context) {
 // @Summary Update job
 // @Description Update job. Only allowed for admins.
 // @Tags Job
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param jobId path string true "Job ID"

@@ -130,6 +130,14 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 		drc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
+	if o.GpuClaimName != nil {
+		if o.GpuClaimRequest != nil {
+			drc.WithGpuClaimRequest(*o.GpuClaimName, *o.GpuClaimRequest)
+		} else {
+			drc.WithGpuClaim(*o.GpuClaimName)
+		}
+	}
+
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's deployments are requested
@@ -249,6 +257,19 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 
 	if !c.V2.System().ZoneHasCapability(params.Zone, configModels.ZoneCapabilityDeployment) {
 		return sErrors.NewZoneCapabilityMissingError(params.Zone, configModels.ZoneCapabilityDeployment)
+	}
+
+	if len(params.GPUs) > 0 {
+		if !c.V2.System().ZoneHasCapability(params.Zone, configModels.ZoneCapabilityDRA) {
+			return sErrors.NewZoneCapabilityMissingError(params.Zone, configModels.ZoneCapabilityDRA)
+		}
+
+		// TODO: get the roles of the user to verify that the claims exist
+		/*var roles = make([]string, 0, 2)
+
+		c.V2.GpuClaims().List(gpuClaimOpts.List{
+			Roles:
+		})*/
 	}
 
 	deployment, err := deployment_repo.New().Create(id, ownerID, params)
@@ -624,6 +645,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 		var replicas int
 		var cpu float64
 		var ram float64
+		var gpus int
 
 		if opts.Create.Replicas != nil {
 			replicas = *opts.Create.Replicas
@@ -643,12 +665,20 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 			ram = usage.RAM + config.Config.Deployment.Resources.Limits.RAM*float64(replicas)
 		}
 
+		if opts.Create.GPUs != nil {
+			gpus = usage.Gpus + len(opts.Create.GPUs)
+		}
+
 		if cpu > quota.CpuCores {
 			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.1f, Quota: %.1f", cpu, quota.CpuCores))
 		}
 
 		if ram > quota.RAM {
 			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.1f, Quota: %.1f", ram, quota.RAM))
+		}
+
+		if gpus > quota.Gpus {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("GPU quota exceeded. Current: %d, Quota: %d", gpus, quota.Gpus))
 		}
 
 		return nil
@@ -665,10 +695,12 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 		replicasBefore := deployment.GetMainApp().Replicas
 		cpuBefore := deployment.GetMainApp().CpuCores * float64(replicasBefore)
 		ramBefore := deployment.GetMainApp().RAM * float64(replicasBefore)
+		gpusBefore := len(deployment.GetMainApp().GPUs) * replicasBefore
 
 		var replicasAfter int
 		var cpuAfter float64
 		var ramAfter float64
+		var gpusAfter int
 
 		if opts.Update.Replicas != nil {
 			replicasAfter = *opts.Update.Replicas
@@ -688,11 +720,21 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 			ramAfter = usage.RAM + deployment.GetMainApp().RAM*float64(replicasAfter) - ramBefore
 		}
 
+		if opts.Update.GPUs != nil {
+			gpusAfter = usage.Gpus + len(*opts.Update.GPUs)*replicasAfter - gpusBefore
+		} else {
+			gpusAfter = usage.Gpus + len(deployment.GetMainApp().GPUs)*replicasAfter - gpusBefore
+		}
+
 		if cpuAfter > quota.CpuCores {
 			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.1f, Quota: %.1f", cpuAfter, quota.CpuCores))
 		}
 		if ramAfter > quota.RAM {
 			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.1f, Quota: %.1f", ramAfter, quota.RAM))
+		}
+
+		if gpusAfter > quota.Gpus {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("GPU quota exceeded. Current: %d, Quota: %d", gpusAfter, quota.Gpus))
 		}
 
 		return nil

@@ -26,7 +26,7 @@ import (
 // @Summary Get VM
 // @Description Get VM
 // @Tags VM
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
@@ -178,6 +178,16 @@ func CreateVM(c *gin.Context) {
 	if err != nil {
 		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
+	}
+
+	// Just to be sure (redundant)
+	if auth != nil {
+		// If the users role has explicitly specified false for useVms then we dont allow it.
+		// To keep backward compatibility we allow roles without useVms specified to create vms.
+		if role := auth.GetEffectiveRole(); role.Permissions.UseVms != nil && !*role.Permissions.UseVms {
+			context.Forbidden("Not permitted to create a VM, missing useVms permission")
+			return
+		}
 	}
 
 	deployV2 := service.V2(auth)
@@ -416,7 +426,6 @@ func UpdateVM(c *gin.Context) {
 		"params":   requestBody,
 		"authInfo": auth,
 	})
-
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return

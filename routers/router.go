@@ -137,6 +137,7 @@ func registerCustomValidators() {
 
 		registrations := map[string]func(fl validator.FieldLevel) bool{
 			"rfc1035":                validators.Rfc1035,
+			"rfc1123":                validators.Rfc1123,
 			"ssh_public_key":         validators.SshPublicKey,
 			"env_name":               validators.EnvName,
 			"env_list":               validators.EnvList,

@@ -25,6 +25,8 @@ var (
 	// ErrVmNotReady is returned when the VM is not ready.
 	// This is normally caused by the internal CloudStack VM not being created yet
 	ErrVmNotReady = fmt.Errorf("VM not ready")
+	// ErrCouldNotGetGpuClaims is returned when getting gpu claims fails
+	ErrCouldNotGetGpuClaims = fmt.Errorf("could not get gpu claims")
 )
 
 // MakeVmToLargeForHostErr creates a ErrVmToLargeForHost with the available CPU and RAM

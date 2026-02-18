@@ -19,7 +19,7 @@ import (
 // @Summary Get logs using Server-Sent Events
 // @Description Get logs using Server-Sent Events
 // @Tags Deployment
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
@@ -92,4 +92,4 @@ func GetLogs(c *gin.Context) {
 	})
 }
 
-//mhuaaaaaaaaaaaah, i love you i love you i love you
+// mhuaaaaaaaaaaaah, i love you i love you i love you

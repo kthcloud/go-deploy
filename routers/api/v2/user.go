@@ -20,7 +20,7 @@ import (
 // @Summary Get user
 // @Description Get user
 // @Tags User
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param userId path string true "User ID"
@@ -99,7 +99,7 @@ func GetUser(c *gin.Context) {
 // @Summary List users
 // @Description List users
 // @Tags User
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param all query bool false "List all"
@@ -171,8 +171,8 @@ func ListUsers(c *gin.Context) {
 // @Summary Update user
 // @Description Update user
 // @Tags User
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param userId path string true "User ID"
