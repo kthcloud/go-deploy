@@ -16,7 +16,7 @@ import (
 // @Summary Register resource
 // @Description Register resource
 // @Tags Register
-// @Produce  json
+// @Produce json
 // @Success 204
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse

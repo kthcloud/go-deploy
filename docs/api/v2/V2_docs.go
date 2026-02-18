@@ -5162,7 +5162,7 @@ const docTemplateV2 = `{
                 ]
             }
         },
-        "/v2/snapshots": {
+        "/v2/snapshots/{vmId}": {
             "get": {
                 "description": "List snapshots",
                 "parameters": [
@@ -5783,15 +5783,6 @@ const docTemplateV2 = `{
                         }
                     }
                 ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "content": {
@@ -5982,15 +5973,6 @@ const docTemplateV2 = `{
                         }
                     }
                 ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "content": {
@@ -6435,7 +6417,7 @@ const docTemplateV2 = `{
                 ]
             }
         },
-        "/v2/vmActions": {
+        "/v2/vmActions/{vmId}": {
             "post": {
                 "description": "Creates a new action",
                 "parameters": [

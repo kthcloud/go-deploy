@@ -19,7 +19,7 @@ import (
 // @Summary Get resource migration
 // @Description Get resource migration
 // @Tags ResourceMigration
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
@@ -61,7 +61,7 @@ func GetResourceMigration(c *gin.Context) {
 // @Summary List resource migrations
 // @Description List resource migrations
 // @Tags ResourceMigration
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param page query int false "Page number"
@@ -109,8 +109,8 @@ func ListResourceMigrations(c *gin.Context) {
 // @Summary Create resource migration
 // @Description Create resource migration
 // @Tags ResourceMigration
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param body body body.ResourceMigrationCreate true "Resource Migration Create"
@@ -176,8 +176,8 @@ func CreateResourceMigration(c *gin.Context) {
 // @Summary Update resource migration
 // @Description Update resource migration
 // @Tags ResourceMigration
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
@@ -277,8 +277,8 @@ func UpdateResourceMigration(c *gin.Context) {
 // @Summary Delete resource migration
 // @Description Delete resource migration
 // @Tags ResourceMigration
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"

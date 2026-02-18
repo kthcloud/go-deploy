@@ -282,7 +282,6 @@ export type GpuDeviceConfiguration =
 export interface GenericDeviceConfiguration {
   driver: string;
 }
-export type Alias = GenericDeviceConfiguration;
 /**
  * NvidiaDeviceConfiguration represents NVIDIA-specific configuration options.
  */
@@ -290,7 +289,6 @@ export interface NvidiaDeviceConfiguration {
   driver: string;
   parameters?: any /* nvidia.GpuConfig */;
 }
-export type Alias = NvidiaDeviceConfiguration;
 /**
  * AllocatedGpu represents a concrete allocated GPU or GPU share.
  */

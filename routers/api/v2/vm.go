@@ -26,7 +26,7 @@ import (
 // @Summary Get VM
 // @Description Get VM
 // @Tags VM
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"

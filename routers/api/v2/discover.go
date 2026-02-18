@@ -10,7 +10,7 @@ import (
 // @Summary Discover
 // @Description Discover
 // @Tags Discover
-// @Produce  json
+// @Produce json
 // @Success 200 {object} body.DiscoverRead
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/discover [get]

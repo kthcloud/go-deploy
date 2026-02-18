@@ -32,7 +32,7 @@ import (
 // @Summary Get deployment
 // @Description Get deployment
 // @Tags Deployment
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
@@ -88,7 +88,7 @@ func GetDeployment(c *gin.Context) {
 // @Summary List deployments
 // @Description List deployments
 // @Tags Deployment
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param all query bool false "List all"
@@ -152,8 +152,8 @@ func ListDeployments(c *gin.Context) {
 // @Summary Create deployment
 // @Description Create deployment
 // @Tags Deployment
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param body body body.DeploymentCreate true "Deployment body"
@@ -291,8 +291,8 @@ func CreateDeployment(c *gin.Context) {
 // @Summary Delete deployment
 // @Description Delete deployment
 // @Tags Deployment
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
@@ -374,8 +374,8 @@ func DeleteDeployment(c *gin.Context) {
 // @Summary Update deployment
 // @Description Update deployment
 // @Tags Deployment
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"

@@ -3344,7 +3344,7 @@ paths:
       summary: Update resource migration
       tags:
       - ResourceMigration
-  /v2/snapshots:
+  /v2/snapshots/{vmId}:
     get:
       description: List snapshots
       parameters:
@@ -3716,11 +3716,6 @@ paths:
         name: pageSize
         schema:
           type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
       responses:
         "200":
           content:
@@ -3831,11 +3826,6 @@ paths:
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
       responses:
         "200":
           content:
@@ -4093,7 +4083,7 @@ paths:
       summary: Create API key
       tags:
       - User
-  /v2/vmActions:
+  /v2/vmActions/{vmId}:
     post:
       description: Creates a new action
       parameters:

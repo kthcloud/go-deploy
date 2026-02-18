@@ -5155,7 +5155,7 @@
                 ]
             }
         },
-        "/v2/snapshots": {
+        "/v2/snapshots/{vmId}": {
             "get": {
                 "description": "List snapshots",
                 "parameters": [
@@ -5776,15 +5776,6 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "content": {
@@ -5975,15 +5966,6 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "content": {
@@ -6428,7 +6410,7 @@
                 ]
             }
         },
-        "/v2/vmActions": {
+        "/v2/vmActions/{vmId}": {
             "post": {
                 "description": "Creates a new action",
                 "parameters": [

@@ -148,8 +148,8 @@ func ListGpuClaims(c *gin.Context) {
 // @Summary Create GpuClaim
 // @Description Create GpuClaim
 // @Tags GpuClaim
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param body body body.GpuClaimCreate true "GpuClaim body"
@@ -232,7 +232,7 @@ func CreateGpuClaim(c *gin.Context) {
 // @Summary Delete GpuClaim
 // @Description Delete GpuClaim
 // @Tags GpuClaim
-// @Produce  json
+// @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
 // @Param gpuClaimId path string true "GpuClaim ID"
