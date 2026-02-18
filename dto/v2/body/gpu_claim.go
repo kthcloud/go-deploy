@@ -190,11 +190,11 @@ func (g GenericDeviceConfiguration) DriverName() string {
 func (g GenericDeviceConfiguration) MarshalJSON() ([]byte, error) {
 	type genericAlias GenericDeviceConfiguration
 	return json.Marshal(&struct {
-		Type  string       `json:"type" bson:"type"`
-		Alias genericAlias `json:",inline" bson:",inline"`
+		Type string `json:"type" bson:"type"`
+		genericAlias
 	}{
-		Type:  "generic",
-		Alias: (genericAlias)(g),
+		Type:         "generic",
+		genericAlias: (genericAlias)(g),
 	})
 }
 
@@ -211,11 +211,11 @@ func (NvidiaDeviceConfiguration) DriverName() string {
 func (n NvidiaDeviceConfiguration) MarshalJSON() ([]byte, error) {
 	type nvidiaAlias NvidiaDeviceConfiguration
 	return json.Marshal(&struct {
-		Type  string      `json:"type" bson:"type"`
-		Alias nvidiaAlias `json:",inline" bson:",inline"`
+		Type string `json:"type" bson:"type"`
+		nvidiaAlias
 	}{
-		Type:  "nvidia",
-		Alias: (nvidiaAlias)(n),
+		Type:        "nvidia",
+		nvidiaAlias: (nvidiaAlias)(n),
 	})
 }
 
