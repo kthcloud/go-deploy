@@ -252,6 +252,7 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 		{Key: "apps.main.replicas", Value: 1},
 		{Key: "apps.main.cpuCores", Value: 1},
 		{Key: "apps.main.ram", Value: 1},
+		{Key: "apps.main.gpus", Value: 1},
 	}
 
 	deployments, err := client.ListWithFilterAndProjection(bson.D{}, projection)
@@ -265,6 +266,9 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 		for _, app := range deployment.Apps {
 			usage.CpuCores += app.CpuCores * float64(app.Replicas)
 			usage.RAM += app.RAM * float64(app.Replicas)
+			if app.GPUs != nil {
+				usage.Gpus += len(app.GPUs) * app.Replicas
+			}
 		}
 	}
 

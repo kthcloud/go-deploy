@@ -101,6 +101,7 @@ type DeploymentGPU struct {
 type DeploymentUsage struct {
 	CpuCores float64
 	RAM      float64
+	Gpus     int
 }
 
 type DeploymentError struct {

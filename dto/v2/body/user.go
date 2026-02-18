@@ -62,10 +62,12 @@ type Quota struct {
 	DiskSize         float64 `json:"diskSize"`
 	Snapshots        int     `json:"snapshots"`
 	GpuLeaseDuration float64 `json:"gpuLeaseDuration"` // in hours
+	Gpus             int     `json:"gpus"`
 }
 
 type Usage struct {
 	CpuCores float64 `json:"cpuCores"`
 	RAM      float64 `json:"ram"`
 	DiskSize int     `json:"diskSize"`
+	Gpus     int     `json:"gpus"`
 }

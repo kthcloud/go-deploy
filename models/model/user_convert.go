@@ -1,9 +1,10 @@
 package model
 
 import (
+	"math"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/log"
-	"math"
 )
 
 // ToDTO converts a User to a body.UserRead DTO.
@@ -75,6 +76,7 @@ func (usage *UserUsage) ToDTO() body.Usage {
 		CpuCores: math.Round(usage.CpuCores*10) / 10,
 		RAM:      math.Round(usage.RAM*10) / 10,
 		DiskSize: usage.DiskSize,
+		Gpus:     usage.Gpus,
 	}
 }
 
