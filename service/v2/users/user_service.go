@@ -48,6 +48,7 @@ func (c *Client) GetUsage(userID string) (*model.UserUsage, error) {
 		CpuCores: float64(vmUsage.CpuCores) + deploymentUsage.CpuCores,
 		RAM:      float64(vmUsage.RAM) + deploymentUsage.RAM,
 		DiskSize: vmUsage.DiskSize,
+		Gpus:     deploymentUsage.Gpus,
 	}
 
 	return usage, nil
