@@ -104,6 +104,8 @@ func DecodeGpuClaimCreateParams(raw map[string]any) (model.GpuClaimCreateParams,
 		AllocationMode  string                      `json:"allocationMode"`
 		DeviceClassName string                      `json:"deviceClassName"`
 		Name            string                      `json:"name"`
+		Count           *int64                      `bson:"count,omitempty"`
+		Selectors       []string                    `bson:"selectors,omitempty"`
 		Config          *tempGpuDeviceConfiguration `json:"config,omitempty"`
 	}
 	type tempGpuClaimCreateParams struct {
@@ -133,6 +135,8 @@ func DecodeGpuClaimCreateParams(raw map[string]any) (model.GpuClaimCreateParams,
 			RequestedGpu: model.RequestedGpu{
 				AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
 				DeviceClassName: r.DeviceClassName,
+				Count:           r.Count,
+				Selectors:       r.Selectors,
 			},
 
 			Name: r.Name,
@@ -174,6 +178,8 @@ func DecodeGpuClaimUpdateParams(raw map[string]any) (model.GpuClaimUpdateParams,
 		AllocationMode  string                      `json:"allocationMode"`
 		DeviceClassName string                      `json:"deviceClassName"`
 		Name            string                      `json:"name"`
+		Count           *int64                      `bson:"count,omitempty"`
+		Selectors       []string                    `bson:"selectors,omitempty"`
 		Config          *tempGpuDeviceConfiguration `json:"config,omitempty"`
 	}
 	type tempGpuClaimCreateParams struct {
@@ -205,6 +211,8 @@ func DecodeGpuClaimUpdateParams(raw map[string]any) (model.GpuClaimUpdateParams,
 				RequestedGpu: model.RequestedGpu{
 					AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
 					DeviceClassName: r.DeviceClassName,
+					Count:           r.Count,
+					Selectors:       r.Selectors,
 				},
 
 				Name: r.Name,
