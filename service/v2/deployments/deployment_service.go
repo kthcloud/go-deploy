@@ -18,6 +18,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/resources/resource_migration_repo"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/team_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/nats"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	sUtils "github.com/kthcloud/go-deploy/service/utils"
 	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
@@ -619,6 +620,29 @@ func (c *Client) AddLogs(ctx context.Context, id string, logs ...model.Log) {
 	go func() {
 		drc := deployment_repo.New()
 		drc.ResourceClient.Ctx = bgCtx
+
+		if nats.IsLogsEnabled() {
+			d, err := drc.GetByID(id)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get deployment %s for nats logs. details: %w", id, err))
+				return
+			}
+			if d != nil && nats.IsZoneLogsEnabled(d.Zone) {
+				ns := deploymentNamespace(d.Zone)
+				for _, item := range logs {
+					if err := nats.Default.PublishLog(bgCtx, d.Zone, ns, d.Name, nats.LogMessage{
+						Source:    item.Source,
+						Prefix:    item.Prefix,
+						Line:      item.Line,
+						CreatedAt: item.CreatedAt,
+					}); err != nil {
+						utils.PrettyPrintError(fmt.Errorf("failed to publish nats log for deployment %s. details: %w", id, err))
+					}
+				}
+				return
+			}
+		}
+
 		err := drc.AddLogsByName(id, logs...)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to add logs to deployment %s. details: %w", id, err))

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/nats"
 	"github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
 	"github.com/kthcloud/go-deploy/utils"
@@ -41,6 +43,12 @@ func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(str
 
 	if deployment.BeingDeleted() {
 		log.Println("Deployment", id, "is being deleted. not setting up log stream")
+		return nil
+	}
+
+	if nats.IsZoneLogsEnabled(deployment.Zone) {
+		namespace := deploymentNamespace(deployment.Zone)
+		go streamNatsLogs(ctx, deployment.Zone, namespace, deployment.Name, history, handler)
 		return nil
 	}
 
@@ -99,4 +107,41 @@ func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(str
 	}()
 
 	return nil
+}
+
+func deploymentNamespace(zoneName string) string {
+	if z := config.Config.GetZone(zoneName); z != nil && z.K8s.Namespaces.Deployment != "" {
+		return z.K8s.Namespaces.Deployment
+	}
+	if config.Config.NATS.Logs.Namespace != "" {
+		return config.Config.NATS.Logs.Namespace
+	}
+	return "deploy"
+}
+
+func streamNatsLogs(
+	ctx context.Context,
+	zoneName, namespace, deployName string,
+	history int,
+	handler func(string, string, string, time.Time),
+) {
+	streamCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-streamCtx.Done():
+				return
+			case <-ticker.C:
+				handler(MessageSourceKeepAlive, "[keep-alive]", "keep-alive", time.Now())
+			}
+		}
+	}()
+
+	if err := nats.Default.StreamLogs(streamCtx, zoneName, namespace, deployName, history, handler); err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to stream nats logs for deployment %s/%s/%s: %w", zoneName, namespace, deployName, err))
+	}
 }

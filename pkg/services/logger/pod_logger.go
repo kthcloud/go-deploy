@@ -15,6 +15,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/message_queue"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/nats"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
@@ -24,6 +25,9 @@ import (
 // PodLogger is a worker that logs deployments.
 func PodLogger(ctx context.Context) error {
 	for _, zone := range config.Config.EnabledZones() {
+		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) || nats.IsZoneLogsEnabled(zone.Name) {
+			continue
+		}
 		log.Println("Setting up log stream for zone", zone.Name)
 
 		dZone := zone

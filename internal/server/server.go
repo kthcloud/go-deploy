@@ -18,6 +18,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/intializer"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/metrics"
+	"github.com/kthcloud/go-deploy/pkg/nats"
 	"github.com/kthcloud/go-deploy/pkg/services/cleaner"
 	"github.com/kthcloud/go-deploy/pkg/services/confirm"
 	"github.com/kthcloud/go-deploy/pkg/services/job_execute"
@@ -89,6 +90,7 @@ func Start(ctx context.Context, opts Options) (*App, error) {
 		{name: "Setup environment", run: func(context.Context, *zap.Logger) error { return config.SetupEnvironment(opts.Mode) }},
 		{name: "Setup metrics", run: func(context.Context, *zap.Logger) error { return metrics.Setup() }},
 		{name: "Setup database", run: db.Setup},
+		{name: "Setup NATS", run: func(ctx context.Context, _ *zap.Logger) error { return nats.Setup(ctx) }},
 		{name: "Clean up old tests", run: func(context.Context, *zap.Logger) error { return intializer.CleanUpOldTests() }},
 		{name: "Synchronize VM ports", run: func(context.Context, *zap.Logger) error { return intializer.SynchronizeVmPorts() }},
 		{name: "Run migrations", run: migrator.Migrate},
@@ -129,7 +131,11 @@ func Start(ctx context.Context, opts Options) (*App, error) {
 		}
 	}
 
-	return startWith(ctx, opts.Logger, tasks, workers, newHTTPServer, db.Shutdown)
+	shutdownFn := func(shutdownCtx context.Context) error {
+		return errors.Join(nats.Shutdown(shutdownCtx), db.Shutdown(shutdownCtx))
+	}
+
+	return startWith(ctx, opts.Logger, tasks, workers, newHTTPServer, shutdownFn)
 }
 
 func startWith(

@@ -23,8 +23,65 @@ data:
             "secret": "dev-secret",
             "directAccessGrantsEnabled": true,
             "serviceAccountsEnabled": true,
-            "redirectUris": ["http://*", "https://*"],
-            "webOrigins": ["http://*", "https://*"],
+            "redirectUris": [
+              "http://localhost:3000/*",
+              "http://localhost:8080/*",
+              "http://api.localtest.me/*",
+              "https://api.localtest.me/*",
+              "http://console.localtest.me/*",
+              "https://console.localtest.me/*"
+            ],
+            "webOrigins": [
+              "http://localhost:3000",
+              "http://localhost:8080",
+              "http://api.localtest.me",
+              "https://api.localtest.me",
+              "http://console.localtest.me",
+              "https://console.localtest.me",
+              "+"
+            ],
+            "protocolMappers": [
+              {
+                "name": "groups",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-group-membership-mapper",
+                "consentRequired": false,
+                "config": {
+                  "access.token.claim": "true",
+                  "claim.name": "groups",
+                  "full.path": "false",
+                  "id.token.claim": "true",
+                  "introspection.token.claim": "true",
+                  "lightweight.claims": "false",
+                  "userinfo.token.claim": "true"
+                }
+              }
+            ]
+          },
+          {
+            "clientId": "landing",
+            "protocol": "openid-connect",
+            "publicClient": true,
+            "enabled": true,
+            "standardFlowEnabled": true,
+            "directAccessGrantsEnabled": true,
+            "redirectUris": [
+              "http://localhost:3000/*",
+              "http://localhost:8080/*",
+              "http://api.localtest.me/*",
+              "https://api.localtest.me/*",
+              "http://console.localtest.me/*",
+              "https://console.localtest.me/*"
+            ],
+            "webOrigins": [
+              "http://localhost:3000",
+              "http://localhost:8080",
+              "http://api.localtest.me",
+              "https://api.localtest.me",
+              "http://console.localtest.me",
+              "https://console.localtest.me",
+              "+"
+            ],
             "protocolMappers": [
               {
                 "name": "groups",
@@ -49,6 +106,56 @@ data:
           { "name": "default" },
           { "name": "base" },
           { "name": "power" }
+        ],
+        "users": [
+          {
+            "username": "admin",
+            "enabled": true,
+            "emailVerified": true,
+            "firstName": "Admin",
+            "lastName": "User",
+            "email": "admin@example.com",
+            "credentials": [
+              { "type": "password", "value": "admin", "temporary": false }
+            ],
+            "groups": ["admin"]
+          },
+          {
+            "username": "power",
+            "enabled": true,
+            "emailVerified": true,
+            "firstName": "Power",
+            "lastName": "User",
+            "email": "power@example.com",
+            "credentials": [
+              { "type": "password", "value": "power", "temporary": false }
+            ],
+            "groups": ["power"]
+          },
+          {
+            "username": "default",
+            "enabled": true,
+            "emailVerified": true,
+            "firstName": "Default",
+            "lastName": "User",
+            "email": "default@example.com",
+            "credentials": [
+              { "type": "password", "value": "default", "temporary": false }
+            ],
+            "groups": ["default"]
+          },
+          {
+            "username": "base",
+            "enabled": true,
+            "emailVerified": true,
+            "firstName": "Base",
+            "lastName": "User",
+            "email": "base@example.com",
+            "credentials": [
+              { "type": "password", "value": "base", "temporary": false }
+            ],
+            "groups": ["base"]
+          }
         ]
       }
     ]

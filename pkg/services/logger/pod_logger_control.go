@@ -10,6 +10,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/key_value"
 	"github.com/kthcloud/go-deploy/pkg/db/message_queue"
 	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/nats"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
 	"github.com/kthcloud/go-deploy/service"
 	"github.com/kthcloud/go-deploy/utils"
@@ -22,7 +23,7 @@ type LogEvent struct {
 
 func PodLoggerControl(ctx context.Context) error {
 	for _, zone := range config.Config.EnabledZones() {
-		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) {
+		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) || nats.IsZoneLogsEnabled(zone.Name) {
 			continue
 		}
 

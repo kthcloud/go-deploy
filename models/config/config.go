@@ -15,6 +15,7 @@ const (
 	ZoneCapabilityDeployment = "deployment"
 	ZoneCapabilityVM         = "vm"
 	ZoneCapabilityDRA        = "dra"
+	ZoneCapabilityNatsLogs   = "nats-logs"
 )
 
 type ConfigType struct {
@@ -103,6 +104,18 @@ type ConfigType struct {
 		URL      string `yaml:"url"`
 		Password string `yaml:"password"`
 	}
+
+	NATS struct {
+		URL      string `yaml:"url"`
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+		Logs     struct {
+			Enabled   bool   `yaml:"enabled"`
+			Stream    string `yaml:"stream"`
+			Namespace string `yaml:"namespace"`
+			MaxAge    string `yaml:"maxAge"`
+		} `yaml:"logs"`
+	} `yaml:"nats"`
 
 	Harbor struct {
 		URL           string `yaml:"url"`

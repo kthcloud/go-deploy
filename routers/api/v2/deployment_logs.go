@@ -50,13 +50,16 @@ func GetLogs(c *gin.Context) {
 		createdAt time.Time
 	}
 
-	ch := make(chan Message)
+	ch := make(chan Message, 64)
 
 	handler := func(source, prefix, msg string, createdAt time.Time) {
-		ch <- Message{source, prefix, msg, createdAt}
+		select {
+		case ch <- Message{source, prefix, msg, createdAt}:
+		case <-c.Request.Context().Done():
+		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(c.Request.Context())
 	defer cancel()
 
 	deployV2 := service.V2(auth)
@@ -71,6 +74,9 @@ func GetLogs(c *gin.Context) {
 		sysContext.ServerError(err, ErrInternal)
 		return
 	}
+
+	c.Header("Cache-Control", "no-cache")
+	c.Header("X-Accel-Buffering", "no")
 
 	c.Stream(func(w io.Writer) bool {
 		select {
