@@ -1,6 +1,8 @@
 package jobs
 
 import (
+	"context"
+
 	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
@@ -10,10 +12,11 @@ import (
 )
 
 // Get retrieves a job by ID.
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Job, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.GetOpts) (*model.Job, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
 	jmc := job_repo.New()
+	jmc.Ctx = ctx
 
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
 		jmc.WithUserID(c.V2.Auth().User.ID)
@@ -23,10 +26,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Job, error) {
 }
 
 // List retrieves a list of jobs.
-func (c *Client) List(opt ...opts.ListOpts) ([]model.Job, error) {
+func (c *Client) List(ctx context.Context, opt ...opts.ListOpts) ([]model.Job, error) {
 	o := utils.GetFirstOrDefault(opt)
 
 	jmc := job_repo.New()
+	jmc.Ctx = ctx
 
 	if o.Pagination != nil {
 		jmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -76,12 +80,14 @@ func (c *Client) List(opt ...opts.ListOpts) ([]model.Job, error) {
 }
 
 // Create creates a new job.
-func (c *Client) Create(id, userID, jobType, version string, args map[string]any) error {
-	return job_repo.New().Create(id, userID, jobType, version, args)
+func (c *Client) Create(ctx context.Context, id, userID, jobType, version string, args map[string]any) error {
+	jmc := job_repo.New()
+	jmc.Ctx = ctx
+	return jmc.Create(id, userID, jobType, version, args)
 }
 
 // Update updates a job.
-func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error) {
+func (c *Client) Update(ctx context.Context, id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error) {
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
 		return nil, sErrors.ErrForbidden
 	}
@@ -90,6 +96,7 @@ func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, er
 	params.FromDTO(jobUpdateDTO)
 
 	jmc := job_repo.New()
+	jmc.Ctx = ctx
 
 	err := jmc.UpdateWithParams(id, &params)
 	if err != nil {
@@ -100,6 +107,6 @@ func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, er
 }
 
 // Exists checks if a job exists.
-func (c *Client) Exists(id string) (bool, error) {
-	return job_repo.New().ExistsByID(id)
+func (c *Client) Exists(ctx context.Context, id string) (bool, error) {
+	return job_repo.New().WithContext(ctx).ExistsByID(id)
 }

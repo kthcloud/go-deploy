@@ -7,9 +7,11 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/services"
 )
 
-// Setup starts the metrics updaters.
+// Setup starts the metrics updaters and blocks until ctx is canceled.
 // Metrics updaters are workers that periodically moves metrics into the key-value store.
 func Setup(ctx context.Context) {
 	log.Println("Starting metrics updaters")
-	go services.PeriodicWorker(ctx, "metricsUpdater", MetricsUpdater, config.Config.Timer.MetricsUpdate)
+	services.RunWorkers(ctx, func(ctx context.Context) {
+		services.PeriodicWorkerCtx(ctx, "metricsUpdater", MetricsUpdater, config.Config.Timer.MetricsUpdate)
+	})
 }

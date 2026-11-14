@@ -49,7 +49,7 @@ func GetSM(c *gin.Context) {
 		return
 	}
 
-	sm, err := service.V2(auth).SMs().Get(requestURI.SmID)
+	sm, err := service.V2(auth).SMs().Get(c.Request.Context(), requestURI.SmID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -93,7 +93,7 @@ func ListSMs(c *gin.Context) {
 		return
 	}
 
-	smList, err := service.V2(auth).SMs().List(opts.ListOpts{
+	smList, err := service.V2(auth).SMs().List(c.Request.Context(), opts.ListOpts{
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		All:        requestQuery.All,
 	})
@@ -147,7 +147,7 @@ func DeleteSM(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	sm, err := deployV2.SMs().Get(requestURI.SmID)
+	sm, err := deployV2.SMs().Get(c.Request.Context(), requestURI.SmID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -159,7 +159,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteSM, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobDeleteSM, version.V2, map[string]any{
 		"id":      sm.ID,
 		"ownerId": sm.OwnerID,
 	})

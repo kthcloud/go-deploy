@@ -1,6 +1,7 @@
 package intializer
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -56,7 +57,7 @@ func CleanUpOldTests() error {
 	}
 
 	for _, team := range oldE2eTeams {
-		err := service.V2().Teams().Delete(team.ID)
+		err := service.V2().Teams().Delete(context.Background(), team.ID)
 		if err != nil {
 			return fmt.Errorf("failed to delete team %s: %w", team.ID, err)
 		}
@@ -71,7 +72,7 @@ func EnsureTestUsersExist() error {
 		return nil
 	}
 
-	users, err := service.V2().Users().ListTestUsers()
+	users, err := service.V2().Users().ListTestUsers(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to list test users: %w", err)
 	}

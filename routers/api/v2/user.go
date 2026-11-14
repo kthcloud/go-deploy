@@ -58,7 +58,7 @@ func GetUser(c *gin.Context) {
 	deployV2 := service.V2(auth)
 
 	if requestQuery.Discover {
-		discover, err := deployV2.Users().Discover(opts.DiscoverOpts{
+		discover, err := deployV2.Users().Discover(c.Request.Context(), opts.DiscoverOpts{
 			UserID: &requestURI.UserID,
 		})
 		if err != nil {
@@ -75,7 +75,7 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := deployV2.Users().Get(requestURI.UserID)
+	user, err := deployV2.Users().Get(c.Request.Context(), requestURI.UserID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -91,8 +91,8 @@ func GetUser(c *gin.Context) {
 		effectiveRole = &model.Role{}
 	}
 
-	usage, _ := deployV2.Users().GetUsage(user.ID)
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(user.ID)))
+	usage, _ := deployV2.Users().GetUsage(c.Request.Context(), user.ID)
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(c.Request.Context(), user.ID)))
 }
 
 // ListUsers
@@ -129,7 +129,7 @@ func ListUsers(c *gin.Context) {
 	deployV2 := service.V2(auth)
 
 	if requestQuery.Discover {
-		userList, err := deployV2.Users().Discover(opts.DiscoverOpts{
+		userList, err := deployV2.Users().Discover(c.Request.Context(), opts.DiscoverOpts{
 			Search:     requestQuery.Search,
 			Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		})
@@ -147,7 +147,7 @@ func ListUsers(c *gin.Context) {
 		return
 	}
 
-	userList, err := deployV2.Users().List(opts.ListOpts{
+	userList, err := deployV2.Users().List(c.Request.Context(), opts.ListOpts{
 		Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		Search:     requestQuery.Search,
 		All:        requestQuery.All,
@@ -160,8 +160,8 @@ func ListUsers(c *gin.Context) {
 	usersDto := make([]body.UserRead, 0)
 	for _, user := range userList {
 		role := config.Config.GetRole(user.EffectiveRole.Name)
-		usage, _ := deployV2.Users().GetUsage(user.ID)
-		usersDto = append(usersDto, user.ToDTO(role, usage, deployV2.SMs().GetUrlByUserID(user.ID)))
+		usage, _ := deployV2.Users().GetUsage(c.Request.Context(), user.ID)
+		usersDto = append(usersDto, user.ToDTO(role, usage, deployV2.SMs().GetUrlByUserID(c.Request.Context(), user.ID)))
 	}
 
 	context.Ok(usersDto)
@@ -210,7 +210,7 @@ func UpdateUser(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	updated, err := deployV2.Users().Update(requestURI.UserID, &userUpdate)
+	updated, err := deployV2.Users().Update(c.Request.Context(), requestURI.UserID, &userUpdate)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrUserNotFound):
@@ -226,6 +226,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	usage, _ := deployV2.Users().GetUsage(updated.ID)
-	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(updated.ID)))
+	usage, _ := deployV2.Users().GetUsage(c.Request.Context(), updated.ID)
+	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(c.Request.Context(), updated.ID)))
 }

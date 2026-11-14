@@ -7,10 +7,18 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/services"
 )
 
-// Setup starts job schedulers
+// Setup starts job schedulers and blocks until ctx is canceled.
 func Setup(ctx context.Context) {
 	log.Println("Starting job schedulers")
-	go services.PeriodicWorker(ctx, "deploymentRepairScheduler", DeploymentRepairScheduler, config.Config.Timer.DeploymentRepair)
-	go services.PeriodicWorker(ctx, "smRepairScheduler", SmRepairScheduler, config.Config.Timer.SmRepair)
-	go services.PeriodicWorker(ctx, "vmRepairScheduler", VmRepairScheduler, config.Config.Timer.VmRepair)
+	services.RunWorkers(ctx,
+		func(ctx context.Context) {
+			services.PeriodicWorker(ctx, "deploymentRepairScheduler", DeploymentRepairScheduler, config.Config.Timer.DeploymentRepair)
+		},
+		func(ctx context.Context) {
+			services.PeriodicWorker(ctx, "smRepairScheduler", SmRepairScheduler, config.Config.Timer.SmRepair)
+		},
+		func(ctx context.Context) {
+			services.PeriodicWorker(ctx, "vmRepairScheduler", VmRepairScheduler, config.Config.Timer.VmRepair)
+		},
+	)
 }

@@ -1,6 +1,7 @@
 package intializer
 
 import (
+	"context"
 	"errors"
 
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ func EnsureSystemDeploymentsExists() error {
 			return errors.New("fallback deployment name not set")
 		}
 
-		err := service.V2().Deployments().Create(uuid.NewString(), "system", &body.DeploymentCreate{
+		err := service.V2().Deployments().Create(context.Background(), uuid.NewString(), "system", &body.DeploymentCreate{
 			Name:     config.Config.Deployment.Fallback.Disabled.Name,
 			CpuCores: new(float64(1)),
 			RAM:      new(float64(1)),
@@ -42,7 +43,7 @@ func EnsureSystemDeploymentsExists() error {
 
 		// Deployment either already exists or was created
 		// Ensure the owner is "system"
-		deployment, err := service.V2().Deployments().GetByName(config.Config.Deployment.Fallback.Disabled.Name)
+		deployment, err := service.V2().Deployments().GetByName(context.Background(), config.Config.Deployment.Fallback.Disabled.Name)
 		if err != nil {
 			return err
 		}

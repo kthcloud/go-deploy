@@ -1,6 +1,8 @@
 package synchronize
 
 import (
+	"context"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_group_repo"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_lease_repo"
@@ -70,7 +72,7 @@ func checkForNonExistentGpuGroups(leases []model.GpuLease, groups []model.GpuGro
 		if _, ok := groupIDs[lease.GpuGroupID]; !ok {
 			log.Infoln("Deleting lease", lease.ID, "since it refers to a non-existent GPU group")
 			// The lease refers to a non-existent GPU group
-			err := deployV2.VMs().GpuLeases().Delete(lease.ID)
+			err := deployV2.VMs().GpuLeases().Delete(context.Background(), lease.ID)
 			if err != nil {
 				return err
 			}
@@ -210,7 +212,7 @@ func checkForExpiredLeasesInFullQueues(leases []model.GpuLease, groups []model.G
 				break
 			}
 
-			err := deployV2.VMs().GpuLeases().Delete(lease.ID)
+			err := deployV2.VMs().GpuLeases().Delete(context.Background(), lease.ID)
 			if err != nil {
 				return err
 			}

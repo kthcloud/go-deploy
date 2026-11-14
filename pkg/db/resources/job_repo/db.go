@@ -1,7 +1,6 @@
 package job_repo
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -42,7 +41,7 @@ func (client *Client) CreateScheduled(id, userID, jobType, version string, runAf
 		ErrorLogs: make([]string, 0),
 	}
 
-	_, err = client.Collection.InsertOne(context.TODO(), job)
+	_, err = client.Collection.InsertOne(client.Context(), job)
 	if err != nil {
 		return fmt.Errorf("failed to create job. details: %w", err)
 	}
@@ -61,7 +60,7 @@ func (client *Client) GetNext() (*model.Job, error) {
 	update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: model.JobStatusRunning}, {Key: "lastRunAt", Value: time.Now()}}}}
 
 	var job model.Job
-	err := client.Collection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
+	err := client.Collection.FindOneAndUpdate(client.Context(), filter, update, opts).Decode(&job)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -84,7 +83,7 @@ func (client *Client) GetNextFailed() (*model.Job, error) {
 	update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: model.JobStatusRunning}, {Key: "lastRunAt", Value: time.Now()}}}}
 
 	var job model.Job
-	err := client.Collection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
+	err := client.Collection.FindOneAndUpdate(client.Context(), filter, update, opts).Decode(&job)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -110,7 +109,7 @@ func (client *Client) MarkCompleted(jobID string) error {
 		},
 	}
 
-	_, err := client.Collection.UpdateOne(context.Background(), filter, update)
+	_, err := client.Collection.UpdateOne(client.Context(), filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update job. details: %w", err)
 	}
@@ -137,7 +136,7 @@ func (client *Client) MarkFailed(jobID string, runAfter time.Time, attempts int,
 		},
 	}
 
-	_, err := client.Collection.UpdateOne(context.Background(), filter, update)
+	_, err := client.Collection.UpdateOne(client.Context(), filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update job. details: %w", err)
 	}
@@ -162,7 +161,7 @@ func (client *Client) MarkTerminated(jobID string, reason string) error {
 		},
 	}
 
-	_, err := client.Collection.UpdateOne(context.Background(), filter, update)
+	_, err := client.Collection.UpdateOne(client.Context(), filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update job. details: %w", err)
 	}
@@ -176,7 +175,7 @@ func (client *Client) ResetRunning() error {
 	filter := bson.D{{Key: "status", Value: model.JobStatusRunning}}
 	update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: model.JobStatusPending}}}}
 
-	_, err := client.Collection.UpdateMany(context.Background(), filter, update)
+	_, err := client.Collection.UpdateMany(client.Context(), filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update job. details: %w", err)
 	}

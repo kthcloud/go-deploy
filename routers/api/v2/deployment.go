@@ -1,6 +1,7 @@
 package v2
 
 import (
+	stdContext "context"
 	"errors"
 	"fmt"
 	"maps"
@@ -65,9 +66,9 @@ func GetDeployment(c *gin.Context) {
 
 	var deployment *model.Deployment
 	if requestQuery.MigrationCode != nil {
-		deployment, err = deployV2.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{MigrationCode: requestQuery.MigrationCode})
+		deployment, err = deployV2.Deployments().Get(c.Request.Context(), requestURI.DeploymentID, opts.GetOpts{MigrationCode: requestQuery.MigrationCode})
 	} else {
-		deployment, err = deployV2.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
+		deployment, err = deployV2.Deployments().Get(c.Request.Context(), requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	}
 
 	if err != nil {
@@ -80,8 +81,8 @@ func GetDeployment(c *gin.Context) {
 		return
 	}
 
-	teamIDs, _ := deployV2.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-	context.Ok(deployment.ToDTO(deployV2.SMs().GetUrlByUserID(deployment.OwnerID), getDeploymentExternalPort(deployment.Zone), teamIDs))
+	teamIDs, _ := deployV2.Teams().ListIDs(c.Request.Context(), teamOpts.ListOpts{ResourceID: deployment.ID})
+	context.Ok(deployment.ToDTO(deployV2.SMs().GetUrlByUserID(c.Request.Context(), deployment.OwnerID), getDeploymentExternalPort(deployment.Zone), teamIDs))
 }
 
 // ListDeployments
@@ -124,7 +125,7 @@ func ListDeployments(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	deployments, err := deployV2.Deployments().List(opts.ListOpts{
+	deployments, err := deployV2.Deployments().List(c.Request.Context(), opts.ListOpts{
 		UserID:     &userID,
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		Shared:     true,
@@ -141,8 +142,8 @@ func ListDeployments(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		teamIDs, _ := deployV2.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-		dtoDeployments[i] = deployment.ToDTO(deployV2.SMs().GetUrlByUserID(deployment.OwnerID), getDeploymentExternalPort(deployment.Zone), teamIDs)
+		teamIDs, _ := deployV2.Teams().ListIDs(c.Request.Context(), teamOpts.ListOpts{ResourceID: deployment.ID})
+		dtoDeployments[i] = deployment.ToDTO(deployV2.SMs().GetUrlByUserID(c.Request.Context(), deployment.OwnerID), getDeploymentExternalPort(deployment.Zone), teamIDs)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -186,7 +187,7 @@ func CreateDeployment(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	doesNotAlreadyExists, err := deployV2.Deployments().NameAvailable(requestBody.Name)
+	doesNotAlreadyExists, err := deployV2.Deployments().NameAvailable(c.Request.Context(), requestBody.Name)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -243,7 +244,7 @@ func CreateDeployment(c *gin.Context) {
 		return
 	}
 
-	if err := validateGpuRequests(&requestBody.GPUs, *requestBody.Zone, auth, deployV2); err != nil {
+	if err := validateGpuRequests(c.Request.Context(), &requestBody.GPUs, *requestBody.Zone, auth, deployV2); err != nil {
 		if errors.Is(err, ErrCouldNotGetGpuClaims) {
 			context.ServerError(err, ErrCouldNotGetGpuClaims)
 			return
@@ -256,7 +257,7 @@ func CreateDeployment(c *gin.Context) {
 		return
 	}
 
-	err = deployV2.Deployments().CheckQuota("", &opts.QuotaOptions{Create: &requestBody})
+	err = deployV2.Deployments().CheckQuota(c.Request.Context(), "", &opts.QuotaOptions{Create: &requestBody})
 	if err != nil {
 		if quotaExceededErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceededErr.Error())
@@ -269,7 +270,7 @@ func CreateDeployment(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateDeployment, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobCreateDeployment, version.V2, map[string]any{
 		"id":       deploymentID,
 		"ownerId":  auth.User.ID,
 		"params":   requestBody,
@@ -319,7 +320,7 @@ func DeleteDeployment(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	currentDeployment, err := deployV2.Deployments().Get(requestURI.DeploymentID)
+	currentDeployment, err := deployV2.Deployments().Get(c.Request.Context(), requestURI.DeploymentID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -335,7 +336,7 @@ func DeleteDeployment(c *gin.Context) {
 		return
 	}
 
-	err = deployV2.Deployments().StartActivity(requestURI.DeploymentID, model.ActivityBeingDeleted)
+	err = deployV2.Deployments().StartActivity(c.Request.Context(), requestURI.DeploymentID, model.ActivityBeingDeleted)
 	if err != nil {
 		if failedToStartActivityErr, ok := errors.AsType[sErrors.FailedToStartActivityError](err); ok {
 			context.Locked(failedToStartActivityErr.Error())
@@ -352,7 +353,7 @@ func DeleteDeployment(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteDeployment, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobDeleteDeployment, version.V2, map[string]any{
 		"id":       currentDeployment.ID,
 		"ownerId":  auth.User.ID,
 		"authInfo": auth,
@@ -407,7 +408,7 @@ func UpdateDeployment(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	deployment, err := deployV2.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
+	deployment, err := deployV2.Deployments().Get(c.Request.Context(), requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -418,7 +419,7 @@ func UpdateDeployment(c *gin.Context) {
 	}
 
 	if requestBody.Name != nil {
-		available, err := deployV2.Deployments().NameAvailable(*requestBody.Name)
+		available, err := deployV2.Deployments().NameAvailable(c.Request.Context(), *requestBody.Name)
 		if err != nil {
 			context.ServerError(err, ErrInternal)
 			return
@@ -430,7 +431,7 @@ func UpdateDeployment(c *gin.Context) {
 		}
 	}
 
-	if err := validateGpuRequests(requestBody.GPUs, deployment.Zone, auth, deployV2); err != nil {
+	if err := validateGpuRequests(c.Request.Context(), requestBody.GPUs, deployment.Zone, auth, deployV2); err != nil {
 		if errors.Is(err, ErrCouldNotGetGpuClaims) {
 			context.ServerError(err, ErrCouldNotGetGpuClaims)
 			return
@@ -448,7 +449,7 @@ func UpdateDeployment(c *gin.Context) {
 		return
 	}
 
-	err = deployV2.Deployments().CheckQuota(requestURI.DeploymentID, &opts.QuotaOptions{Update: &requestBody})
+	err = deployV2.Deployments().CheckQuota(c.Request.Context(), requestURI.DeploymentID, &opts.QuotaOptions{Update: &requestBody})
 	if err != nil {
 		if quotaExceededErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceededErr.Error())
@@ -459,14 +460,14 @@ func UpdateDeployment(c *gin.Context) {
 		return
 	}
 
-	canUpdate, reason := deployV2.Deployments().CanAddActivity(requestURI.DeploymentID, model.ActivityUpdating)
+	canUpdate, reason := deployV2.Deployments().CanAddActivity(c.Request.Context(), requestURI.DeploymentID, model.ActivityUpdating)
 	if !canUpdate {
 		context.Locked(reason)
 		return
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateDeployment, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobUpdateDeployment, version.V2, map[string]any{
 		"id":       deployment.ID,
 		"params":   requestBody,
 		"authInfo": auth,
@@ -482,7 +483,7 @@ func UpdateDeployment(c *gin.Context) {
 	})
 }
 
-func validateGpuRequests(gpus *[]body.DeploymentGPU, zone string, auth *core.AuthInfo, deployV2 clients.V2) error {
+func validateGpuRequests(ctx stdContext.Context, gpus *[]body.DeploymentGPU, zone string, auth *core.AuthInfo, deployV2 clients.V2) error {
 	if gpus != nil {
 		if len(*gpus) > 0 {
 
@@ -506,7 +507,7 @@ func validateGpuRequests(gpus *[]body.DeploymentGPU, zone string, auth *core.Aut
 				}
 			}
 			names := slices.AppendSeq(make([]string, 0, len(claimReqMap)), maps.Keys(claimReqMap))
-			claims, err := deployV2.GpuClaims().List(gpuClaimOpts.ListOpts{
+			claims, err := deployV2.GpuClaims().List(ctx, gpuClaimOpts.ListOpts{
 				Names: &names,
 				Zone:  &zone,
 				Roles: &roles,

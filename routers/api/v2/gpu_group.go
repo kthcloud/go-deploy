@@ -42,7 +42,7 @@ func GetGpuGroup(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	gpuGroup, err := deployV2.VMs().GpuGroups().Get(requestURI.GpuGroupID)
+	gpuGroup, err := deployV2.VMs().GpuGroups().Get(c.Request.Context(), requestURI.GpuGroupID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -53,7 +53,7 @@ func GetGpuGroup(c *gin.Context) {
 		return
 	}
 
-	leases, err := deployV2.VMs().GpuLeases().Count(opts.ListGpuLeaseOpts{
+	leases, err := deployV2.VMs().GpuLeases().Count(c.Request.Context(), opts.ListGpuLeaseOpts{
 		GpuGroupID: &gpuGroup.ID,
 	})
 	if err != nil {
@@ -102,7 +102,7 @@ func ListGpuGroups(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	gpuGroups, err := deployV2.VMs().GpuGroups().List(opts.ListGpuGroupOpts{
+	gpuGroups, err := deployV2.VMs().GpuGroups().List(c.Request.Context(), opts.ListGpuGroupOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 	})
 	if err != nil {
@@ -117,7 +117,7 @@ func ListGpuGroups(c *gin.Context) {
 
 	dtoGpuGroups := make([]body.GpuGroupRead, len(gpuGroups))
 	for i, gpuGroup := range gpuGroups {
-		leases, err := deployV2.VMs().GpuLeases().Count(opts.ListGpuLeaseOpts{
+		leases, err := deployV2.VMs().GpuLeases().Count(c.Request.Context(), opts.ListGpuLeaseOpts{
 			GpuGroupID: &gpuGroup.ID,
 		})
 		if err != nil {

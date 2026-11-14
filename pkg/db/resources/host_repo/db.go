@@ -1,7 +1,6 @@
 package host_repo
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -21,7 +20,7 @@ func (client *Client) Register(host *model.Host) error {
 
 	if current == nil {
 		// Host does not exist, insert it
-		_, err = client.Collection.InsertOne(context.TODO(), host)
+		_, err = client.Collection.InsertOne(client.Context(), host)
 		if err != nil {
 			return fmt.Errorf("failed to insert host %s. details: %w", host.Name, err)
 		}

@@ -43,6 +43,10 @@ func VmStatusListener(ctx context.Context) error {
 			}
 		})
 
+		if err != nil {
+			return fmt.Errorf("failed to set up vm status watcher for zone %s. details: %w", zone.Name, err)
+		}
+
 		err = k8s_service.New().SetupStatusWatcher(ctx, &z, "vmi", func(name string, incomingStatus any) {
 			if status, ok := incomingStatus.(*model.VmiStatus); ok {
 				if status.Host == nil {
@@ -67,6 +71,7 @@ func VmStatusListener(ctx context.Context) error {
 		}
 	}
 
+	<-ctx.Done()
 	return nil
 }
 

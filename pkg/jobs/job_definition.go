@@ -1,6 +1,8 @@
 package jobs
 
 import (
+	"context"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
 	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
@@ -11,7 +13,7 @@ import (
 // It contains the job itself and the functions that are executed when the job is created, updated, deleted, etc.
 type JobDefinition struct {
 	Job           *model.Job
-	JobFunc       func(*model.Job) error
+	JobFunc       func(context.Context, *model.Job) error
 	EntryFunc     func(*model.Job) error
 	ExitFunc      func(*model.Job) error
 	TerminateFunc func(*model.Job) (bool, error)

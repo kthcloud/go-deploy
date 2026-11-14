@@ -12,7 +12,6 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
 	jErrors "github.com/kthcloud/go-deploy/pkg/jobs/errors"
 	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
-	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/services/confirm"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
@@ -20,7 +19,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func CreateVM(job *model.Job) error {
+func CreateVM(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -34,17 +33,17 @@ func CreateVM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().Create(id, ownerID, &params)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().Create(ctx, id, ownerID, &params)
 	if err != nil {
 		// If there was some error, we trigger a repair, since rerunning it would cause a ErrNonUniqueField
-		_ = service.V2(utils.GetAuthInfo(job)).VMs().Repair(id)
+		_ = service.V2(utils.GetAuthInfo(job)).VMs().Repair(ctx, id)
 		return jErrors.MakeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func DeleteVM(job *model.Job) error {
+func DeleteVM(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -68,34 +67,17 @@ func DeleteVM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
-	defer cancel()
-
-	go func() {
-		err = utils.WaitForJobs(ctx, relatedJobs, []string{model.JobStatusCompleted, model.JobStatusTerminated})
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				return
-			}
-
-			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("Timeout waiting for related jobs to finish for model", id)
-				return
-			}
-
-			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
+	if err := utils.WaitForRelatedJobs(ctx, id, relatedJobs, 300*time.Second); err != nil {
+		if errors.Is(err, context.Canceled) {
+			return jErrors.MakeFailedError(err)
 		}
-
-		cancel()
-	}()
-
-	select {
-	case <-time.After(300 * time.Second):
-		return jErrors.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
-	case <-ctx.Done():
+		if errors.Is(err, context.DeadlineExceeded) {
+			return jErrors.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish: %w", err))
+		}
+		return jErrors.MakeFailedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().Delete(id)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().Delete(ctx, id)
 	if err != nil {
 		if !errors.Is(err, sErrors.ErrVmNotFound) {
 			return jErrors.MakeFailedError(err)
@@ -119,7 +101,7 @@ func DeleteVM(job *model.Job) error {
 	return nil
 }
 
-func UpdateVM(job *model.Job) error {
+func UpdateVM(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -132,7 +114,7 @@ func UpdateVM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().Update(id, &update)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().Update(ctx, id, &update)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrVmNotFound):
@@ -158,7 +140,7 @@ func UpdateVM(job *model.Job) error {
 	return nil
 }
 
-func CreateGpuLease(job *model.Job) error {
+func CreateGpuLease(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "userId", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -172,7 +154,7 @@ func CreateGpuLease(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Create(id, userID, &params)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Create(ctx, id, userID, &params)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrVmNotFound):
@@ -189,7 +171,7 @@ func CreateGpuLease(job *model.Job) error {
 	return nil
 }
 
-func UpdateGpuLease(job *model.Job) error {
+func UpdateGpuLease(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -202,7 +184,7 @@ func UpdateGpuLease(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Update(id, &params)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Update(ctx, id, &params)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrGpuLeaseNotFound):
@@ -219,7 +201,7 @@ func UpdateGpuLease(job *model.Job) error {
 	return nil
 }
 
-func DeleteGpuLease(job *model.Job) error {
+func DeleteGpuLease(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -227,7 +209,7 @@ func DeleteGpuLease(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Delete(id)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Delete(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrGpuNotFound):
@@ -240,7 +222,7 @@ func DeleteGpuLease(job *model.Job) error {
 	return nil
 }
 
-func CreateSystemVmSnapshot(job *model.Job) error {
+func CreateSystemVmSnapshot(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -253,7 +235,7 @@ func CreateSystemVmSnapshot(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	_, err = service.V2(utils.GetAuthInfo(job)).VMs().Snapshots().Create(vmID, opts.CreateSnapshotOpts{System: &params})
+	_, err = service.V2(utils.GetAuthInfo(job)).VMs().Snapshots().Create(ctx, vmID, opts.CreateSnapshotOpts{System: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -262,7 +244,7 @@ func CreateSystemVmSnapshot(job *model.Job) error {
 	return nil
 }
 
-func CreateUserVmSnapshot(job *model.Job) error {
+func CreateUserVmSnapshot(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -275,7 +257,7 @@ func CreateUserVmSnapshot(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	_, err = service.V2(utils.GetAuthInfo(job)).VMs().Snapshots().Create(vmID, opts.CreateSnapshotOpts{User: &params})
+	_, err = service.V2(utils.GetAuthInfo(job)).VMs().Snapshots().Create(ctx, vmID, opts.CreateSnapshotOpts{User: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -284,7 +266,7 @@ func CreateUserVmSnapshot(job *model.Job) error {
 	return nil
 }
 
-func DeleteVmSnapshot(job *model.Job) error {
+func DeleteVmSnapshot(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "snapshotId"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -293,7 +275,7 @@ func DeleteVmSnapshot(job *model.Job) error {
 	vmID := job.Args["id"].(string)
 	snapshotID := job.Args["snapshotId"].(string)
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().Snapshots().Delete(vmID, snapshotID)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().Snapshots().Delete(ctx, vmID, snapshotID)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -302,7 +284,7 @@ func DeleteVmSnapshot(job *model.Job) error {
 	return nil
 }
 
-func DoVmAction(job *model.Job) error {
+func DoVmAction(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -315,7 +297,7 @@ func DoVmAction(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().DoAction(vmID, &params)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().DoAction(ctx, vmID, &params)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -324,7 +306,7 @@ func DoVmAction(job *model.Job) error {
 	return nil
 }
 
-func UpdateVmOwner(job *model.Job) error {
+func UpdateVmOwner(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -337,7 +319,7 @@ func UpdateVmOwner(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().UpdateOwner(id, &params)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().UpdateOwner(ctx, id, &params)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrVmNotFound) {
 			return jErrors.MakeTerminatedError(err)
@@ -348,7 +330,7 @@ func UpdateVmOwner(job *model.Job) error {
 
 	if job.HasArg("resourceMigrationId") {
 		resourceMigrationID := job.Args["resourceMigrationId"].(string)
-		err = service.V2().ResourceMigrations().Delete(resourceMigrationID)
+		err = service.V2().ResourceMigrations().Delete(ctx, resourceMigrationID)
 		if err != nil {
 			return jErrors.MakeTerminatedError(err)
 		}
@@ -362,7 +344,7 @@ func UpdateVmOwner(job *model.Job) error {
 	return nil
 }
 
-func RepairVM(job *model.Job) error {
+func RepairVM(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -370,7 +352,7 @@ func RepairVM(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().Repair(id)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().Repair(ctx, id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)

@@ -29,7 +29,7 @@ type CollectionDefinition struct {
 
 // setupMongo initializes the MongoDB connection.
 // It should be called once at the start of the application.
-func (dbCtx *Context) setupMongo() error {
+func (dbCtx *Context) setupMongo(ctx context.Context) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to set up mongodb. details: %w", err)
 	}
@@ -37,14 +37,13 @@ func (dbCtx *Context) setupMongo() error {
 	log.Println("Setting up MongoDB")
 
 	var err error
-	dbCtx.MongoClient, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(config.Config.MongoDB.URL))
+	dbCtx.MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(config.Config.MongoDB.URL))
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = dbCtx.MongoClient.Ping(context.Background(), nil)
-	if err != nil {
-		log.Fatalln(makeError(err))
+	if err := dbCtx.MongoClient.Ping(ctx, nil); err != nil {
+		return makeError(err)
 	}
 
 	// Find collections
@@ -59,7 +58,7 @@ func (dbCtx *Context) setupMongo() error {
 	ensureCount := 0
 	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.Indexes {
-			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
+			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(ctx, mongo.IndexModel{
 				Keys:    map[string]int{indexName: 1},
 				Options: options.Index().SetUnique(false),
 			})
@@ -81,7 +80,7 @@ func (dbCtx *Context) setupMongo() error {
 				keys = append(keys, bson.E{Key: key, Value: 1})
 			}
 
-			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
+			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(ctx, mongo.IndexModel{
 				Keys:    keys,
 				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{Key: "deletedAt", Value: bson.D{{Key: "$in", Value: []any{nil, time.Time{}}}}}}),
 			})
@@ -103,7 +102,7 @@ func (dbCtx *Context) setupMongo() error {
 				keys = append(keys, bson.E{Key: key, Value: 1})
 			}
 
-			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
+			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(ctx, mongo.IndexModel{
 				Keys:    keys,
 				Options: options.Index().SetUnique(true),
 			})
@@ -128,7 +127,7 @@ func (dbCtx *Context) setupMongo() error {
 			keys = append(keys, bson.E{Key: indexName, Value: "text"})
 		}
 
-		_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		_, err = DB.GetCollection(def.Name).Indexes().CreateOne(ctx, mongo.IndexModel{
 			Keys: keys,
 		})
 		if err != nil && !isIndexExistsError(err) {
@@ -145,17 +144,17 @@ func (dbCtx *Context) setupMongo() error {
 
 // shutdownMongo closes the MongoDB connection.
 // It should be called once at the end of the application.
-func (dbCtx *Context) shutdownMongo() error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to shutdown database. details: %w", err)
+func (dbCtx *Context) shutdownMongo(ctx context.Context) error {
+	if dbCtx.MongoClient == nil {
+		return nil
 	}
 
-	err := dbCtx.MongoClient.Disconnect(context.Background())
-	if err != nil {
-		return makeError(err)
+	if err := dbCtx.MongoClient.Disconnect(ctx); err != nil {
+		return fmt.Errorf("failed to shutdown database: %w", err)
 	}
 
 	dbCtx.CollectionMap = nil
+	dbCtx.MongoClient = nil
 
 	return nil
 }

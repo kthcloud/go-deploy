@@ -33,7 +33,7 @@ func SetupAuthUser(c *gin.Context) {
 			return
 		}
 
-		user, err = service.V2().Users().GetByApiKey(apiKey)
+		user, err = service.V2().Users().GetByApiKey(c.Request.Context(), apiKey)
 		if err != nil {
 			context.ServerError(err, v2.ErrAuthInfoSetupFailed)
 			c.Abort()
@@ -65,7 +65,7 @@ func SetupAuthUser(c *gin.Context) {
 			Roles:     config.Config.GetRolesByIamGroups(jwtToken.Groups),
 		}
 
-		user, err = service.V2().Users().Synchronize(authParams)
+		user, err = service.V2().Users().Synchronize(c.Request.Context(), authParams)
 		if err != nil {
 			context.ServerError(err, v2.ErrAuthInfoSetupFailed)
 			c.Abort()

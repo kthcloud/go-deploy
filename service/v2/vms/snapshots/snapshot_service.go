@@ -1,16 +1,18 @@
 package snapshots
 
 import (
+	"context"
 	"fmt"
+	"sort"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/service/utils"
 	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
-	"sort"
 )
 
 // Get gets a snapshot
-func (c *Client) Get(vmID string, id string, opts ...opts.GetSnapshotOpts) (*model.SnapshotV2, error) {
+func (c *Client) Get(_ context.Context, vmID string, id string, opts ...opts.GetSnapshotOpts) (*model.SnapshotV2, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
 	vm, err := c.VM(vmID, nil)
@@ -36,7 +38,7 @@ func (c *Client) Get(vmID string, id string, opts ...opts.GetSnapshotOpts) (*mod
 }
 
 // GetByName gets a snapshot by name
-func (c *Client) GetByName(vmID string, name string, opts ...opts.GetSnapshotOpts) (*model.SnapshotV2, error) {
+func (c *Client) GetByName(_ context.Context, vmID string, name string, opts ...opts.GetSnapshotOpts) (*model.SnapshotV2, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
 	vm, err := c.VM(vmID, nil)
@@ -62,7 +64,7 @@ func (c *Client) GetByName(vmID string, name string, opts ...opts.GetSnapshotOpt
 }
 
 // List lists snapshots
-func (c *Client) List(vmID string, opts ...opts.ListSnapshotOpts) ([]model.SnapshotV2, error) {
+func (c *Client) List(_ context.Context, vmID string, opts ...opts.ListSnapshotOpts) ([]model.SnapshotV2, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
 	vm, err := c.VM(vmID, nil)
@@ -92,7 +94,7 @@ func (c *Client) List(vmID string, opts ...opts.ListSnapshotOpts) ([]model.Snaps
 }
 
 // Create creates a snapshot
-func (c *Client) Create(vmID string, opts ...opts.CreateSnapshotOpts) (*model.SnapshotV2, error) {
+func (c *Client) Create(_ context.Context, vmID string, opts ...opts.CreateSnapshotOpts) (*model.SnapshotV2, error) {
 	o := utils.GetFirstOrDefault(opts)
 
 	makeError := func(err error) error {
@@ -134,7 +136,7 @@ func (c *Client) Create(vmID string, opts ...opts.CreateSnapshotOpts) (*model.Sn
 }
 
 // Delete deletes a snapshot
-func (c *Client) Delete(vmID, snapshotID string) error {
+func (c *Client) Delete(_ context.Context, vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete snapshot %s from vm %s. details: %w", snapshotID, vmID, err)
 	}
@@ -162,7 +164,7 @@ func (c *Client) Delete(vmID, snapshotID string) error {
 }
 
 // Apply applies a snapshot
-func (c *Client) Apply(vmID, snapshotID string) error {
+func (c *Client) Apply(_ context.Context, vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %w", snapshotID, vmID, err)
 	}

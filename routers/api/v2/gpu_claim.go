@@ -53,7 +53,7 @@ func GetGpuClaim(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	GpuClaim, err := deployV2.GpuClaims().Get(requestURI.GpuClaimID)
+	GpuClaim, err := deployV2.GpuClaims().Get(c.Request.Context(), requestURI.GpuClaimID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -118,7 +118,7 @@ func ListGpuClaims(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	GpuClaims, err := deployV2.GpuClaims().List(opts.ListOpts{
+	GpuClaims, err := deployV2.GpuClaims().List(c.Request.Context(), opts.ListOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 		Roles:      &roles,
 	})
@@ -212,7 +212,7 @@ func CreateGpuClaim(c *gin.Context) {
 
 	GpuClaimID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateGpuClaim, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobCreateGpuClaim, version.V2, map[string]any{
 		"id":       GpuClaimID,
 		"params":   requestBody,
 		"authInfo": auth,
@@ -265,7 +265,7 @@ func DeleteGpuClaim(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	currentGpuClaim, err := deployV2.GpuClaims().Get(requestURI.GpuClaimID)
+	currentGpuClaim, err := deployV2.GpuClaims().Get(c.Request.Context(), requestURI.GpuClaimID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -294,7 +294,7 @@ func DeleteGpuClaim(c *gin.Context) {
 	}*/
 
 	jobID := uuid.NewString()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuClaim, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobDeleteGpuClaim, version.V2, map[string]any{
 		"id":       currentGpuClaim.ID,
 		"authInfo": auth,
 	})

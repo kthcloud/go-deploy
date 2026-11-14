@@ -43,7 +43,7 @@ func GetResourceMigration(c *gin.Context) {
 		return
 	}
 
-	resourceMigration, err := service.V2(auth).ResourceMigrations().Get(requestQuery.ResourceMigrationID)
+	resourceMigration, err := service.V2(auth).ResourceMigrations().Get(c.Request.Context(), requestQuery.ResourceMigrationID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -86,7 +86,7 @@ func ListResourceMigrations(c *gin.Context) {
 		return
 	}
 
-	resourceMigrations, err := service.V2(auth).ResourceMigrations().List()
+	resourceMigrations, err := service.V2(auth).ResourceMigrations().List(c.Request.Context())
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -136,7 +136,7 @@ func CreateResourceMigration(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	resourceMigration, jobID, err := deployV2.ResourceMigrations().Create(uuid.New().String(), auth.User.ID, &requestBody)
+	resourceMigration, jobID, err := deployV2.ResourceMigrations().Create(c.Request.Context(), uuid.New().String(), auth.User.ID, &requestBody)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrResourceMigrationAlreadyExists):
@@ -219,7 +219,7 @@ func UpdateResourceMigration(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	resourceMigration, err := deployV2.ResourceMigrations().Get(requestURI.ResourceMigrationID, opts.GetOpts{
+	resourceMigration, err := deployV2.ResourceMigrations().Get(c.Request.Context(), requestURI.ResourceMigrationID, opts.GetOpts{
 		MigrationCode: requestBody.Code,
 	})
 	if err != nil {
@@ -233,7 +233,7 @@ func UpdateResourceMigration(c *gin.Context) {
 	}
 
 	var jobID *string
-	resourceMigration, jobID, err = deployV2.ResourceMigrations().Update(resourceMigration.ID, &requestBody, opts.UpdateOpts{
+	resourceMigration, jobID, err = deployV2.ResourceMigrations().Update(c.Request.Context(), resourceMigration.ID, &requestBody, opts.UpdateOpts{
 		MigrationCode: requestBody.Code,
 	})
 	if err != nil {
@@ -322,7 +322,7 @@ func DeleteResourceMigration(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	resourceMigration, err := deployV2.ResourceMigrations().Get(requestQuery.ResourceMigrationID)
+	resourceMigration, err := deployV2.ResourceMigrations().Get(c.Request.Context(), requestQuery.ResourceMigrationID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -333,7 +333,7 @@ func DeleteResourceMigration(c *gin.Context) {
 		return
 	}
 
-	err = deployV2.ResourceMigrations().Delete(resourceMigration.ID)
+	err = deployV2.ResourceMigrations().Delete(c.Request.Context(), resourceMigration.ID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return

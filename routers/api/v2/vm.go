@@ -60,9 +60,9 @@ func GetVM(c *gin.Context) {
 
 	var vm *model.VM
 	if requestQuery.MigrationCode != nil {
-		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{MigrationCode: requestQuery.MigrationCode})
+		vm, err = deployV2.VMs().Get(c.Request.Context(), requestURI.VmID, opts.GetOpts{MigrationCode: requestQuery.MigrationCode})
 	} else {
-		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+		vm, err = deployV2.VMs().Get(c.Request.Context(), requestURI.VmID, opts.GetOpts{Shared: true})
 	}
 
 	if err != nil {
@@ -75,10 +75,10 @@ func GetVM(c *gin.Context) {
 		return
 	}
 
-	teamIDs, _ := deployV2.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
+	teamIDs, _ := deployV2.Teams().ListIDs(c.Request.Context(), teamOpts.ListOpts{ResourceID: vm.ID})
+	sshConnectionString, _ := deployV2.VMs().SshConnectionString(c.Request.Context(), vm.ID)
 
-	lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
+	lease, _ := deployV2.VMs().GpuLeases().GetByVmID(c.Request.Context(), vm.ID)
 	context.Ok(vm.ToDTOv2(lease, teamIDs, getVmAppExternalPort(vm.Zone), sshConnectionString))
 }
 
@@ -123,7 +123,7 @@ func ListVMs(c *gin.Context) {
 		userID = auth.User.ID
 	}
 
-	vms, err := deployV2.VMs().List(opts.ListOpts{
+	vms, err := deployV2.VMs().List(c.Request.Context(), opts.ListOpts{
 		Pagination: v2Utils.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     &userID,
 		Shared:     true,
@@ -140,9 +140,9 @@ func ListVMs(c *gin.Context) {
 
 	dtoVMs := make([]body.VmRead, len(vms))
 	for i, vm := range vms {
-		teamIDs, _ := deployV2.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-		sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
-		lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
+		teamIDs, _ := deployV2.Teams().ListIDs(c.Request.Context(), teamOpts.ListOpts{ResourceID: vm.ID})
+		sshConnectionString, _ := deployV2.VMs().SshConnectionString(c.Request.Context(), vm.ID)
+		lease, _ := deployV2.VMs().GpuLeases().GetByVmID(c.Request.Context(), vm.ID)
 		dtoVMs[i] = vm.ToDTOv2(lease, teamIDs, getVmAppExternalPort(vm.Zone), sshConnectionString)
 	}
 
@@ -192,7 +192,7 @@ func CreateVM(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	unique, err := deployV2.VMs().NameAvailable(requestBody.Name)
+	unique, err := deployV2.VMs().NameAvailable(c.Request.Context(), requestBody.Name)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -226,7 +226,7 @@ func CreateVM(c *gin.Context) {
 		return
 	}
 
-	err = deployV2.VMs().CheckQuota("", auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
+	err = deployV2.VMs().CheckQuota(c.Request.Context(), "", auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
 	if err != nil {
 		if quotaExceedErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceedErr.Error())
@@ -239,7 +239,7 @@ func CreateVM(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateVM, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobCreateVM, version.V2, map[string]any{
 		"id":       vmID,
 		"ownerId":  auth.User.ID,
 		"params":   requestBody,
@@ -288,7 +288,7 @@ func DeleteVM(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	vm, err := deployV2.VMs().Get(c.Request.Context(), requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -305,7 +305,7 @@ func DeleteVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVM, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobDeleteVM, version.V2, map[string]any{
 		"id":       vm.ID,
 		"authInfo": auth,
 	})
@@ -360,7 +360,7 @@ func UpdateVM(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	vm, err := deployV2.VMs().Get(c.Request.Context(), requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -372,7 +372,7 @@ func UpdateVM(c *gin.Context) {
 	}
 
 	if requestBody.Name != nil {
-		available, err := deployV2.VMs().NameAvailable(*requestBody.Name)
+		available, err := deployV2.VMs().NameAvailable(c.Request.Context(), *requestBody.Name)
 		if err != nil {
 			context.ServerError(err, ErrInternal)
 			return
@@ -407,7 +407,7 @@ func UpdateVM(c *gin.Context) {
 		return
 	}
 
-	err = deployV2.VMs().CheckQuota(vm.ID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
+	err = deployV2.VMs().CheckQuota(c.Request.Context(), vm.ID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		if quotaExceededErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceededErr.Error())
@@ -419,7 +419,7 @@ func UpdateVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateVM, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobUpdateVM, version.V2, map[string]any{
 		"id":       vm.ID,
 		"params":   requestBody,
 		"authInfo": auth,

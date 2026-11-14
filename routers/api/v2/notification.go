@@ -42,7 +42,7 @@ func GetNotification(c *gin.Context) {
 		return
 	}
 
-	notification, err := service.V2(auth).Notifications().Get(requestQuery.NotificationID)
+	notification, err := service.V2(auth).Notifications().Get(c.Request.Context(), requestQuery.NotificationID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -88,7 +88,7 @@ func ListNotifications(c *gin.Context) {
 		userID = &auth.User.ID
 	}
 
-	notificationList, err := service.V2(auth).Notifications().List(opts.ListOpts{
+	notificationList, err := service.V2(auth).Notifications().List(c.Request.Context(), opts.ListOpts{
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
@@ -139,7 +139,7 @@ func UpdateNotification(c *gin.Context) {
 		return
 	}
 
-	updated, err := service.V2(auth).Notifications().Update(requestQuery.NotificationID, &requestBody)
+	updated, err := service.V2(auth).Notifications().Update(c.Request.Context(), requestQuery.NotificationID, &requestBody)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -180,7 +180,7 @@ func DeleteNotification(c *gin.Context) {
 		return
 	}
 
-	err = service.V2(auth).Notifications().Delete(requestQuery.NotificationID)
+	err = service.V2(auth).Notifications().Delete(c.Request.Context(), requestQuery.NotificationID)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrNotificationNotFound) {
 			context.NotFound("Notification not found")

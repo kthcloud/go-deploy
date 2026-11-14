@@ -52,10 +52,10 @@ func PodLoggerControl(ctx context.Context) error {
 			if !exists {
 				// Clean up the keys
 				log.Printf("Pod %s no longer exists in zone %s. Cleaning up keys", podName, z.Name)
-				_ = kvc.Del(LogKey(podName, z.Name))
-				_ = kvc.Del(LastLogKey(podName, z.Name))
-				_ = kvc.Del(OwnerLogKey(podName, z.Name))
-				_ = mqc.Publish(LogQueueKey(z.Name), LogEvent{
+				_ = kvc.Del(ctx, LogKey(podName, z.Name))
+				_ = kvc.Del(ctx, LastLogKey(podName, z.Name))
+				_ = kvc.Del(ctx, OwnerLogKey(podName, z.Name))
+				_ = mqc.Publish(ctx, LogQueueKey(z.Name), LogEvent{
 					PodName:  podName,
 					PodEvent: k8s.PodEventDeleted,
 				})
@@ -63,12 +63,12 @@ func PodLoggerControl(ctx context.Context) error {
 			}
 
 			// Reset the expired key so that it can be used again
-			_, err = kvc.SetNX(key, false, LoggerLifetime)
+			_, err = kvc.SetNX(ctx, key, false, LoggerLifetime)
 			if err != nil {
 				return fmt.Errorf("failed to reset expired key for pod %s. details: %w", podName, err)
 			}
 
-			count, err := mqc.GetListeners(LogQueueKey(zone.Name))
+			count, err := mqc.GetListeners(ctx, LogQueueKey(zone.Name))
 			if err != nil {
 				return err
 			}
@@ -79,7 +79,7 @@ func PodLoggerControl(ctx context.Context) error {
 			}
 
 			// If a non-expired owner key exists, then the logger is still active
-			isSet, err := kvc.IsSet(OwnerLogKey(podName, z.Name))
+			isSet, err := kvc.IsSet(ctx, OwnerLogKey(podName, z.Name))
 			if err != nil {
 				return fmt.Errorf("failed to check if owner key is set for pod %s. details: %w", podName, err)
 			}
@@ -89,7 +89,7 @@ func PodLoggerControl(ctx context.Context) error {
 			}
 
 			// Publish the pod name to the active listeners
-			err = mqc.Publish(LogQueueKey(z.Name), LogEvent{
+			err = mqc.Publish(ctx, LogQueueKey(z.Name), LogEvent{
 				PodName:  podName,
 				PodEvent: k8s.PodEventAdded,
 			})
@@ -99,6 +99,9 @@ func PodLoggerControl(ctx context.Context) error {
 
 			return nil
 		})
+		if err != nil {
+			return fmt.Errorf("failed to set up expiration listener for zone %s: %w", zone.Name, err)
+		}
 
 		// Listen to pod events to set up loggers
 		err = service.V2().Deployments().K8s().SetupPodWatcher(ctx, &z, func(podName string, event string) {
@@ -108,10 +111,10 @@ func PodLoggerControl(ctx context.Context) error {
 			case k8s.PodEventDeleted:
 				// We assume that the logger stops on its own
 				// Clean up the keys
-				_ = kvc.Del(LogKey(podName, z.Name))
-				_ = kvc.Del(LastLogKey(podName, z.Name))
-				_ = kvc.Del(OwnerLogKey(podName, z.Name))
-				_ = mqc.Publish(LogQueueKey(z.Name), LogEvent{
+				_ = kvc.Del(ctx, LogKey(podName, z.Name))
+				_ = kvc.Del(ctx, LastLogKey(podName, z.Name))
+				_ = kvc.Del(ctx, OwnerLogKey(podName, z.Name))
+				_ = mqc.Publish(ctx, LogQueueKey(z.Name), LogEvent{
 					PodName:  podName,
 					PodEvent: k8s.PodEventDeleted,
 				})
@@ -119,7 +122,7 @@ func PodLoggerControl(ctx context.Context) error {
 				return
 			}
 
-			_, err = kvc.SetNX(LogKey(podName, z.Name), false, 1*time.Second)
+			_, err = kvc.SetNX(ctx, LogKey(podName, z.Name), false, 1*time.Second)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to activate pod processing (when no listeners). details: %w", err))
 				return
@@ -133,6 +136,7 @@ func PodLoggerControl(ctx context.Context) error {
 		// Synchronize the existing pods with the loggers at an interval
 		go func(ctx context.Context) {
 			ticker := time.NewTicker(LoggerSynchronize)
+			defer ticker.Stop()
 			for {
 				select {
 				case <-ctx.Done():
@@ -144,7 +148,7 @@ func PodLoggerControl(ctx context.Context) error {
 						continue
 					}
 
-					activePods, err := ActivePods(kvc, z.Name)
+					activePods, err := ActivePods(ctx, kvc, z.Name)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to get active pods for zone %s. details: %w", z.Name, err))
 						continue
@@ -158,7 +162,7 @@ func PodLoggerControl(ctx context.Context) error {
 						}
 
 						// If not, mark it as added
-						_, err := kvc.SetNX(LogKey(pod.Name, z.Name), false, LoggerLifetime)
+						_, err := kvc.SetNX(ctx, LogKey(pod.Name, z.Name), false, LoggerLifetime)
 						if err != nil {
 							utils.PrettyPrintError(fmt.Errorf("failed to set log key for pod %s. details: %w", pod.Name, err))
 							continue
@@ -168,10 +172,10 @@ func PodLoggerControl(ctx context.Context) error {
 
 					// If there are any active pods left, mark them as deleted
 					for podName := range activePods {
-						_ = kvc.Del(LogKey(podName, z.Name))
-						_ = kvc.Del(LastLogKey(podName, z.Name))
-						_ = kvc.Del(OwnerLogKey(podName, z.Name))
-						_ = mqc.Publish(LogQueueKey(z.Name), LogEvent{
+						_ = kvc.Del(ctx, LogKey(podName, z.Name))
+						_ = kvc.Del(ctx, LastLogKey(podName, z.Name))
+						_ = kvc.Del(ctx, OwnerLogKey(podName, z.Name))
+						_ = mqc.Publish(ctx, LogQueueKey(z.Name), LogEvent{
 							PodName:  podName,
 							PodEvent: k8s.PodEventDeleted,
 						})
@@ -181,5 +185,6 @@ func PodLoggerControl(ctx context.Context) error {
 		}(ctx)
 	}
 
+	<-ctx.Done()
 	return nil
 }

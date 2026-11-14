@@ -61,7 +61,7 @@ func GetLogs(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	err = deployV2.Deployments().SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
+	err = deployV2.Deployments().SetupLogStream(ctx, requestURI.DeploymentID, handler, 25)
 	if err != nil {
 		if errors.Is(err, errors2.ErrDeploymentNotFound) {
 			sysContext.NotFound("Deployment not found")

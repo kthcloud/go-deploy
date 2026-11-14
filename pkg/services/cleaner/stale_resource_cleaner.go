@@ -1,6 +1,7 @@
 package cleaner
 
 import (
+	"context"
 	"time"
 
 	bodyV2 "github.com/kthcloud/go-deploy/api/openapi/v2"
@@ -40,7 +41,7 @@ func staleResourceCleaner() error {
 
 		// Set its replicas to 0
 		replicas := 0
-		err = service.V2().Deployments().Update(deployment.ID, &bodyV2.DeploymentUpdate{
+		err = service.V2().Deployments().Update(context.Background(), deployment.ID, &bodyV2.DeploymentUpdate{
 			Replicas: &replicas,
 		})
 		if err != nil {
@@ -61,7 +62,7 @@ func staleResourceCleaner() error {
 		log.Printf("Disabling VM %s due to inactivity", vm.Name)
 
 		// Stop the VM
-		err = service.V2().VMs().DoAction(vm.ID, &bodyV2.VmActionCreate{
+		err = service.V2().VMs().DoAction(context.Background(), vm.ID, &bodyV2.VmActionCreate{
 			Action: model.ActionStop,
 		})
 		if err != nil {

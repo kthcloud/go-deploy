@@ -25,7 +25,6 @@ require (
 	github.com/rancher/go-rancher v0.1.0
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/stretchr/testify v1.12.1
-	github.com/swaggo/files/v2 v2.0.2
 	go.mongodb.org/mongo-driver v1.17.10
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.59.0

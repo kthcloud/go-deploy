@@ -1,7 +1,6 @@
 package vm_port_repo
 
 import (
-	"context"
 	"errors"
 
 	"github.com/kthcloud/go-deploy/models/model"
@@ -30,7 +29,7 @@ func (client *Client) CreateIfNotExists(publicPortStart, publicPortEnd int, zone
 	}
 
 	// We have a unique index for public port + zone, so it is safe to try to insert many at once
-	res, err := client.Collection.InsertMany(context.Background(), toInsert, options.InsertMany().SetOrdered(false))
+	res, err := client.Collection.InsertMany(client.Context(), toInsert, options.InsertMany().SetOrdered(false))
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			if res != nil {
@@ -59,7 +58,7 @@ func (client *Client) Lease(publicPort, privatePort int, vmID, zone string) (*mo
 		PrivatePort: privatePort,
 	}}}}}
 
-	res := client.Collection.FindOneAndUpdate(context.Background(), filter, update)
+	res := client.Collection.FindOneAndUpdate(client.Context(), filter, update)
 	if res.Err() != nil {
 		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
 			return nil, ErrPortNotFound
@@ -111,7 +110,7 @@ func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*model.
 		},
 	}
 
-	res := client.Collection.FindOneAndUpdate(context.Background(), filter, update, options.FindOneAndUpdate().SetReturnDocument(options.After))
+	res := client.Collection.FindOneAndUpdate(client.Context(), filter, update, options.FindOneAndUpdate().SetReturnDocument(options.After))
 	if res.Err() != nil {
 		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
 			return nil, ErrNoPortsAvailable
@@ -143,7 +142,7 @@ func (client *Client) ReleaseAll(vmID string) error {
 		},
 	}
 
-	_, err := client.Collection.UpdateMany(context.Background(), filter, update)
+	_, err := client.Collection.UpdateMany(client.Context(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -159,7 +158,7 @@ func (client *Client) Erase(publicPort int, zone string) error {
 		{Key: "zone", Value: zone},
 	}
 
-	_, err := client.Collection.DeleteOne(context.TODO(), filter)
+	_, err := client.Collection.DeleteOne(client.Context(), filter)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil

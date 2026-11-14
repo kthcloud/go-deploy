@@ -3,9 +3,12 @@ package clients
 import (
 	"github.com/kthcloud/go-deploy/service/core"
 	apiV2 "github.com/kthcloud/go-deploy/service/v2/api"
+	"go.uber.org/zap"
 )
 
 type V2 interface {
+	Logger() *zap.Logger
+
 	Auth() *core.AuthInfo
 	HasAuth() bool
 

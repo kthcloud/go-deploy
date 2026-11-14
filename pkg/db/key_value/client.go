@@ -3,29 +3,46 @@ package key_value
 import (
 	"context"
 	"errors"
-	"fmt"
-	"github.com/kthcloud/go-deploy/pkg/db"
-	"github.com/kthcloud/go-deploy/utils"
-	"github.com/redis/go-redis/v9"
 	"regexp"
 	"time"
+
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 // Client is used to manage key-value pairs in Redis.
 type Client struct {
 	RedisClient *redis.Client
+	Logger      *zap.Logger
 }
 
-// New returns a new key-value client.
+// New returns a new key-value client backed by the global Redis client.
 func New() *Client {
+	return NewWithClient(db.DB.RedisClient, nil)
+}
+
+// NewWithClient constructs a Client with an explicit Redis client and optional logger.
+func NewWithClient(redisClient *redis.Client, logger *zap.Logger) *Client {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
 	return &Client{
-		RedisClient: db.DB.RedisClient,
+		RedisClient: redisClient,
+		Logger:      logger,
 	}
 }
 
-// Get returns the value of the given key.
-func (client *Client) Get(key string) (string, error) {
-	res, err := client.RedisClient.Get(context.TODO(), key).Result()
+func (client *Client) log() *zap.Logger {
+	if client.Logger == nil {
+		return zap.NewNop()
+	}
+	return client.Logger
+}
+
+// Get returns the value of the given key, or "" if the key does not exist.
+func (client *Client) Get(ctx context.Context, key string) (string, error) {
+	res, err := client.RedisClient.Get(ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return "", nil
@@ -34,12 +51,12 @@ func (client *Client) Get(key string) (string, error) {
 		return "", err
 	}
 
-	return res, err
+	return res, nil
 }
 
 // List returns all keys that match the given pattern.
-func (client *Client) List(pattern string) ([]string, error) {
-	keys, err := client.RedisClient.Keys(context.Background(), pattern).Result()
+func (client *Client) List(ctx context.Context, pattern string) ([]string, error) {
+	keys, err := client.RedisClient.Keys(ctx, pattern).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -48,28 +65,28 @@ func (client *Client) List(pattern string) ([]string, error) {
 }
 
 // Set sets the value of the given key.
-func (client *Client) Set(key string, value any, expiration time.Duration) error {
-	return client.RedisClient.Set(context.TODO(), key, value, expiration).Err()
+func (client *Client) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
+	return client.RedisClient.Set(ctx, key, value, expiration).Err()
 }
 
 // Del deletes the given key.
-func (client *Client) Del(key string) error {
-	return client.RedisClient.Del(context.TODO(), key).Err()
+func (client *Client) Del(ctx context.Context, key string) error {
+	return client.RedisClient.Del(ctx, key).Err()
 }
 
 // SetNX sets the value of the given key if it does not exist.
-func (client *Client) SetNX(key string, value any, expiration time.Duration) (bool, error) {
-	return client.RedisClient.SetNX(context.TODO(), key, value, expiration).Result()
+func (client *Client) SetNX(ctx context.Context, key string, value any, expiration time.Duration) (bool, error) {
+	return client.RedisClient.SetNX(ctx, key, value, expiration).Result()
 }
 
 // SetXX sets the value of the given key if it exists.
-func (client *Client) SetXX(key string, value any, expiration time.Duration) (bool, error) {
-	return client.RedisClient.SetXX(context.TODO(), key, value, expiration).Result()
+func (client *Client) SetXX(ctx context.Context, key string, value any, expiration time.Duration) (bool, error) {
+	return client.RedisClient.SetXX(ctx, key, value, expiration).Result()
 }
 
 // IsSet checks if the given key is set.
-func (client *Client) IsSet(key string) (bool, error) {
-	res, err := client.RedisClient.Exists(context.TODO(), key).Result()
+func (client *Client) IsSet(ctx context.Context, key string) (bool, error) {
+	res, err := client.RedisClient.Exists(ctx, key).Result()
 	if err != nil {
 		return false, err
 	}
@@ -78,49 +95,52 @@ func (client *Client) IsSet(key string) (bool, error) {
 }
 
 // Incr increments the value of the given key.
-func (client *Client) Incr(key string) error {
-	return client.RedisClient.Incr(context.Background(), key).Err()
+func (client *Client) Incr(ctx context.Context, key string) error {
+	return client.RedisClient.Incr(ctx, key).Err()
 }
 
 // Decr decrements the value of the given key.
-func (client *Client) Decr(key string) error {
-	return client.RedisClient.Decr(context.Background(), key).Err()
+func (client *Client) Decr(ctx context.Context, key string) error {
+	return client.RedisClient.Decr(ctx, key).Err()
 }
 
-// SetUpExpirationListener sets up a listener for expired key events for every key that matches the given pattern.
-// It is non-blocking and will run in a separate goroutine.
+// SetUpExpirationListener sets up a listener for expired key events matching pattern.
+// It is non-blocking and exits when ctx is canceled.
 func (client *Client) SetUpExpirationListener(ctx context.Context, pattern string, handler func(key string) error) error {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return err
+	}
+
 	go func() {
-		pubSub := client.RedisClient.PSubscribe(context.TODO(), "__keyevent@0__:expired")
-		defer func(channel *redis.PubSub) {
-			err := channel.Close()
-			if err != nil {
-				return
-			}
-		}(pubSub)
+		pubSub := client.RedisClient.PSubscribe(ctx, "__keyevent@0__:expired")
+		defer func() {
+			_ = pubSub.Close()
+		}()
 
 		channel := pubSub.Channel()
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case msg := <-channel:
-				if msg.Payload == "" {
+			case msg, ok := <-channel:
+				if !ok || msg == nil || msg.Payload == "" {
+					if !ok {
+						return
+					}
 					continue
 				}
 
-				// Check regex match
-				if !regexp.MustCompile(pattern).MatchString(msg.Payload) {
+				if !re.MatchString(msg.Payload) {
 					continue
 				}
 
-				err := handler(msg.Payload)
-				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to handle expired key event for key %s. details: %w", msg.Payload, err))
-					continue
+				if err := handler(msg.Payload); err != nil {
+					client.log().Warn("failed to handle expired key event", zap.String("key", msg.Payload), zap.Error(err))
 				}
 			}
 		}
 	}()
+
 	return nil
 }

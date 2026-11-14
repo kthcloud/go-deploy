@@ -1,7 +1,6 @@
 package notification_repo
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -21,7 +20,7 @@ func (client *Client) Create(id string, userID string, params *model.Notificatio
 		DeletedAt:   time.Time{},
 	}
 
-	_, err := client.Collection.InsertOne(context.TODO(), notification)
+	_, err := client.Collection.InsertOne(client.Context(), notification)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create job. details: %w", err)
 	}

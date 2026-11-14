@@ -17,7 +17,7 @@ import (
 func Discover(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	discover, err := service.V2().Discovery().Discover()
+	discover, err := service.V2().Discovery().Discover(c.Request.Context())
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return

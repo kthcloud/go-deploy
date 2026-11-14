@@ -58,7 +58,7 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployV2.Deployments().Get("", opts.GetOpts{HarborWebhook: &webhook})
+	deployment, err := deployV2.Deployments().Get(c.Request.Context(), "", opts.GetOpts{HarborWebhook: &webhook})
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -78,9 +78,9 @@ func HandleHarborHook(c *gin.Context) {
 			CreatedAt: time.Now(),
 		}
 
-		deployV2.Deployments().AddLogs(deployment.ID, newLog)
+		deployV2.Deployments().AddLogs(c.Request.Context(), deployment.ID, newLog)
 
-		err = deployV2.Deployments().Restart(deployment.ID)
+		err = deployV2.Deployments().Restart(c.Request.Context(), deployment.ID)
 		if err != nil {
 			if failedToStartActivityErr, ok := errors.AsType[*sErrors.FailedToStartActivityError](err); ok {
 				context.Locked(failedToStartActivityErr.Error())

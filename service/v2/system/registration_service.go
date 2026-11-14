@@ -1,6 +1,8 @@
 package system
 
 import (
+	"context"
+
 	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -8,7 +10,7 @@ import (
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
-func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
+func (c *Client) RegisterNode(ctx context.Context, params *body.HostRegisterParams) error {
 	// Validate token
 	if params.Token != config.Config.Discovery.Token {
 		return sErrors.ErrBadDiscoveryToken
@@ -44,7 +46,9 @@ func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 	params.Schedulable = k8sNode.Schedulable
 
 	// Register node
-	err = host_repo.New().Register(model.NewHostByParams(params))
+	hc := host_repo.New()
+	hc.Ctx = ctx
+	err = hc.Register(model.NewHostByParams(params))
 	if err != nil {
 		return err
 	}

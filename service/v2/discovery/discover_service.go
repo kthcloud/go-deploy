@@ -1,6 +1,8 @@
 package discovery
 
 import (
+	"context"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -8,7 +10,7 @@ import (
 
 // Discover returns the discover information.
 // This is stored locally in the config.
-func (c *Client) Discover() (*model.Discover, error) {
+func (c *Client) Discover(_ context.Context) (*model.Discover, error) {
 	return &model.Discover{
 		Version: version.AppVersion,
 		Roles:   config.Config.GetRoles(),

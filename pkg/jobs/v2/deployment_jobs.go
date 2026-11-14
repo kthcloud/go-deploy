@@ -12,14 +12,13 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
 	jErrors "github.com/kthcloud/go-deploy/pkg/jobs/errors"
 	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
-	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/services/confirm"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/mitchellh/mapstructure"
 )
 
-func CreateDeployment(job *model.Job) error {
+func CreateDeployment(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -33,21 +32,21 @@ func CreateDeployment(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).Deployments().Create(id, ownerID, &params)
+	err = service.V2(utils.GetAuthInfo(job)).Deployments().Create(ctx, id, ownerID, &params)
 	if err != nil {
 		if _, ok := errors.AsType[sErrors.ZoneCapabilityMissingErr](err); ok {
 			return jErrors.MakeTerminatedError(err)
 		}
 
 		// If there was some error, we trigger a repair, since rerunning it would cause a ErrNonUniqueField
-		_ = service.V2(utils.GetAuthInfo(job)).Deployments().Repair(id)
+		_ = service.V2(utils.GetAuthInfo(job)).Deployments().Repair(ctx, id)
 		return jErrors.MakeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func DeleteDeployment(job *model.Job) error {
+func DeleteDeployment(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -71,34 +70,17 @@ func DeleteDeployment(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	go func() {
-		err = utils.WaitForJobs(ctx, relatedJobs, []string{model.JobStatusCompleted, model.JobStatusTerminated})
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				return
-			}
-
-			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("Timeout waiting for related jobs to finish for model", id)
-				return
-			}
-
-			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
+	if err := utils.WaitForRelatedJobs(ctx, id, relatedJobs, 30*time.Second); err != nil {
+		if errors.Is(err, context.Canceled) {
+			return jErrors.MakeFailedError(err)
 		}
-
-		cancel()
-	}()
-
-	select {
-	case <-time.After(30 * time.Second):
-		return jErrors.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
-	case <-ctx.Done():
+		if errors.Is(err, context.DeadlineExceeded) {
+			return jErrors.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish: %w", err))
+		}
+		return jErrors.MakeFailedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).Deployments().Delete(id)
+	err = service.V2(utils.GetAuthInfo(job)).Deployments().Delete(ctx, id)
 	if err != nil {
 		if !errors.Is(err, sErrors.ErrDeploymentNotFound) {
 			return jErrors.MakeFailedError(err)
@@ -122,7 +104,7 @@ func DeleteDeployment(job *model.Job) error {
 	return nil
 }
 
-func UpdateDeployment(job *model.Job) error {
+func UpdateDeployment(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -135,7 +117,7 @@ func UpdateDeployment(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).Deployments().Update(id, &update)
+	err = service.V2(utils.GetAuthInfo(job)).Deployments().Update(ctx, id, &update)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrDeploymentNotFound):
@@ -157,7 +139,7 @@ func UpdateDeployment(job *model.Job) error {
 	return nil
 }
 
-func UpdateDeploymentOwner(job *model.Job) error {
+func UpdateDeploymentOwner(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -170,7 +152,7 @@ func UpdateDeploymentOwner(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).Deployments().UpdateOwner(id, &params)
+	err = service.V2(utils.GetAuthInfo(job)).Deployments().UpdateOwner(ctx, id, &params)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrDeploymentNotFound) {
 			return jErrors.MakeTerminatedError(err)
@@ -181,7 +163,7 @@ func UpdateDeploymentOwner(job *model.Job) error {
 
 	if job.HasArg("resourceMigrationId") {
 		resourceMigrationID := job.Args["resourceMigrationId"].(string)
-		err = service.V2(utils.GetAuthInfo(job)).ResourceMigrations().Delete(resourceMigrationID)
+		err = service.V2(utils.GetAuthInfo(job)).ResourceMigrations().Delete(ctx, resourceMigrationID)
 		if err != nil {
 			return jErrors.MakeTerminatedError(err)
 		}
@@ -190,7 +172,7 @@ func UpdateDeploymentOwner(job *model.Job) error {
 	return nil
 }
 
-func RepairDeployment(job *model.Job) error {
+func RepairDeployment(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -198,7 +180,7 @@ func RepairDeployment(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V2(utils.GetAuthInfo(job)).Deployments().Repair(id)
+	err = service.V2(utils.GetAuthInfo(job)).Deployments().Repair(ctx, id)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}

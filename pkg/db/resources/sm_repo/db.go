@@ -1,7 +1,6 @@
 package sm_repo
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -84,7 +83,7 @@ func (client *Client) MarkRepaired(id string) error {
 		{Key: "$unset", Value: bson.D{{Key: "activities.repairing", Value: ""}}},
 	}
 
-	_, err := client.ResourceClient.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.ResourceClient.Collection.UpdateOne(client.ResourceClient.Context(), filter, update)
 	if err != nil {
 		return err
 	}

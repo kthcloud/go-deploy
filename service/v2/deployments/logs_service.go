@@ -29,8 +29,8 @@ const (
 //
 // It will continuously check the deployment logs and read the logs after the last read log.
 // Increasing the history will increase the time it takes to set up the log stream.
-func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, string, string, time.Time), history int) error {
-	deployment, err := c.Get(id, opts.GetOpts{Shared: true})
+func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(string, string, string, time.Time), history int) error {
+	deployment, err := c.Get(ctx, id, opts.GetOpts{Shared: true})
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,9 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs
-		logs, err := deployment_repo.New().GetLogs(id, history)
+		drc := deployment_repo.New()
+		drc.ResourceClient.Ctx = ctx
+		logs, err := drc.GetLogs(id, history)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", id, err))
 			return
@@ -67,6 +69,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 
 		// Keep-alive packet every 30 seconds
 		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
 
 		for {
 			select {
@@ -78,7 +81,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 				time.Sleep(FetchPeriod)
 				handler(MessageSourceControl, "[control]", "fetching logs", time.Now())
 
-				logs, err = deployment_repo.New().GetLogsAfter(id, lastFetched)
+				logs, err = drc.GetLogsAfter(id, lastFetched)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", id, lastFetched, err))
 					return

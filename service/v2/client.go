@@ -15,23 +15,44 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/teams"
 	"github.com/kthcloud/go-deploy/service/v2/users"
 	"github.com/kthcloud/go-deploy/service/v2/vms"
+	"go.uber.org/zap"
 )
 
 type Client struct {
-	auth  *core.AuthInfo
-	cache *core.Cache
+	logger *zap.Logger
+	auth   *core.AuthInfo
+	cache  *core.Cache
 }
 
+// New creates a v2 Client with a no-op logger.
 func New(authInfo ...*core.AuthInfo) *Client {
+	return NewWithLogger(nil, authInfo...)
+}
+
+// NewWithLogger creates a v2 Client bound to logger.
+// Nil logger defaults to zap.NewNop().
+func NewWithLogger(logger *zap.Logger, authInfo ...*core.AuthInfo) *Client {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
+
 	var auth *core.AuthInfo
 	if len(authInfo) > 0 {
 		auth = authInfo[0]
 	}
 
 	return &Client{
-		auth:  auth,
-		cache: core.NewCache(),
+		logger: logger,
+		auth:   auth,
+		cache:  core.NewCache(),
 	}
+}
+
+func (c *Client) Logger() *zap.Logger {
+	if c.logger == nil {
+		return zap.NewNop()
+	}
+	return c.logger
 }
 
 func (c *Client) Auth() *core.AuthInfo {

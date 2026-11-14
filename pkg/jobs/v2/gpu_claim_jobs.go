@@ -2,6 +2,7 @@ package v2
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
-func CreateGpuClaim(job *model.Job) error {
+func CreateGpuClaim(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -34,7 +35,7 @@ func CreateGpuClaim(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).GpuClaims().Create(id, &params)
+	err = service.V2(utils.GetAuthInfo(job)).GpuClaims().Create(ctx, id, &params)
 	if err != nil {
 		// We always terminate these jobs, since rerunning it would cause a ErrNonUniqueField
 		return jErrors.MakeTerminatedError(err)
@@ -43,7 +44,7 @@ func CreateGpuClaim(job *model.Job) error {
 	return nil
 }
 
-func DeleteGpuClaim(job *model.Job) error {
+func DeleteGpuClaim(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -56,7 +57,7 @@ func DeleteGpuClaim(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).GpuClaims().Delete(id)
+	err = service.V2(utils.GetAuthInfo(job)).GpuClaims().Delete(ctx, id)
 	if err != nil {
 		if !errors.Is(err, sErrors.ErrResourceNotFound) {
 			return jErrors.MakeFailedError(err)
@@ -66,7 +67,7 @@ func DeleteGpuClaim(job *model.Job) error {
 	return nil
 }
 
-func UpdateGpuClaim(job *model.Job) error {
+func UpdateGpuClaim(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -83,7 +84,7 @@ func UpdateGpuClaim(job *model.Job) error {
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
-	if err := service.V2(utils.GetAuthInfo(job)).GpuClaims().Update(id, &params); err != nil {
+	if err := service.V2(utils.GetAuthInfo(job)).GpuClaims().Update(ctx, id, &params); err != nil {
 		if errors.Is(err, sErrors.ErrResourceNotFound) {
 			return jErrors.MakeTerminatedError(err)
 		}

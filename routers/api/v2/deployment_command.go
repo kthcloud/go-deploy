@@ -48,7 +48,7 @@ func DoDeploymentCommand(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	deployment, err := deployV2.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
+	deployment, err := deployV2.Deployments().Get(c.Request.Context(), requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -64,7 +64,7 @@ func DoDeploymentCommand(c *gin.Context) {
 		return
 	}
 
-	deployV2.Deployments().DoCommand(requestURI.DeploymentID, requestBody.Command)
+	deployV2.Deployments().DoCommand(c.Request.Context(), requestURI.DeploymentID, requestBody.Command)
 
 	context.OkNoContent()
 }

@@ -17,6 +17,20 @@ type ActivityResourceClient[T any] struct {
 	ExtraFilter bson.M
 	Pagination  *db.Pagination
 	Search      *db.SearchParams
+	Ctx         context.Context
+}
+
+// WithContext binds ctx to the client for subsequent database operations.
+func (client *ActivityResourceClient[T]) WithContext(ctx context.Context) *ActivityResourceClient[T] {
+	client.Ctx = ctx
+	return client
+}
+
+func (client *ActivityResourceClient[T]) Context() context.Context {
+	if client.Ctx != nil {
+		return client.Ctx
+	}
+	return context.Background()
 }
 
 // AddExtraFilter adds an extra filter to the client.
@@ -35,7 +49,7 @@ func (client *ActivityResourceClient[T]) AddExtraFilter(filter bson.D) *Activity
 // AddActivity adds an activity to the model with the given ID.
 // If the activity already exists, it will be overwritten.
 func (client *ActivityResourceClient[T]) AddActivity(id, activity string) error {
-	_, err := client.Collection.UpdateOne(context.TODO(),
+	_, err := client.Collection.UpdateOne(client.Context(),
 		bson.D{{Key: "id", Value: id}},
 		bson.D{{Key: "$set", Value: bson.D{
 			{Key: "activities." + activity, Value: model.Activity{
@@ -54,7 +68,7 @@ func (client *ActivityResourceClient[T]) AddActivity(id, activity string) error 
 // RemoveActivity removes an activity from the model with the given ID.
 // If the activity does not exist, nothing will happen.
 func (client *ActivityResourceClient[T]) RemoveActivity(id, activity string) error {
-	_, err := client.Collection.UpdateOne(context.TODO(),
+	_, err := client.Collection.UpdateOne(client.Context(),
 		bson.D{{Key: "id", Value: id}},
 		bson.D{{Key: "$unset", Value: bson.D{
 			{Key: "activities." + activity, Value: ""},
@@ -69,7 +83,7 @@ func (client *ActivityResourceClient[T]) RemoveActivity(id, activity string) err
 
 // ClearActivities clears all activities from the model with the given ID.
 func (client *ActivityResourceClient[T]) ClearActivities(id string) error {
-	_, err := client.Collection.UpdateOne(context.TODO(),
+	_, err := client.Collection.UpdateOne(client.Context(),
 		bson.D{{Key: "id", Value: id}},
 		bson.D{{Key: "$set", Value: bson.D{
 			{Key: "activities", Value: make(map[string]model.Activity)},
@@ -92,7 +106,7 @@ func (client *ActivityResourceClient[T]) IsDoingActivity(id, activity string) (b
 		}},
 	}
 
-	count, err := db.CountResources(client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, false))
+	count, err := db.CountResources(client.Context(), client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, false))
 	if err != nil {
 		return false, err
 	}

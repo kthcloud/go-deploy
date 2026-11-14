@@ -1,6 +1,7 @@
 package api_key
 
 import (
+	"context"
 	"time"
 
 	body "github.com/kthcloud/go-deploy/api/openapi/v2"
@@ -11,10 +12,10 @@ import (
 )
 
 // Create generates a new API key for the user.
-func (c *Client) Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*model.ApiKey, error) {
+func (c *Client) Create(ctx context.Context, userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*model.ApiKey, error) {
 	key := c.generateKey()
 
-	user, err := c.V2.Users().Get(userID)
+	user, err := c.V2.Users().Get(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +41,9 @@ func (c *Client) Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*mod
 	}
 
 	apiKeys := append(user.ApiKeys, *apiKey)
-	err = user_repo.New().UpdateWithParams(userID, &model.UserUpdateParams{ApiKeys: &apiKeys})
+	urc := user_repo.New()
+	urc.Ctx = ctx
+	err = urc.UpdateWithParams(userID, &model.UserUpdateParams{ApiKeys: &apiKeys})
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +52,8 @@ func (c *Client) Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*mod
 }
 
 // List returns all API keys for the user.
-func (c *Client) List(userID string) ([]model.ApiKey, error) {
-	user, err := c.V2.Users().Get(userID)
+func (c *Client) List(ctx context.Context, userID string) ([]model.ApiKey, error) {
+	user, err := c.V2.Users().Get(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +66,8 @@ func (c *Client) List(userID string) ([]model.ApiKey, error) {
 }
 
 // Delete removes an API key from the user.
-func (c *Client) Delete(userID string, name string) error {
-	user, err := c.V2.Users().Get(userID)
+func (c *Client) Delete(ctx context.Context, userID string, name string) error {
+	user, err := c.V2.Users().Get(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -80,7 +83,9 @@ func (c *Client) Delete(userID string, name string) error {
 		}
 	}
 
-	return user_repo.New().UpdateWithParams(userID, &model.UserUpdateParams{ApiKeys: &apiKeys})
+	urc := user_repo.New()
+	urc.Ctx = ctx
+	return urc.UpdateWithParams(userID, &model.UserUpdateParams{ApiKeys: &apiKeys})
 }
 
 // generateKey generates a new API key for the user.

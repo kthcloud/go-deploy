@@ -20,7 +20,7 @@ import (
 func ListHosts(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	hostInfo, err := service.V2().System().ListHosts()
+	hostInfo, err := service.V2().System().ListHosts(c.Request.Context())
 	if err != nil {
 		context.ServerError(err, fmt.Errorf("failed to get host info"))
 	}
@@ -56,7 +56,7 @@ func VerboseListHosts(c *gin.Context) {
 		return
 	}
 
-	hostInfo, err := service.V2().System().ListAllHosts()
+	hostInfo, err := service.V2().System().ListAllHosts(c.Request.Context())
 	if err != nil {
 		context.ServerError(err, fmt.Errorf("failed to get host info"))
 	}

@@ -1,15 +1,17 @@
 package system
 
 import (
+	"context"
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/worker_status_repo"
 	"github.com/kthcloud/go-deploy/service/v2/system/opts"
-	"time"
 )
 
 // ListWorkerStatus returns the status of all workers
-func (c *Client) ListWorkerStatus(opts ...opts.ListWorkerStatusOpts) ([]model.WorkerStatus, error) {
-	workerStatus, err := worker_status_repo.New().List()
+func (c *Client) ListWorkerStatus(ctx context.Context, opts ...opts.ListWorkerStatusOpts) ([]model.WorkerStatus, error) {
+	workerStatus, err := worker_status_repo.New().WithContext(ctx).List()
 	if err != nil {
 		return nil, err
 	}

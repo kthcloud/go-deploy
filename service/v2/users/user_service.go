@@ -1,6 +1,7 @@
 package users
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
@@ -17,29 +18,33 @@ import (
 )
 
 // Get gets a user
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.User, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.GetOpts) (*model.User, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
 	if c.V2.Auth() != nil && id != c.V2.Auth().User.ID && !c.V2.Auth().User.IsAdmin {
 		return nil, nil
 	}
 
-	return c.User(id, user_repo.New())
+	umc := user_repo.New()
+	umc.Ctx = ctx
+	return c.User(id, umc)
 }
 
 // GetByApiKey gets a user by their API key
-func (c *Client) GetByApiKey(apiKey string) (*model.User, error) {
-	return user_repo.New().WithApiKey(apiKey).Get()
+func (c *Client) GetByApiKey(ctx context.Context, apiKey string) (*model.User, error) {
+	umc := user_repo.New()
+	umc.Ctx = ctx
+	return umc.WithApiKey(apiKey).Get()
 }
 
 // GetUsage gets the usage of a user, such as number of deployments and CPU cores used
-func (c *Client) GetUsage(userID string) (*model.UserUsage, error) {
-	vmUsage, err := c.V2.VMs().GetUsage(userID)
+func (c *Client) GetUsage(ctx context.Context, userID string) (*model.UserUsage, error) {
+	vmUsage, err := c.V2.VMs().GetUsage(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	deploymentUsage, err := c.V2.Deployments().GetUsage(userID)
+	deploymentUsage, err := c.V2.Deployments().GetUsage(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +60,11 @@ func (c *Client) GetUsage(userID string) (*model.UserUsage, error) {
 }
 
 // List lists users
-func (c *Client) List(opts ...opts.ListOpts) ([]model.User, error) {
+func (c *Client) List(ctx context.Context, opts ...opts.ListOpts) ([]model.User, error) {
 	o := utils.GetFirstOrDefault(opts)
 
 	umc := user_repo.New()
+	umc.Ctx = ctx
 
 	if o.Pagination != nil {
 		umc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -83,15 +89,15 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.User, error) {
 // Exists checks if a user exists
 //
 // This does not use AuthInfo
-func (c *Client) Exists(id string) (bool, error) {
-	return user_repo.New().ExistsByID(id)
+func (c *Client) Exists(ctx context.Context, id string) (bool, error) {
+	return user_repo.New().WithContext(ctx).ExistsByID(id)
 }
 
 // Synchronize creates a user or updates an existing user.
 // It does nothing if no auth info is provided.
 //
 // It does not use AuthInfo as it is meant to be used by the auth service.
-func (c *Client) Synchronize(authParams *model.AuthParams) (*model.User, error) {
+func (c *Client) Synchronize(ctx context.Context, authParams *model.AuthParams) (*model.User, error) {
 	var effectiveRole *model.EffectiveRole
 	if len(authParams.Roles) > 0 {
 		effectiveRole = &model.EffectiveRole{
@@ -110,6 +116,7 @@ func (c *Client) Synchronize(authParams *model.AuthParams) (*model.User, error) 
 	}
 
 	umc := user_repo.New()
+	umc.Ctx = ctx
 
 	user, err := umc.Synchronize(authParams.UserID, synchronizeParams)
 	if err != nil {
@@ -117,7 +124,7 @@ func (c *Client) Synchronize(authParams *model.AuthParams) (*model.User, error) 
 	}
 
 	if user.Gravatar.FetchedAt.IsZero() || user.Gravatar.FetchedAt.Add(model.FetchGravatarInterval).Before(time.Now()) {
-		gravatarURL, err := c.FetchGravatar(user.ID)
+		gravatarURL, err := c.FetchGravatar(ctx, user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -142,9 +149,10 @@ func (c *Client) Synchronize(authParams *model.AuthParams) (*model.User, error) 
 //
 // It uses search param to enable searching in multiple fields.
 // If UserID is provided, it returns a single user.
-func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, error) {
+func (c *Client) Discover(ctx context.Context, opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, error) {
 	o := utils.GetFirstOrDefault(opts)
 	umc := user_repo.New()
+	umc.Ctx = ctx
 
 	if o.Search != nil {
 		umc.WithSearch(*o.Search)
@@ -205,8 +213,9 @@ func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, 
 }
 
 // Update updates a user
-func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error) {
+func (c *Client) Update(ctx context.Context, userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error) {
 	umc := user_repo.New()
+	umc.Ctx = ctx
 
 	user, err := c.User(userID, umc)
 	if err != nil {
@@ -229,8 +238,9 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 
 // FetchGravatar checks if the user has a gravatar image and fetches it if it exists.
 // If the user does not have a gravatar image, it returns nil.
-func (c *Client) FetchGravatar(userID string) (*string, error) {
+func (c *Client) FetchGravatar(ctx context.Context, userID string) (*string, error) {
 	umc := user_repo.New()
+	umc.Ctx = ctx
 
 	if c.V2.Auth() != nil && userID != c.V2.Auth().User.ID && !c.V2.Auth().User.IsAdmin {
 		return nil, nil
@@ -262,7 +272,7 @@ func (c *Client) FetchGravatar(userID string) (*string, error) {
 	return &gravatarURL, nil
 }
 
-func (c *Client) ListTestUsers() ([]model.User, error) {
+func (c *Client) ListTestUsers(_ context.Context) ([]model.User, error) {
 	return []model.User{
 		{
 			ID:        model.TestAdminUserID,

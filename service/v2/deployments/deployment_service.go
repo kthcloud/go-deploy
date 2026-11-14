@@ -1,6 +1,7 @@
 package deployments
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -28,16 +29,18 @@ import (
 // Get gets an existing deployment.
 //
 // It can be fetched in multiple ways including ID, transfer code, and Harbor webhook.
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.GetOpts) (*model.Deployment, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
 	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
 
 	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
 			WithResourceType(model.ResourceTypeDeployment).
 			WithCode(*o.MigrationCode)
+		rmc.Ctx = ctx
 
 		migration, err := rmc.Get()
 		if err != nil {
@@ -63,7 +66,9 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = team_repo.New().WithUserID(c.V2.Auth().User.ID).WithResourceID(id).ExistsAny()
+		tmc := team_repo.New().WithUserID(c.V2.Auth().User.ID).WithResourceID(id)
+		tmc.Ctx = ctx
+		teamCheck, err = tmc.ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -93,10 +98,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 
 // GetByName gets an existing deployment by name.
 // This does not support shared deployments.
-func (c *Client) GetByName(name string, opts ...opts.GetOpts) (*model.Deployment, error) {
+func (c *Client) GetByName(ctx context.Context, name string, opts ...opts.GetOpts) (*model.Deployment, error) {
 	_ = sUtils.GetFirstOrDefault(opts)
 
 	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
 
 	var effectiveUserID string
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
@@ -122,10 +128,11 @@ func (c *Client) GetByName(name string, opts ...opts.GetOpts) (*model.Deployment
 }
 
 // List lists existing deployments.
-func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
+func (c *Client) List(ctx context.Context, opts ...opts.ListOpts) ([]model.Deployment, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
 	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
 
 	if o.Pagination != nil {
 		drc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -172,6 +179,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 		}
 
 		teamClient := team_repo.New().WithUserID(effectiveUserID)
+		teamClient.Ctx = ctx
 		if o.Pagination != nil {
 			teamClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 		}
@@ -230,7 +238,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 // Create creates a new deployment.
 //
 // It returns an error if the deployment already exists (name clash).
-func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCreate) error {
+func (c *Client) Create(ctx context.Context, id, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)
 	}
@@ -262,12 +270,14 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		// TODO: get the roles of the user to verify that the claims exist
 		/*var roles = make([]string, 0, 2)
 
-		c.V2.GpuClaims().List(gpuClaimOpts.List{
+		c.V2.GpuClaims().List(ctx, gpuClaimOpts.List{
 			Roles:
 		})*/
 	}
 
-	deployment, err := deployment_repo.New().Create(id, ownerID, params)
+	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
+	deployment, err := drc.Create(id, ownerID, params)
 	if err != nil {
 		if errors.Is(err, rErrors.ErrNonUniqueField) {
 			return sErrors.ErrNonUniqueField
@@ -308,12 +318,12 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 // Update updates an existing deployment.
 //
 // It returns an error if the deployment is not found.
-func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
+func (c *Client) Update(ctx context.Context, id string, dtoUpdate *body.DeploymentUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment. details: %w", err)
 	}
 
-	d, err := c.Get(id, opts.GetOpts{Shared: true})
+	d, err := c.Get(ctx, id, opts.GetOpts{Shared: true})
 	if err != nil {
 		return makeError(err)
 	}
@@ -340,7 +350,9 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		params.CustomDomain = nil
 	}
 
-	err = deployment_repo.New().UpdateWithParams(id, params)
+	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
+	err = drc.UpdateWithParams(id, params)
 	if err != nil {
 		if errors.Is(err, rErrors.ErrNonUniqueField) {
 			return sErrors.ErrNonUniqueField
@@ -379,12 +391,12 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 // This is the second step of the owner update process, where the transfer is actually done.
 //
 // It returns an error if the deployment is not found.
-func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParams) error {
+func (c *Client) UpdateOwner(ctx context.Context, id string, params *model.DeploymentUpdateOwnerParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
 	}
 
-	d, err := c.Get(id, opts.GetOpts{MigrationCode: params.MigrationCode})
+	d, err := c.Get(ctx, id, opts.GetOpts{MigrationCode: params.MigrationCode})
 	if err != nil {
 		return makeError(err)
 	}
@@ -399,7 +411,9 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		newImage = &image
 	}
 
-	err = deployment_repo.New().UpdateWithParams(id, &model.DeploymentUpdateParams{
+	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
+	err = drc.UpdateWithParams(id, &model.DeploymentUpdateParams{
 		OwnerID: &params.NewOwnerID,
 		Image:   newImage,
 	})
@@ -427,7 +441,9 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return makeError(err)
 	}
 
-	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationResourceTransfer).MarkReadAndCompleted()
+	nmc := notification_repo.New().FilterContent("id", id).WithType(model.NotificationResourceTransfer)
+	nmc.Ctx = ctx
+	err = nmc.MarkReadAndCompleted()
 	if err != nil {
 		return makeError(err)
 	}
@@ -439,12 +455,12 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 // Delete deletes an existing deployment.
 //
 // It returns an error if the deployment is not found.
-func (c *Client) Delete(id string) error {
+func (c *Client) Delete(ctx context.Context, id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
-	d, err := c.Get(id)
+	d, err := c.Get(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -453,17 +469,17 @@ func (c *Client) Delete(id string) error {
 		return sErrors.ErrDeploymentNotFound
 	}
 
-	err = notification_repo.New().FilterContent("id", id).Delete()
+	err = notification_repo.New().FilterContent("id", id).WithContext(ctx).Delete()
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = resource_migration_repo.New().WithResourceID(id).Delete()
+	err = resource_migration_repo.New().WithResourceID(id).WithContext(ctx).Delete()
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = c.V2.Teams().CleanResource(id)
+	err = c.V2.Teams().CleanResource(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -484,12 +500,12 @@ func (c *Client) Delete(id string) error {
 // Repair repairs an existing deployment.
 //
 // Trigger repair jobs for every subsystem.
-func (c *Client) Repair(id string) error {
+func (c *Client) Repair(ctx context.Context, id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair deployment %s. details: %w", id, err)
 	}
 
-	d, err := c.Get(id)
+	d, err := c.Get(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -507,7 +523,9 @@ func (c *Client) Repair(id string) error {
 	now := time.Now()
 	if now.Sub(d.RestartedAt) > 5*time.Minute {
 		log.Printf("Removing restarting activity from deployment %s\n", d.Name)
-		err = deployment_repo.New().RemoveActivity(d.ID, model.ActivityRestarting)
+		drc := deployment_repo.New()
+		drc.ResourceClient.Ctx = ctx
+		err = drc.RemoveActivity(d.ID, model.ActivityRestarting)
 		if err != nil {
 			return err
 		}
@@ -537,12 +555,12 @@ func (c *Client) Repair(id string) error {
 // Restart restarts a deployment.
 //
 // It is done in best-effort, and only returns an error if any pre-check fails.
-func (c *Client) Restart(id string) error {
+func (c *Client) Restart(ctx context.Context, id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
-	d, err := c.Get(id)
+	d, err := c.Get(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -551,7 +569,7 @@ func (c *Client) Restart(id string) error {
 		return sErrors.ErrDeploymentNotFound
 	}
 
-	c.AddLogs(id, model.Log{
+	c.AddLogs(ctx, id, model.Log{
 		Source: model.LogSourceDeployment,
 		Prefix: "[deployment]",
 		// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
@@ -559,21 +577,26 @@ func (c *Client) Restart(id string) error {
 		CreatedAt: time.Now(),
 	})
 
-	err = deployment_repo.New().SetWithBsonByID(id, bson.D{{Key: "restartedAt", Value: time.Now()}})
+	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
+	err = drc.SetWithBsonByID(id, bson.D{{Key: "restartedAt", Value: time.Now()}})
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = c.StartActivity(id, model.ActivityRestarting)
+	err = c.StartActivity(ctx, id, model.ActivityRestarting)
 	if err != nil {
 		return makeError(err)
 	}
 
+	bgCtx := context.WithoutCancel(ctx)
 	go func() {
 		// The restart is best-effort, so we mimic a reasonable delay
 		time.Sleep(5 * time.Second)
 
-		err = deployment_repo.New().RemoveActivity(id, model.ActivityRestarting)
+		bgDrc := deployment_repo.New()
+		bgDrc.ResourceClient.Ctx = bgCtx
+		err = bgDrc.RemoveActivity(id, model.ActivityRestarting)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", model.ActivityRestarting, id, err))
 		}
@@ -590,10 +613,13 @@ func (c *Client) Restart(id string) error {
 // AddLogs adds logs to the deployment.
 //
 // It is purely done in best-effort
-func (c *Client) AddLogs(id string, logs ...model.Log) {
+func (c *Client) AddLogs(ctx context.Context, id string, logs ...model.Log) {
 	// logs are added best-effort, so we don't return an error here
+	bgCtx := context.WithoutCancel(ctx)
 	go func() {
-		err := deployment_repo.New().AddLogsByName(id, logs...)
+		drc := deployment_repo.New()
+		drc.ResourceClient.Ctx = bgCtx
+		err := drc.AddLogsByName(id, logs...)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to add logs to deployment %s. details: %w", id, err))
 		}
@@ -603,11 +629,12 @@ func (c *Client) AddLogs(id string, logs ...model.Log) {
 // DoCommand executes a command on the deployment.
 //
 // It is purely done in best-effort
-func (c *Client) DoCommand(id string, command string) {
+func (c *Client) DoCommand(ctx context.Context, id string, command string) {
+	bgCtx := context.WithoutCancel(ctx)
 	go func() {
 		switch command {
 		case "restart":
-			err := c.Restart(id)
+			err := c.Restart(bgCtx, id)
 			if err != nil {
 				utils.PrettyPrintError(err)
 			}
@@ -620,7 +647,7 @@ func (c *Client) DoCommand(id string, command string) {
 // Make sure to specify either opts.Create or opts.Update in the options (opts.Create takes priority).
 //
 // It returns an error if the user does not have enough quotas.
-func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
+func (c *Client) CheckQuota(ctx context.Context, id string, opts *opts.QuotaOptions) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
@@ -629,7 +656,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 		return nil
 	}
 
-	usage, err := c.GetUsage(c.V2.Auth().User.ID)
+	usage, err := c.GetUsage(ctx, c.V2.Auth().User.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -678,7 +705,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 
 		return nil
 	} else if opts.Update != nil {
-		deployment, err := c.Get(id)
+		deployment, err := c.Get(ctx, id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -744,8 +771,8 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 //
 // It only starts the activity if it is allowed, determined by CanAddActivity.
 // It returns a boolean indicating if the activity was started, and a string indicating the reason if it was not.
-func (c *Client) StartActivity(id string, activity string) error {
-	canAdd, reason := c.CanAddActivity(id, activity)
+func (c *Client) StartActivity(ctx context.Context, id string, activity string) error {
+	canAdd, reason := c.CanAddActivity(ctx, id, activity)
 	if !canAdd {
 		if reason == "Deployment not found" {
 			return sErrors.ErrDeploymentNotFound
@@ -754,7 +781,9 @@ func (c *Client) StartActivity(id string, activity string) error {
 		return sErrors.NewFailedToStartActivityError(reason)
 	}
 
-	err := deployment_repo.New().AddActivity(id, activity)
+	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
+	err := drc.AddActivity(id, activity)
 	if err != nil {
 		return err
 	}
@@ -765,7 +794,7 @@ func (c *Client) StartActivity(id string, activity string) error {
 // CanAddActivity checks if the deployment can add an activity.
 //
 // It returns a boolean indicating if the activity can be added, and a string indicating the reason if it cannot.
-func (c *Client) CanAddActivity(id string, activity string) (bool, string) {
+func (c *Client) CanAddActivity(_ context.Context, id string, activity string) (bool, string) {
 	d, err := c.Deployment(id, nil)
 	if err != nil {
 		return false, err.Error()
@@ -794,13 +823,17 @@ func (c *Client) CanAddActivity(id string, activity string) (bool, string) {
 }
 
 // GetUsage gets the usage of the user.
-func (c *Client) GetUsage(userID string) (*model.DeploymentUsage, error) {
-	return deployment_repo.New().WithOwner(userID).GetUsage()
+func (c *Client) GetUsage(ctx context.Context, userID string) (*model.DeploymentUsage, error) {
+	drc := deployment_repo.New().WithOwner(userID)
+	drc.ResourceClient.Ctx = ctx
+	return drc.GetUsage()
 }
 
 // NameAvailable checks if a name is available.
-func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := deployment_repo.New().ExistsByName(name)
+func (c *Client) NameAvailable(ctx context.Context, name string) (bool, error) {
+	drc := deployment_repo.New()
+	drc.ResourceClient.Ctx = ctx
+	exists, err := drc.ExistsByName(name)
 	if err != nil {
 		return false, err
 	}

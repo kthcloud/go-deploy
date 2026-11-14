@@ -57,8 +57,8 @@ func PodAndZoneNameFromLogKey(key string) (podName, zoneName string) {
 //
 // It captures all keys that match the logs key, including:
 // logs:zone:podName, logs:zone:podName:last, logs:zone:podName:owner
-func ActivePods(kvc *key_value.Client, zoneName string) (map[string]bool, error) {
-	keys, err := kvc.List(LogsKey + ":" + zoneName + ":*")
+func ActivePods(ctx context.Context, kvc *key_value.Client, zoneName string) (map[string]bool, error) {
+	keys, err := kvc.List(ctx, LogsKey+":"+zoneName+":*")
 	if err != nil {
 		return nil, err
 	}
@@ -83,13 +83,19 @@ func Setup(ctx context.Context, roles []LogRole) {
 		return
 	}
 
+	var runners []func(context.Context)
 	for _, role := range roles {
 		switch role {
 		case LogRoleControl:
-			go services.Worker(ctx, "deploymentLoggerControl", PodLoggerControl)
+			runners = append(runners, func(ctx context.Context) {
+				services.Worker(ctx, "deploymentLoggerControl", PodLoggerControl)
+			})
 		case LogRoleWorker:
-			go services.Worker(ctx, "deploymentLoggerWorker", PodLogger)
+			runners = append(runners, func(ctx context.Context) {
+				services.Worker(ctx, "deploymentLoggerWorker", PodLogger)
+			})
 		}
 	}
+	services.RunWorkers(ctx, runners...)
 
 }

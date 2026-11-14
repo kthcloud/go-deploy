@@ -2,28 +2,35 @@
 package migrator
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
-	"github.com/kthcloud/go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.uber.org/zap"
 )
 
 // Migrate runs every migration specified in the getMigrations function.
 // It should be run as early as possible in the program, and should never be called again.
-func Migrate() error {
+func Migrate(ctx context.Context, logger *zap.Logger) error {
 	migrations := getMigrations()
+
+	if logger == nil {
+		logger = zap.NewNop()
+	}
+	slogger := logger.Sugar()
 
 	if len(migrations) > 0 {
 		for name, migration := range migrations {
-			log.Printf("- %s (%d/%d)", name, 1, len(migrations))
-			if err := migration(); err != nil {
+			slogger.Infof("- %s (%d/%d)", name, 1, len(migrations))
+			if err := migration(ctx, logger.Named(name)); err != nil {
 				return fmt.Errorf("migration %s failed. details: %w", name, err)
 			}
 		}
 	} else {
-		log.Println("No migrations to run")
+		slogger.Infoln("No migrations to run")
 	}
 
 	return nil
@@ -36,22 +43,26 @@ func Migrate() error {
 // the migrations must be **idempotent**.
 //
 // add a date to the migration name to make it easier to identify.
-func getMigrations() map[string]func() error {
-	return map[string]func() error{
+func getMigrations() map[string]func(ctx context.Context, logger *zap.Logger) error {
+	return map[string]func(ctx context.Context, logger *zap.Logger) error{
 		"migratePrivateBooleanToVisibilityEnum_2024_06_10": migratePrivateBooleanToVisibilityEnum_2024_06_10,
 	}
 }
 
-func migratePrivateBooleanToVisibilityEnum_2024_06_10() error {
+func migratePrivateBooleanToVisibilityEnum_2024_06_10(ctx context.Context, logger *zap.Logger) error {
+	var start = time.Now()
 	deployments, err := deployment_repo.New().List()
 	if err != nil {
 		return err
 	}
 
+	migrated := len(deployments)
+
 	for _, deployment := range deployments {
 		mainApp := deployment.GetMainApp()
 
 		if mainApp.Visibility != "" {
+			migrated--
 			continue
 		}
 
@@ -66,6 +77,8 @@ func migratePrivateBooleanToVisibilityEnum_2024_06_10() error {
 			return err
 		}
 	}
+
+	logger.Info("migrated", zap.Int("deploymentCount", migrated), zap.Duration("in", time.Since(start)))
 
 	return nil
 }

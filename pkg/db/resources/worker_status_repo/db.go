@@ -1,7 +1,6 @@
 package worker_status_repo
 
 import (
-	"context"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,7 +17,7 @@ func (client *Client) CreateOrUpdate(name, status string) error {
 		{Key: "reportedAt", Value: time.Now()},
 	}}}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update, options.Update().SetUpsert(true))
+	_, err := client.Collection.UpdateOne(client.Context(), filter, update, options.Update().SetUpsert(true))
 	if err != nil {
 		return err
 	}
@@ -29,7 +28,7 @@ func (client *Client) CreateOrUpdate(name, status string) error {
 // DeleteStale deletes all worker statuses that have not been updated in the last 24 hours.
 func (client *Client) DeleteStale() error {
 	filter := bson.D{{Key: "reportedAt", Value: bson.D{{Key: "$lt", Value: time.Now().Add(-24 * time.Hour)}}}}
-	_, err := client.Collection.DeleteMany(context.TODO(), filter)
+	_, err := client.Collection.DeleteMany(client.Context(), filter)
 	if err != nil {
 		return err
 	}

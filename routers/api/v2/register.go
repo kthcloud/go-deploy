@@ -28,7 +28,7 @@ func Register(c *gin.Context) {
 	// Try parse body as body.HostRegisterParams
 	var requestQueryJoin body.HostRegisterParams
 	if err := context.GinContext.ShouldBindBodyWith(&requestQueryJoin, binding.JSON); err == nil {
-		err = service.V2().System().RegisterNode(&requestQueryJoin)
+		err = service.V2().System().RegisterNode(c.Request.Context(), &requestQueryJoin)
 		if err != nil {
 			switch {
 			case errors.Is(err, sErrors.ErrBadDiscoveryToken):

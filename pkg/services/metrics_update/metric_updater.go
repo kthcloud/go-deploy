@@ -1,7 +1,10 @@
 package metrics_update
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/key_value"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
@@ -9,10 +12,9 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/metrics"
 	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
-var metricsFuncMap = map[string]func() error{
+var metricsFuncMap = map[string]func(context.Context) error{
 	"users-total":          usersTotal,
 	"monthly-active-users": monthlyActiveUsers,
 	"daily-active-users":   dailyActiveUsers,
@@ -25,9 +27,12 @@ var metricsFuncMap = map[string]func() error{
 }
 
 // MetricsUpdater is a worker that updates metrics.
-func MetricsUpdater() error {
+func MetricsUpdater(ctx context.Context) error {
 	for metricGroupName, metric := range metricsFuncMap {
-		if err := metric(); err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err := metric(ctx); err != nil {
 			utils.PrettyPrintError(fmt.Errorf("error computing metric %s, skipping. details: %w", metricGroupName, err))
 		}
 	}
@@ -36,53 +41,53 @@ func MetricsUpdater() error {
 }
 
 // usersTotal computes the total number of users and stores it in the key-value store.
-func usersTotal() error {
+func usersTotal(ctx context.Context) error {
 	total, err := user_repo.New().Count()
 	if err != nil {
-		return fmt.Errorf("error counting distinct users when computing metrics. details: %w", err)
+		return fmt.Errorf("error counting distinct users when computing metrics: %w", err)
 	}
 
-	err = key_value.New().Set(metrics.KeyUsersTotal, fmt.Sprintf("%d", total), 0)
+	err = key_value.New().Set(ctx, metrics.KeyUsersTotal, fmt.Sprintf("%d", total), 0)
 	if err != nil {
-		return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", metrics.KeyUsersTotal, err)
+		return fmt.Errorf("error setting value for key %s when computing metrics: %w", metrics.KeyUsersTotal, err)
 	}
 
 	return nil
 }
 
 // monthlyActiveUsers computes the number of active users and stores it in the key-value store.
-func monthlyActiveUsers() error {
+func monthlyActiveUsers(ctx context.Context) error {
 	total, err := user_repo.New().LastAuthenticatedAfter(time.Now().AddDate(0, -1, 0)).Count()
 	if err != nil {
-		return fmt.Errorf("error counting monthly active users when computing metrics. details: %w", err)
+		return fmt.Errorf("error counting monthly active users when computing metrics: %w", err)
 	}
 
-	err = key_value.New().Set(metrics.KeyMonthlyActiveUsers, fmt.Sprintf("%d", total), 0)
+	err = key_value.New().Set(ctx, metrics.KeyMonthlyActiveUsers, fmt.Sprintf("%d", total), 0)
 	if err != nil {
-		return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", metrics.KeyMonthlyActiveUsers, err)
+		return fmt.Errorf("error setting value for key %s when computing metrics: %w", metrics.KeyMonthlyActiveUsers, err)
 	}
 
 	return nil
 }
 
 // dailyActiveUsers computes the number of active users and stores it in the key-value store.
-func dailyActiveUsers() error {
+func dailyActiveUsers(ctx context.Context) error {
 	total, err := user_repo.New().LastAuthenticatedAfter(time.Now().AddDate(0, 0, -1)).Count()
 	if err != nil {
-		return fmt.Errorf("error counting daily active users when computing metrics. details: %w", err)
+		return fmt.Errorf("error counting daily active users when computing metrics: %w", err)
 	}
 
-	err = key_value.New().Set(metrics.KeyDailyActiveUsers, fmt.Sprintf("%d", total), 0)
+	err = key_value.New().Set(ctx, metrics.KeyDailyActiveUsers, fmt.Sprintf("%d", total), 0)
 	if err != nil {
-		return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", metrics.KeyDailyActiveUsers, err)
+		return fmt.Errorf("error setting value for key %s when computing metrics: %w", metrics.KeyDailyActiveUsers, err)
 	}
 
 	return nil
 }
 
 // jobMetrics computes the number of jobs and stores it in the key-value store.
-func jobMetrics(key string, status *string) func() error {
-	return func() error {
+func jobMetrics(key string, status *string) func(context.Context) error {
+	return func(ctx context.Context) error {
 		filter := bson.D{}
 		if status != nil {
 			filter = append(filter, bson.E{Key: "status", Value: *status})
@@ -91,14 +96,14 @@ func jobMetrics(key string, status *string) func() error {
 		total, err := job_repo.New().AddFilter(filter).Count()
 		if err != nil {
 			if status == nil {
-				return fmt.Errorf("error counting jobs when computing metrics. details: %w", err)
+				return fmt.Errorf("error counting jobs when computing metrics: %w", err)
 			}
-			return fmt.Errorf("error counting jobs with status %s when computing metrics. details: %w", *status, err)
+			return fmt.Errorf("error counting jobs with status %s when computing metrics: %w", *status, err)
 		}
 
-		err = key_value.New().Set(key, fmt.Sprintf("%d", total), 0)
+		err = key_value.New().Set(ctx, key, fmt.Sprintf("%d", total), 0)
 		if err != nil {
-			return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", key, err)
+			return fmt.Errorf("error setting value for key %s when computing metrics: %w", key, err)
 		}
 
 		return nil

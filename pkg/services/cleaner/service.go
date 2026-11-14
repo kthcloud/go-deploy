@@ -7,9 +7,11 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/services"
 )
 
-// Setup starts the cleaners.
+// Setup starts the cleaners and blocks until ctx is canceled.
 func Setup(ctx context.Context) {
 	log.Println("Starting cleaners")
 
-	go services.PeriodicWorker(ctx, "staleResourceCleaner", staleResourceCleaner, config.Config.Timer.StaleResourceCleanup)
+	services.RunWorkers(ctx, func(ctx context.Context) {
+		services.PeriodicWorker(ctx, "staleResourceCleaner", staleResourceCleaner, config.Config.Timer.StaleResourceCleanup)
+	})
 }

@@ -51,6 +51,7 @@ func DeploymentStatusListener(ctx context.Context) error {
 		}
 	}
 
+	<-ctx.Done()
 	return nil
 }
 
@@ -93,6 +94,7 @@ func DeploymentEventListener(ctx context.Context) error {
 		}
 	}
 
+	<-ctx.Done()
 	return nil
 }
 

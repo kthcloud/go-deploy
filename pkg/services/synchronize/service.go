@@ -7,10 +7,16 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/services"
 )
 
-// Setup starts the synchronizers.
+// Setup starts the synchronizers and blocks until ctx is canceled.
 // Synchronizers are workers that periodically synchronize resources, such as GPUs.
 func Setup(ctx context.Context) {
 	log.Println("Starting synchronizers")
-	go services.PeriodicWorker(ctx, "gpuSynchronizer", GpuSynchronizer, config.Config.Timer.GpuSynchronize)
-	go services.PeriodicWorker(ctx, "gpuLeaseSynchronizer", GpuLeaseSynchronizer, config.Config.Timer.GpuLeaseSynchronize)
+	services.RunWorkers(ctx,
+		func(ctx context.Context) {
+			services.PeriodicWorker(ctx, "gpuSynchronizer", GpuSynchronizer, config.Config.Timer.GpuSynchronize)
+		},
+		func(ctx context.Context) {
+			services.PeriodicWorker(ctx, "gpuLeaseSynchronizer", GpuLeaseSynchronizer, config.Config.Timer.GpuLeaseSynchronize)
+		},
+	)
 }

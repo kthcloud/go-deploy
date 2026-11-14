@@ -1,6 +1,7 @@
 package base_clients
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -20,6 +21,20 @@ type ResourceClient[T Resource] struct {
 	Pagination     *db.Pagination
 	Search         *db.SearchParams
 	SortBy         *db.SortBy
+	Ctx            context.Context
+}
+
+// WithContext binds ctx to the client for subsequent database operations.
+func (client *ResourceClient[T]) WithContext(ctx context.Context) *ResourceClient[T] {
+	client.Ctx = ctx
+	return client
+}
+
+func (client *ResourceClient[T]) Context() context.Context {
+	if client.Ctx != nil {
+		return client.Ctx
+	}
+	return context.Background()
 }
 
 // AddExtraFilter adds an extra filter to the client.
@@ -37,22 +52,22 @@ func (client *ResourceClient[T]) AddExtraFilter(filter bson.D) *ResourceClient[T
 
 // GetByID returns a model with the given ID.
 func (client *ResourceClient[T]) GetByID(id string) (*T, error) {
-	return db.GetResource[T](client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
+	return db.GetResource[T](client.Context(), client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
 }
 
 // GetByName returns a model with the given name.
 func (client *ResourceClient[T]) GetByName(name string) (*T, error) {
-	return db.GetResource[T](client.Collection, db.GroupFilters(bson.D{{Key: "name", Value: name}}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
+	return db.GetResource[T](client.Context(), client.Collection, db.GroupFilters(bson.D{{Key: "name", Value: name}}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
 }
 
 // List returns any resources that match the given filter.
 func (client *ResourceClient[T]) List() ([]T, error) {
-	return db.ListResources[T](client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil, client.Pagination, client.SortBy)
+	return db.ListResources[T](client.Context(), client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil, client.Pagination, client.SortBy)
 }
 
 // ExistsByID returns whether a model with the given ID exists.
 func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
-	count, err := db.CountResources(client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	count, err := db.CountResources(client.Context(), client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 	if err != nil {
 		return false, err
 	}
@@ -62,7 +77,7 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 
 // ExistsByName returns whether a model with the given name exists.
 func (client *ResourceClient[T]) ExistsByName(name string) (bool, error) {
-	count, err := db.CountResources(client.Collection, db.GroupFilters(bson.D{{Key: "name", Value: name}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	count, err := db.CountResources(client.Context(), client.Collection, db.GroupFilters(bson.D{{Key: "name", Value: name}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 	if err != nil {
 		return false, err
 	}
@@ -72,7 +87,7 @@ func (client *ResourceClient[T]) ExistsByName(name string) (bool, error) {
 
 // ExistsWithFilter returns whether a model with the given filter exists.
 func (client *ResourceClient[T]) ExistsWithFilter(filter bson.D) (bool, error) {
-	count, err := db.CountResources(client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	count, err := db.CountResources(client.Context(), client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
 	if err != nil {
 		return false, err
 	}
@@ -82,7 +97,7 @@ func (client *ResourceClient[T]) ExistsWithFilter(filter bson.D) (bool, error) {
 
 // ExistsAny returns whether any resources exist with the given filter.
 func (client *ResourceClient[T]) ExistsAny() (bool, error) {
-	count, err := db.CountResources(client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	count, err := db.CountResources(client.Context(), client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 	if err != nil {
 		return false, err
 	}
@@ -93,7 +108,7 @@ func (client *ResourceClient[T]) ExistsAny() (bool, error) {
 // CreateIfUnique creates a model with the given ID and model,
 // but only if a model with the given filter does not already exist.
 func (client *ResourceClient[T]) CreateIfUnique(id string, resource *T, filter bson.D) error {
-	return db.CreateIfUniqueResource[T](client.Collection, id, resource, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return db.CreateIfUniqueResource[T](client.Context(), client.Collection, id, resource, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 // UpdateWithBSON updates a model with the given BSON update.
@@ -113,7 +128,7 @@ func (client *ResourceClient[T]) UpdateWithBsonByName(name string, update bson.D
 
 // UpdateWithBsonByFilter updates a model with the given filter and BSON update.
 func (client *ResourceClient[T]) UpdateWithBsonByFilter(filter bson.D, update bson.D) error {
-	return db.UpdateOneResource(client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), update)
+	return db.UpdateOneResource(client.Context(), client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), update)
 }
 
 // UnsetWithBSON unsets the given fields from a model.
@@ -177,7 +192,7 @@ func (client *ResourceClient[T]) SetWithBsonByFilter(filter bson.D, update bson.
 
 // CountDistinct returns the number of distinct values for the given field.
 func (client *ResourceClient[T]) CountDistinct(field string) (int, error) {
-	return db.CountDistinctResources(client.Collection, field, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return db.CountDistinctResources(client.Context(), client.Collection, field, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 // Delete deletes all resources that match the given filter.
@@ -220,7 +235,7 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 		{Key: "id", Value: id},
 		{Key: "deletedAt", Value: bson.M{"$nin": []any{nil, time.Time{}}}},
 	}
-	count, err := db.CountResources(client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, true))
+	count, err := db.CountResources(client.Context(), client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, true))
 	if err != nil {
 		return false, err
 	}
@@ -231,18 +246,18 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 // Erase deletes all resources that match the given filter.
 // It removes the resources from the database.
 func (client *ResourceClient[T]) Erase() error {
-	return db.DeleteResources(client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return db.DeleteResources(client.Context(), client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 // EraseByID deletes a model with the given ID.
 // It removes the model from the database.
 func (client *ResourceClient[T]) EraseByID(id string) error {
-	return db.DeleteResources(client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return db.DeleteResources(client.Context(), client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 // Get returns a model with the given filter.
 func (client *ResourceClient[T]) Get() (*T, error) {
-	return db.GetResource[T](client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
+	return db.GetResource[T](client.Context(), client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
 }
 
 // OnlyID is a type that only contains an ID.
@@ -266,7 +281,7 @@ type OnlyName struct {
 func (client *ResourceClient[T]) GetID() (*string, error) {
 	projection := bson.D{{Key: "id", Value: 1}}
 
-	idStruct, err := db.GetResource[OnlyID](client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
+	idStruct, err := db.GetResource[OnlyID](client.Context(), client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +298,7 @@ func (client *ResourceClient[T]) GetID() (*string, error) {
 func (client *ResourceClient[T]) GetName(id string) (*string, error) {
 	projection := bson.D{{Key: "name", Value: 1}}
 
-	nameStruct, err := db.GetResource[OnlyName](client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
+	nameStruct, err := db.GetResource[OnlyName](client.Context(), client.Collection, db.GroupFilters(bson.D{{Key: "id", Value: id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +313,7 @@ func (client *ResourceClient[T]) GetName(id string) (*string, error) {
 // ListIDs returns the IDs of all resources that match the given filter.
 func (client *ResourceClient[T]) ListIDs() ([]string, error) {
 	projection := bson.D{{Key: "id", Value: 1}}
-	ids, err := db.ListResources[OnlyID](client.Collection, db.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
+	ids, err := db.ListResources[OnlyID](client.Context(), client.Collection, db.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +329,7 @@ func (client *ResourceClient[T]) ListIDs() ([]string, error) {
 // ListNames returns the names of all resources that match the given filter.
 func (client *ResourceClient[T]) ListNames() ([]string, error) {
 	projection := bson.D{{Key: "name", Value: 1}}
-	names, err := db.ListResources[OnlyName](client.Collection, db.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
+	names, err := db.ListResources[OnlyName](client.Context(), client.Collection, db.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
 	if err != nil {
 		return nil, err
 	}
@@ -330,16 +345,16 @@ func (client *ResourceClient[T]) ListNames() ([]string, error) {
 // GetWithFilterAndProjection returns a model with the given filter and projection.
 // It should be used as a base method for other methods to use, and not called directly.
 func (client *ResourceClient[T]) GetWithFilterAndProjection(filter, projection bson.D) (*T, error) {
-	return db.GetResource[T](client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
+	return db.GetResource[T](client.Context(), client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
 }
 
 // ListWithFilterAndProjection returns any resources that match the given filter and projection.
 // It should be used as a base method for other methods to use, and not called directly.
 func (client *ResourceClient[T]) ListWithFilterAndProjection(filter, projection bson.D) ([]T, error) {
-	return db.ListResources[T](client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
+	return db.ListResources[T](client.Context(), client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
 }
 
 // Count returns the number of resources that match the given filter.
 func (client *ResourceClient[T]) Count() (int, error) {
-	return db.CountResources(client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return db.CountResources(client.Context(), client.Collection, db.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }

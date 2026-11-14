@@ -1,6 +1,7 @@
 package v2
 
 import (
+	stdContext "context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -50,7 +51,7 @@ func GetTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := service.V2(auth).Teams().Get(requestURI.TeamID)
+	team, err := service.V2(auth).Teams().Get(c.Request.Context(), requestURI.TeamID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -96,7 +97,7 @@ func ListTeams(c *gin.Context) {
 		userID = auth.User.ID
 	}
 
-	teamList, err := service.V2(auth).Teams().List(opts.ListOpts{
+	teamList, err := service.V2(auth).Teams().List(c.Request.Context(), opts.ListOpts{
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
@@ -141,7 +142,7 @@ func CreateTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := service.V2(auth).Teams().Create(uuid.NewString(), auth.User.ID, &requestQuery)
+	team, err := service.V2(auth).Teams().Create(c.Request.Context(), uuid.NewString(), auth.User.ID, &requestQuery)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrTeamNameTaken) {
 			context.UserError("Team name is taken")
@@ -196,7 +197,7 @@ func UpdateTeam(c *gin.Context) {
 		return
 	}
 
-	updated, err := service.V2(auth).Teams().Update(requestURI.TeamID, &requestQuery)
+	updated, err := service.V2(auth).Teams().Update(c.Request.Context(), requestURI.TeamID, &requestQuery)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrTeamNameTaken) {
 			context.UserError("Team name is taken")
@@ -243,7 +244,7 @@ func DeleteTeam(c *gin.Context) {
 		return
 	}
 
-	err = service.V2(auth).Teams().Delete(requestURI.TeamID)
+	err = service.V2(auth).Teams().Delete(c.Request.Context(), requestURI.TeamID)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrTeamNotFound) {
 			context.NotFound("Team not found")
@@ -265,7 +266,7 @@ func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) 
 		context.ServerError(err, ErrAuthInfoNotAvailable)
 	}
 
-	team, err := service.V2(auth).Teams().Join(id, requestBody)
+	team, err := service.V2(auth).Teams().Join(context.GinContext.Request.Context(), id, requestBody)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrNotInvited) {
 			context.UserError("User not invited to team")
@@ -291,7 +292,7 @@ func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) 
 
 // getMember is a helper function for converting a team member to a team member DTO
 func getMember(member *model.TeamMember) *body.TeamMember {
-	user, err := service.V2().Users().Get(member.ID)
+	user, err := service.V2().Users().Get(stdContext.Background(), member.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user when getting team member for team: %s", err))
 		return nil
@@ -336,7 +337,7 @@ func getResourceName(resource *model.TeamResource) *string {
 
 	switch resource.Type {
 	case model.ResourceTypeDeployment:
-		d, err := deployV2.Deployments().Get(resource.ID, deploymentOpts.GetOpts{Shared: true})
+		d, err := deployV2.Deployments().Get(stdContext.Background(), resource.ID, deploymentOpts.GetOpts{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team model name: %s", err))
 			return nil
@@ -348,7 +349,7 @@ func getResourceName(resource *model.TeamResource) *string {
 
 		return &d.Name
 	case model.ResourceTypeVM:
-		vm, err := deployV2.VMs().Get(resource.ID, vmOpts.GetOpts{Shared: true})
+		vm, err := deployV2.VMs().Get(stdContext.Background(), resource.ID, vmOpts.GetOpts{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team model name: %s", err))
 			return nil

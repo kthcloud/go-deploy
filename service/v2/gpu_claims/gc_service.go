@@ -1,6 +1,7 @@
 package gpu_claims
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -26,10 +27,11 @@ import (
 // Get detailed gpu claims
 //
 // Only admin users are allowed to get the detailed gpu claim
-func (c *Client) Get(id string, opts ...opts.Opts) (*model.GpuClaim, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.Opts) (*model.GpuClaim, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
 	gcrc := gpu_claim_repo.New()
+	gcrc.ResourceClient.Ctx = ctx
 
 	if c.V2.Auth() == nil || !c.V2.Auth().User.IsAdmin {
 		return nil, sErrors.ErrForbidden
@@ -42,10 +44,11 @@ func (c *Client) Get(id string, opts ...opts.Opts) (*model.GpuClaim, error) {
 	return c.GpuClaim(id, gcrc)
 }
 
-func (c *Client) List(opts ...opts.ListOpts) ([]model.GpuClaim, error) {
+func (c *Client) List(ctx context.Context, opts ...opts.ListOpts) ([]model.GpuClaim, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
 	gcrc := gpu_claim_repo.New()
+	gcrc.ResourceClient.Ctx = ctx
 
 	if o.Pagination != nil {
 		gcrc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -67,7 +70,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.GpuClaim, error) {
 }
 
 // Create creates a new gpu claim
-func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
+func (c *Client) Create(ctx context.Context, id string, params *model.GpuClaimCreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create gpu claim. details: %w", err)
 	}
@@ -94,7 +97,9 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 		}
 	}
 
-	err := gpu_claim_repo.New().Create(id, params)
+	gcrc := gpu_claim_repo.New()
+	gcrc.ResourceClient.Ctx = ctx
+	err := gcrc.Create(id, params)
 	if err != nil {
 		if errors.Is(err, gpu_claim_repo.ErrGpuClaimAlreadyExists) {
 			return sErrors.ErrGpuClaimAlreadyExists
@@ -113,12 +118,13 @@ func (c *Client) Create(id string, params *model.GpuClaimCreateParams) error {
 
 // Delete deletes an existing gpu claim
 // It will best effort delete references to the claim from deployments.
-func (c *Client) Delete(id string) error {
+func (c *Client) Delete(ctx context.Context, id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to delete gpu claim. details: %w", err)
 	}
 
 	repo := gpu_claim_repo.New()
+	repo.ResourceClient.Ctx = ctx
 
 	claim, err := repo.GetByID(id)
 	if err != nil || claim == nil {
@@ -133,7 +139,7 @@ func (c *Client) Delete(id string) error {
 	// Best effort remove references to the resourceClaims when deleting the claim
 	// We do this because otherwise the pods of the deployment will be struck on
 	// creating when the claims are removed from k8s.
-	depls, err := c.V2.Deployments().List(deploymentOpts.ListOpts{
+	depls, err := c.V2.Deployments().List(ctx, deploymentOpts.ListOpts{
 		GpuClaimName: &claim.Name,
 	})
 	if err != nil {
@@ -162,7 +168,7 @@ func (c *Client) Delete(id string) error {
 				log.Errorf("Could not generate uuid v4 for update job, err: %s", err.Error())
 				continue
 			}
-			if err := c.V2.Jobs().Create(jobUUID.String(), depl.OwnerID, model.JobUpdateDeployment, version.V2, map[string]any{
+			if err := c.V2.Jobs().Create(ctx, jobUUID.String(), depl.OwnerID, model.JobUpdateDeployment, version.V2, map[string]any{
 				"id":     depl.ID,
 				"params": update,
 			}); err != nil {
@@ -185,11 +191,12 @@ func (c *Client) Delete(id string) error {
 	return nil
 }
 
-func (c *Client) Update(id string, params *model.GpuClaimUpdateParams) error {
+func (c *Client) Update(ctx context.Context, id string, params *model.GpuClaimUpdateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to update gpu claim. details: %w", err)
 	}
 	repo := gpu_claim_repo.New()
+	repo.ResourceClient.Ctx = ctx
 
 	claim, err := repo.GetByID(id)
 	if err != nil || claim == nil {

@@ -1,13 +1,19 @@
 package log
 
 import (
+	"sync"
+
 	"github.com/kthcloud/go-deploy/models/mode"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var (
-	Logger    *zap.SugaredLogger
+	loggerMu sync.RWMutex
+
+	// Logger is the global fallback logger used by legacy callers.
+	// It defaults to a no-op logger so unit tests and early callers never panic.
+	Logger    = zap.NewNop().Sugar()
 	LoggerMap = make(map[string]*zap.SugaredLogger)
 )
 
@@ -18,44 +24,82 @@ var (
 	Orange = "\033[38;5;208m"
 	Grey   = "\033[90m"
 
-	runMode       = "development"
+	runMode       = mode.Dev
 	defaultLogger = "default"
 )
 
-func SetupLogger(mode string) error {
-	runMode = mode
-	Logger = Get(defaultLogger)
-
-	return nil
+// New constructs a zap.Logger configured for the given run mode.
+func New(m string) (*zap.Logger, error) {
+	if m == mode.Prod {
+		return zap.NewProduction(zap.WithCaller(false))
+	}
+	return zap.NewDevelopment(zap.WithCaller(false))
 }
 
-func Get(name string) *zap.SugaredLogger {
-	if sugaredLogger, ok := LoggerMap[name]; ok {
-		return sugaredLogger
+// SetupLogger initializes the legacy global logger for the given run mode.
+func SetupLogger(m string) error {
+	base, err := New(m)
+	if err != nil {
+		return err
 	}
 
-	var sugaredLogger *zap.SugaredLogger
-
-	if runMode != mode.Prod {
-		logger := zap.Must(zap.NewDevelopment(zap.WithCaller(false)))
-		if name == defaultLogger {
-			// For default logger, we don't need to name it.
-			sugaredLogger = logger.Sugar()
-		} else {
-			sugaredLogger = logger.Sugar().Named(name)
-		}
-	} else {
-		logger := zap.Must(zap.NewProduction(zap.WithCaller(false)))
-		sugaredLogger = logger.Sugar().Named(name)
-
+	loggerMu.Lock()
+	runMode = m
+	LoggerMap = make(map[string]*zap.SugaredLogger)
+	if m == mode.Prod {
 		Bold = ""
 		Reset = ""
 		Orange = ""
 		Grey = ""
 	}
+	Logger = base.Sugar()
+	LoggerMap[defaultLogger] = Logger
+	loggerMu.Unlock()
 
-	LoggerMap[name] = sugaredLogger
-	return sugaredLogger
+	return nil
+}
+
+// Get returns a named legacy SugaredLogger, creating it safely on first access.
+func Get(name string) *zap.SugaredLogger {
+	loggerMu.RLock()
+	if sugaredLogger, ok := LoggerMap[name]; ok {
+		loggerMu.RUnlock()
+		return sugaredLogger
+	}
+	m := runMode
+	loggerMu.RUnlock()
+
+	base, err := New(m)
+	if err != nil {
+		base = zap.NewNop()
+	}
+
+	var sugared *zap.SugaredLogger
+	if m != mode.Prod && name == defaultLogger {
+		sugared = base.Sugar()
+	} else {
+		sugared = base.Sugar().Named(name)
+	}
+
+	loggerMu.Lock()
+	if existing, ok := LoggerMap[name]; ok {
+		loggerMu.Unlock()
+		return existing
+	}
+	LoggerMap[name] = sugared
+	loggerMu.Unlock()
+
+	return sugared
+}
+
+// Sync flushes any buffered log entries from the global logger.
+func Sync() {
+	loggerMu.RLock()
+	l := Logger
+	loggerMu.RUnlock()
+	if l != nil {
+		_ = l.Sync()
+	}
 }
 
 // Logln logs a message at provided level.

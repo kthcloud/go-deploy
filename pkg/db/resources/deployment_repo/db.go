@@ -1,7 +1,6 @@
 package deployment_repo
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -83,7 +82,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		Status:     status_codes.GetMsg(status_codes.ResourceCreating),
 	}
 
-	_, err := client.Collection.InsertOne(context.TODO(), deployment)
+	_, err := client.Collection.InsertOne(client.ResourceClient.Context(), deployment)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, rErrors.ErrNonUniqueField
@@ -175,7 +174,7 @@ func (client *Client) GetLogs(id string, history int) ([]model.Log, error) {
 	}
 
 	var deployment model.Deployment
-	err := client.Collection.FindOne(context.TODO(),
+	err := client.Collection.FindOne(client.ResourceClient.Context(),
 		bson.D{{Key: "id", Value: id}},
 		options.FindOne().SetProjection(projection),
 	).Decode(&deployment)
@@ -318,7 +317,7 @@ func (client *Client) MarkRepaired(id string) error {
 		{Key: "$unset", Value: bson.D{{Key: "activities.repairing", Value: ""}}},
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(client.ResourceClient.Context(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -335,7 +334,7 @@ func (client *Client) MarkUpdated(id string) error {
 		{Key: "$unset", Value: bson.D{{Key: "activities.updating", Value: ""}}},
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(client.ResourceClient.Context(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -356,7 +355,7 @@ func (client *Client) UpdateCustomDomainStatus(id string, status string) error {
 		{Key: "$set", Value: bson.D{{Key: "apps.main.customDomain.status", Value: status}}},
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(client.ResourceClient.Context(), filter, update)
 	if err != nil {
 		return err
 	}

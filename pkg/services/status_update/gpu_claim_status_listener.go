@@ -41,6 +41,8 @@ func GpuClaimStatusListener(ctx context.Context) error {
 			return fmt.Errorf("failed to set up gpu claim state reconciler for zone %s. details: %w", zone.Name, err)
 		}
 	}
+
+	<-ctx.Done()
 	return nil
 }
 

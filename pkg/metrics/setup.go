@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"github.com/kthcloud/go-deploy/pkg/db/key_value"
 	"github.com/kthcloud/go-deploy/utils"
@@ -83,7 +84,7 @@ func Sync() {
 	monitor := ginmetrics.GetMonitor()
 
 	for _, collector := range Metrics.Collectors {
-		valueStr, err := client.Get(collector.Key)
+		valueStr, err := client.Get(context.Background(), collector.Key)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("error getting value for key %s when synchronizing metrics. details: %w", collector.Key, err))
 			continue

@@ -52,7 +52,7 @@ func CreateApiKey(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	apiKey, err := deployV2.Users().ApiKeys().Create(requestURI.UserID, &requestBody)
+	apiKey, err := deployV2.Users().ApiKeys().Create(c.Request.Context(), requestURI.UserID, &requestBody)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ErrUserNotFound):

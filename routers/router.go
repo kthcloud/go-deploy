@@ -58,7 +58,13 @@ func NewRouter() *gin.Engine {
 	})
 
 	// OpenAPI docs (v2)
-	router.GET("/v2/docs/*any", apiV2.ServeDocs(basePath+"/v2/docs"))
+	var docsOpts apiV2.DocsOptions
+	if config.Config.Keycloak.Url != "" && config.Config.Keycloak.Realm != "" {
+		oidcBase := strings.TrimRight(config.Config.Keycloak.Url, "/") + "/realms/" + config.Config.Keycloak.Realm + "/protocol/openid-connect"
+		docsOpts.KeycloakAuthURL = oidcBase + "/auth"
+		docsOpts.KeycloakTokenURL = oidcBase + "/token"
+	}
+	router.GET("/v2/docs/*any", apiV2.ServeDocs(basePath+"/v2/docs", docsOpts))
 
 	// Health check routes
 	router.Any("/healthz", func(c *gin.Context) {

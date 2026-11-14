@@ -7,11 +7,17 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/services"
 )
 
-// Setup starts the job workers.
+// Setup starts the job workers and blocks until ctx is canceled.
 // Job execution workers are workers that runs any jobs that are ready to be executed.
 func Setup(ctx context.Context) {
 	log.Println("Starting job workers")
 
-	go services.PeriodicWorker(ctx, "jobFetcher", JobFetcher, config.Config.Timer.JobFetch)
-	go services.PeriodicWorker(ctx, "failedJobFetcher", FailedJobFetcher, config.Config.Timer.FailedJobFetch)
+	services.RunWorkers(ctx,
+		func(ctx context.Context) {
+			services.PeriodicWorkerCtx(ctx, "jobFetcher", JobFetcher, config.Config.Timer.JobFetch)
+		},
+		func(ctx context.Context) {
+			services.PeriodicWorkerCtx(ctx, "failedJobFetcher", FailedJobFetcher, config.Config.Timer.FailedJobFetch)
+		},
+	)
 }

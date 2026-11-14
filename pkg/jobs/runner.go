@@ -1,15 +1,17 @@
 package jobs
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"math"
+	"strings"
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/utils"
-	"math"
-	"strings"
-	"time"
 )
 
 type Runner struct {
@@ -24,7 +26,10 @@ func NewRunner(job *model.Job) *Runner {
 }
 
 // Run runs the job, and marks it as completed, failed or terminated according to the job's result.
-func (runner *Runner) Run() {
+func (runner *Runner) Run(ctx context.Context) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if jobDef := GetJobDef(runner.Job); jobDef != nil {
 		if jobDef.TerminateFunc != nil {
 			shouldTerminate, err := jobDef.TerminateFunc(runner.Job)
@@ -50,7 +55,7 @@ func (runner *Runner) Run() {
 			}
 		}
 
-		go wrapper(jobDef)
+		go wrapper(ctx, jobDef)
 	} else {
 		utils.PrettyPrintError(fmt.Errorf("job %s has unknown type %s", runner.Job.ID, runner.Job.Type))
 
@@ -64,7 +69,7 @@ func (runner *Runner) Run() {
 
 // wrapper is a helper function that runs the EntryFunc, JobFunc and ExitFunc of the given job definition,
 // and updates the job's status according to the result of the JobFunc.
-func wrapper(def *JobDefinition) {
+func wrapper(ctx context.Context, def *JobDefinition) {
 	if def.EntryFunc != nil {
 		err := def.EntryFunc(def.Job)
 		if err != nil {
@@ -95,7 +100,7 @@ func wrapper(def *JobDefinition) {
 		}
 	}()
 
-	err := def.JobFunc(def.Job)
+	err := def.JobFunc(ctx, def.Job)
 
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "failed") {

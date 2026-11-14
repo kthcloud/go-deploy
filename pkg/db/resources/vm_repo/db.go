@@ -1,7 +1,6 @@
 package vm_repo
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -74,7 +73,7 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 		Status: status_codes.GetMsg(status_codes.ResourceCreating),
 	}
 
-	_, err := client.Collection.InsertOne(context.TODO(), vm)
+	_, err := client.Collection.InsertOne(client.ResourceClient.Context(), vm)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return nil, rErrors.ErrNonUniqueField
@@ -116,7 +115,7 @@ func (client *Client) ListWithAnyPendingCustomDomain() ([]model.VM, error) {
 		}},
 	}
 
-	cursor, err := client.Collection.Aggregate(context.Background(), pipeline)
+	cursor, err := client.Collection.Aggregate(client.ResourceClient.Context(), pipeline)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return []model.VM{}, nil
@@ -126,7 +125,7 @@ func (client *Client) ListWithAnyPendingCustomDomain() ([]model.VM, error) {
 	}
 
 	var vms []model.VM
-	err = cursor.All(context.Background(), &vms)
+	err = cursor.All(client.ResourceClient.Context(), &vms)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +316,7 @@ func (client *Client) MarkRepaired(id string) error {
 		{Key: "$unset", Value: bson.D{{Key: "activities.repairing", Value: ""}}},
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(client.ResourceClient.Context(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -334,7 +333,7 @@ func (client *Client) MarkUpdated(id string) error {
 		{Key: "$unset", Value: bson.D{{Key: "activities.updating", Value: ""}}},
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(client.ResourceClient.Context(), filter, update)
 	if err != nil {
 		return err
 	}

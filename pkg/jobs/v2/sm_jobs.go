@@ -11,13 +11,12 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
 	jErrors "github.com/kthcloud/go-deploy/pkg/jobs/errors"
 	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
-	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/mitchellh/mapstructure"
 )
 
-func CreateSM(job *model.Job) error {
+func CreateSM(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "userId", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -32,7 +31,7 @@ func CreateSM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).SMs().Create(id, userID, &params)
+	err = service.V2(utils.GetAuthInfo(job)).SMs().Create(ctx, id, userID, &params)
 	if err != nil {
 		// We always terminate these jobs, since rerunning it would cause a ErrNonUniqueField
 		return jErrors.MakeTerminatedError(err)
@@ -41,7 +40,7 @@ func CreateSM(job *model.Job) error {
 	return nil
 }
 
-func DeleteSM(job *model.Job) error {
+func DeleteSM(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -65,34 +64,17 @@ func DeleteSM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
-	defer cancel()
-
-	go func() {
-		err = utils.WaitForJobs(ctx, relatedJobs, []string{model.JobStatusCompleted, model.JobStatusTerminated})
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				return
-			}
-
-			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("Timeout waiting for related jobs to finish for model", id)
-				return
-			}
-
-			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
+	if err := utils.WaitForRelatedJobs(ctx, id, relatedJobs, 300*time.Second); err != nil {
+		if errors.Is(err, context.Canceled) {
+			return jErrors.MakeFailedError(err)
 		}
-
-		cancel()
-	}()
-
-	select {
-	case <-time.After(300 * time.Second):
-		return jErrors.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
-	case <-ctx.Done():
+		if errors.Is(err, context.DeadlineExceeded) {
+			return jErrors.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish: %w", err))
+		}
+		return jErrors.MakeFailedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).SMs().Delete(id)
+	err = service.V2(utils.GetAuthInfo(job)).SMs().Delete(ctx, id)
 	if err != nil {
 		if !errors.Is(err, sErrors.ErrSmNotFound) {
 			return jErrors.MakeFailedError(err)
@@ -102,7 +84,7 @@ func DeleteSM(job *model.Job) error {
 	return nil
 }
 
-func RepairSM(job *model.Job) error {
+func RepairSM(ctx context.Context, job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
@@ -110,7 +92,7 @@ func RepairSM(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V2(utils.GetAuthInfo(job)).SMs().Repair(id)
+	err = service.V2(utils.GetAuthInfo(job)).SMs().Repair(ctx, id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)

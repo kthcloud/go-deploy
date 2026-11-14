@@ -1,6 +1,7 @@
 package teams
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -20,10 +21,11 @@ import (
 )
 
 // Get gets a team by ID
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Team, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.GetOpts) (*model.Team, error) {
 	_ = utils2.GetFirstOrDefault(opts)
 
 	tmc := team_repo.New()
+	tmc.Ctx = ctx
 
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
 		tmc.WithUserID(c.V2.Auth().User.ID)
@@ -33,10 +35,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Team, error) {
 }
 
 // List lists teams
-func (c *Client) List(opts ...opts.ListOpts) ([]model.Team, error) {
+func (c *Client) List(ctx context.Context, opts ...opts.ListOpts) ([]model.Team, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
 	tmc := team_repo.New()
+	tmc.Ctx = ctx
 
 	if o.Pagination != nil {
 		tmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -73,10 +76,11 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Team, error) {
 //
 // This is a more lightweight version of List when only the IDs are needed
 // TODO: Fetch only IDs, right now ListIDs == List
-func (c *Client) ListIDs(opts ...opts.ListOpts) ([]string, error) {
+func (c *Client) ListIDs(ctx context.Context, opts ...opts.ListOpts) ([]string, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
 	tmc := team_repo.New()
+	tmc.Ctx = ctx
 
 	if o.Pagination != nil {
 		tmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -122,16 +126,18 @@ func (c *Client) ListIDs(opts ...opts.ListOpts) ([]string, error) {
 // Create creates a new team
 //
 // Notifications are sent out if the owner of the team is not admin
-func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error) {
+func (c *Client) Create(ctx context.Context, id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error) {
 	params := &model.TeamCreateParams{}
 	params.FromDTO(dtoCreateTeam, ownerID,
-		func(resourceID string) *model.TeamResource { return c.getResourceIfAccessible(resourceID) },
+		func(resourceID string) *model.TeamResource { return c.getResourceIfAccessible(ctx, resourceID) },
 		func(memberDTO *body.TeamMemberCreate) *model.TeamMember {
 			return c.createMemberIfAccessible(nil, memberDTO.ID)
 		},
 	)
 
-	team, err := team_repo.New().Create(id, ownerID, params)
+	tmc := team_repo.New()
+	tmc.Ctx = ctx
+	team, err := tmc.Create(id, ownerID, params)
 	if err != nil {
 		if errors.Is(err, team_repo.ErrNameTaken) {
 			return nil, sErrors.ErrTeamNameTaken
@@ -143,7 +149,7 @@ func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*mo
 	// Send invitations to every member that received an invitation code
 	for _, member := range params.MemberMap {
 		if member.InvitationCode != "" {
-			err = c.createInvitationNotification(member.ID, team.ID, team.Name, member.InvitationCode)
+			err = c.createInvitationNotification(ctx, member.ID, team.ID, team.Name, member.InvitationCode)
 			if err != nil {
 				return nil, err
 			}
@@ -154,8 +160,8 @@ func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*mo
 }
 
 // Update updates a team
-func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error) {
-	team, err := team_repo.New().GetByID(id)
+func (c *Client) Update(ctx context.Context, id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error) {
+	team, err := team_repo.New().WithContext(ctx).GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +176,7 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team,
 
 	params := &model.TeamUpdateParams{}
 	params.FromDTO(dtoUpdateTeam, team.GetMember(team.OwnerID),
-		func(resourceID string) *model.TeamResource { return c.getResourceIfAccessible(resourceID) },
+		func(resourceID string) *model.TeamResource { return c.getResourceIfAccessible(ctx, resourceID) },
 		func(memberDTO *body.TeamMemberUpdate) *model.TeamMember {
 			return c.createMemberIfAccessible(team, memberDTO.ID)
 		},
@@ -186,7 +192,7 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team,
 
 			// Send notification to new users
 			if member.InvitationCode != "" {
-				err = c.createInvitationNotification(member.ID, team.ID, team.Name, member.InvitationCode)
+				err = c.createInvitationNotification(ctx, member.ID, team.ID, team.Name, member.InvitationCode)
 				if err != nil {
 					return nil, err
 				}
@@ -208,6 +214,7 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team,
 	}
 
 	tmc := team_repo.New()
+	tmc.Ctx = ctx
 
 	err = tmc.UpdateWithParams(id, params)
 	if err != nil {
@@ -218,8 +225,9 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team,
 }
 
 // Delete deletes a team
-func (c *Client) Delete(id string) error {
+func (c *Client) Delete(ctx context.Context, id string) error {
 	tmc := team_repo.New()
+	tmc.Ctx = ctx
 
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
 		tmc.WithOwnerID(c.V2.Auth().User.ID)
@@ -234,7 +242,7 @@ func (c *Client) Delete(id string) error {
 		return sErrors.ErrTeamNotFound
 	}
 
-	err = notification_repo.New().FilterContent("id", id).Delete()
+	err = notification_repo.New().FilterContent("id", id).WithContext(ctx).Delete()
 	if err != nil {
 		return err
 	}
@@ -243,8 +251,9 @@ func (c *Client) Delete(id string) error {
 }
 
 // CleanResource cleans a resource from all teams
-func (c *Client) CleanResource(resourceID string) error {
+func (c *Client) CleanResource(ctx context.Context, resourceID string) error {
 	tmc := team_repo.New()
+	tmc.Ctx = ctx
 
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
 		tmc.WithOwnerID(c.V2.Auth().User.ID)
@@ -271,7 +280,7 @@ func (c *Client) CleanResource(resourceID string) error {
 // Join joins a team
 //
 // It uses service.AuthInfo to get the user ID
-func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error) {
+func (c *Client) Join(ctx context.Context, id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error) {
 	if !c.V2.HasAuth() {
 		return nil, nil
 	}
@@ -280,6 +289,7 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error
 	params.FromDTO(dtoTeamJoin)
 
 	tmc := team_repo.New()
+	tmc.Ctx = ctx
 	team, err := tmc.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -307,6 +317,7 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error
 	}
 
 	nmc := notification_repo.New().WithUserID(c.V2.Auth().User.ID).FilterContent("id", id).WithType(model.NotificationTeamInvite)
+	nmc.Ctx = ctx
 	err = nmc.MarkReadAndCompleted()
 	if err != nil {
 		return nil, err
@@ -315,15 +326,19 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error
 	return c.RefreshTeam(id, tmc)
 }
 
-func (c *Client) CheckResourceAccess(userID, resourceID string) (bool, error) {
-	return team_repo.New().WithUserID(userID).WithResourceID(resourceID).ExistsAny()
+func (c *Client) CheckResourceAccess(ctx context.Context, userID, resourceID string) (bool, error) {
+	tmc := team_repo.New()
+	tmc.Ctx = ctx
+	return tmc.WithUserID(userID).WithResourceID(resourceID).ExistsAny()
 }
 
 // getTeamIfAccessible is a helper function to get a team if the user is accessible to the user in the current context
-func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource {
+func (c *Client) getResourceIfAccessible(ctx context.Context, resourceID string) *model.TeamResource {
 	// Try to fetch deployment
 	dmc := deployment_repo.New()
+	dmc.ResourceClient.Ctx = ctx
 	vmc := vm_repo.New()
+	vmc.ResourceClient.Ctx = ctx
 
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
 		dmc.WithOwner(c.V2.Auth().User.ID)
@@ -345,7 +360,9 @@ func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource 
 	}
 
 	// Try to fetch vm
-	isOwner, err = vm_repo.New().ExistsByID(resourceID)
+	vmc2 := vm_repo.New()
+	vmc2.ResourceClient.Ctx = ctx
+	isOwner, err = vmc2.ExistsByID(resourceID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to fetch vm when checking user access when creating team: %w", err))
 		return nil
@@ -390,8 +407,8 @@ func (c *Client) createMemberIfAccessible(current *model.Team, memberID string) 
 }
 
 // createInvitationNotification is a helper function to create a notification for a team invitation
-func (c *Client) createInvitationNotification(userID, teamID, teamName, invitationCode string) error {
-	_, err := c.V2.Notifications().Create(uuid.NewString(), userID, &model.NotificationCreateParams{
+func (c *Client) createInvitationNotification(ctx context.Context, userID, teamID, teamName, invitationCode string) error {
+	_, err := c.V2.Notifications().Create(ctx, uuid.NewString(), userID, &model.NotificationCreateParams{
 		Type: model.NotificationTeamInvite,
 		Content: map[string]any{
 			"id":   teamID,

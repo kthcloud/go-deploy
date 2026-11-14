@@ -40,7 +40,7 @@ func GetSnapshot(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	vm, err := deployV2.VMs().Get(c.Request.Context(), requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -51,7 +51,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := deployV2.VMs().Snapshots().Get(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
+	snapshot, err := deployV2.VMs().Snapshots().Get(c.Request.Context(), requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -99,7 +99,7 @@ func ListSnapshots(c *gin.Context) {
 		return
 	}
 
-	snapshots, err := service.V2().VMs().Snapshots().List(requestURI.VmID, opts.ListSnapshotOpts{
+	snapshots, err := service.V2().VMs().Snapshots().List(c.Request.Context(), requestURI.VmID, opts.ListSnapshotOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 	})
 	if err != nil {
@@ -160,7 +160,7 @@ func CreateSnapshot(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	err = deployV2.VMs().CheckQuota(requestURI.VmID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{
+	err = deployV2.VMs().CheckQuota(c.Request.Context(), requestURI.VmID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{
 		CreateSnapshot: &requestBody,
 	})
 	if err != nil {
@@ -174,7 +174,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	current, err := deployV2.VMs().Snapshots().GetByName(requestURI.VmID, requestBody.Name, opts.GetSnapshotOpts{})
+	current, err := deployV2.VMs().Snapshots().GetByName(c.Request.Context(), requestURI.VmID, requestBody.Name, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -185,7 +185,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	vm, err := deployV2.VMs().Get(c.Request.Context(), requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -202,7 +202,7 @@ func CreateSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateVmUserSnapshot, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobCreateVmUserSnapshot, version.V2, map[string]interface{}{
 		"id": vm.ID,
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
@@ -256,7 +256,7 @@ func DeleteSnapshot(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	vm, err := deployV2.VMs().Get(c.Request.Context(), requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -267,7 +267,7 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := deployV2.VMs().Snapshots().Get(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
+	snapshot, err := deployV2.VMs().Snapshots().Get(c.Request.Context(), requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -279,7 +279,7 @@ func DeleteSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVmSnapshot, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobDeleteVmSnapshot, version.V2, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
 		"authInfo":   auth,

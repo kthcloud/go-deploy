@@ -1,7 +1,6 @@
 package event_repo
 
 import (
-	"context"
 	"github.com/kthcloud/go-deploy/models/model"
 	"time"
 )
@@ -16,6 +15,6 @@ func (client *Client) Create(id string, params *model.EventCreateParams) error {
 		Metadata:  params.Metadata,
 	}
 
-	_, err := client.Collection.InsertOne(context.TODO(), event)
+	_, err := client.Collection.InsertOne(client.Context(), event)
 	return err
 }

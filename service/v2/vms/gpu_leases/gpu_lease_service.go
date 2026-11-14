@@ -1,6 +1,7 @@
 package gpu_leases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -14,12 +15,13 @@ import (
 )
 
 // Get gets a GPU lease by ID
-func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get gpu lease. details: %w", err)
 	}
 
 	glc := gpu_lease_repo.New()
+	glc.Ctx = ctx
 
 	lease, err := glc.GetByID(id)
 	if err != nil {
@@ -48,7 +50,7 @@ func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, 
 
 		// 3. User has access to the parent VM through a team
 		if lease.VmID != nil {
-			hasAccess, err := c.V2.Teams().CheckResourceAccess(c.V2.Auth().User.ID, *lease.VmID)
+			hasAccess, err := c.V2.Teams().CheckResourceAccess(ctx, c.V2.Auth().User.ID, *lease.VmID)
 			if err != nil {
 				return nil, makeError(err)
 			}
@@ -66,12 +68,12 @@ func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, 
 }
 
 // GetByVmID gets a GPU lease by VM ID
-func (c *Client) GetByVmID(vmID string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, error) {
+func (c *Client) GetByVmID(ctx context.Context, vmID string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get gpu lease. details: %w", err)
 	}
 
-	vm, err := c.V2.VMs().Get(vmID)
+	vm, err := c.V2.VMs().Get(ctx, vmID)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -81,6 +83,7 @@ func (c *Client) GetByVmID(vmID string, opts ...opts.GetGpuLeaseOpts) (*model.Gp
 	}
 
 	glc := gpu_lease_repo.New()
+	glc.Ctx = ctx
 
 	lease, err := glc.WithVmID(vmID).Get()
 	if err != nil {
@@ -95,7 +98,7 @@ func (c *Client) GetByVmID(vmID string, opts ...opts.GetGpuLeaseOpts) (*model.Gp
 }
 
 // List lists GPU leases for a VM
-func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
+func (c *Client) List(ctx context.Context, opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to list gpu leases. details: %w", err)
 	}
@@ -103,6 +106,7 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
 	glc := gpu_lease_repo.New()
+	glc.Ctx = ctx
 
 	if o.Pagination != nil {
 		glc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -117,7 +121,7 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 		// Specific VM's GPU leases are requested
 		if c.V2.HasAuth() {
 			// Check ownership
-			vm, err := c.V2.VMs().Get(*o.VmID)
+			vm, err := c.V2.VMs().Get(ctx, *o.VmID)
 			if err != nil {
 				return nil, makeError(err)
 			}
@@ -131,7 +135,7 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 			}
 
 			// Check team access
-			hasAccess, err := c.V2.Teams().CheckResourceAccess(c.V2.Auth().User.ID, *o.VmID)
+			hasAccess, err := c.V2.Teams().CheckResourceAccess(ctx, c.V2.Auth().User.ID, *o.VmID)
 			if err != nil {
 				return nil, makeError(err)
 			}
@@ -169,7 +173,7 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 // Create creates a GPU lease
 //
 // The lease is not active immediately, but will be activated by the GPU lease worker
-func (c *Client) Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error {
+func (c *Client) Create(ctx context.Context, leaseID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create gpu lease. details: %w", err)
 	}
@@ -195,7 +199,10 @@ func (c *Client) Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLease
 		return makeError(errors.New("lease duration could not be determined"))
 	}
 
-	err := gpu_lease_repo.New().Create(leaseID, userID, params.GpuGroupName, leaseDuration)
+	glc := gpu_lease_repo.New()
+	glc.Ctx = ctx
+	glc.Ctx = ctx
+	err := glc.Create(leaseID, userID, params.GpuGroupName, leaseDuration)
 	if err != nil {
 		if errors.Is(err, gpu_lease_repo.ErrGpuLeaseAlreadyExists) {
 			return makeError(sErrors.ErrGpuLeaseAlreadyExists)
@@ -208,12 +215,12 @@ func (c *Client) Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLease
 }
 
 // Update updates a GPU lease
-func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error {
+func (c *Client) Update(ctx context.Context, id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update gpu lease. details: %w", err)
 	}
 
-	lease, err := c.Get(id)
+	lease, err := c.Get(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -241,7 +248,9 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 		params.ActivatedAt = nil
 	}
 
-	err = gpu_lease_repo.New().UpdateWithParams(id, params)
+	glc := gpu_lease_repo.New()
+	glc.Ctx = ctx
+	err = glc.UpdateWithParams(id, params)
 	if err != nil {
 		if errors.Is(err, gpu_lease_repo.ErrVmAlreadyAttached) {
 			return makeError(sErrors.ErrVmAlreadyAttached)
@@ -260,7 +269,7 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 
 	// Attach the GPU to the VM
 	if params.VmID != nil {
-		group, err := c.V2.VMs().GpuGroups().Get(lease.GpuGroupID)
+		group, err := c.V2.VMs().GpuGroups().Get(ctx, lease.GpuGroupID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -275,12 +284,12 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 }
 
 // Delete deletes a GPU lease
-func (c *Client) Delete(id string) error {
+func (c *Client) Delete(ctx context.Context, id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete gpu lease. details: %w", err)
 	}
 
-	lease, err := c.Get(id)
+	lease, err := c.Get(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -297,7 +306,7 @@ func (c *Client) Delete(id string) error {
 		}
 	}
 
-	err = gpu_lease_repo.New().DeleteByID(id)
+	err = gpu_lease_repo.New().WithContext(ctx).DeleteByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -306,7 +315,7 @@ func (c *Client) Delete(id string) error {
 }
 
 // Count counts the number of GPU leases
-func (c *Client) Count(opts ...opts.ListGpuLeaseOpts) (int, error) {
+func (c *Client) Count(ctx context.Context, opts ...opts.ListGpuLeaseOpts) (int, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to count gpu leases. details: %w", err)
 	}
@@ -314,6 +323,7 @@ func (c *Client) Count(opts ...opts.ListGpuLeaseOpts) (int, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
 	glc := gpu_lease_repo.New()
+	glc.Ctx = ctx
 
 	if o.UserID != nil {
 		glc.WithUserID(*o.UserID)
@@ -342,12 +352,12 @@ func (c *Client) Count(opts ...opts.ListGpuLeaseOpts) (int, error) {
 // GetQueuePosition fetches the queue position of a GPU lease.
 // Queue position is the number of leases that were created before this one minus the total GPUs of the group
 // A queue position of 0 means the lease can be activated.
-func (c *Client) GetQueuePosition(id string) (int, error) {
+func (c *Client) GetQueuePosition(ctx context.Context, id string) (int, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get gpu lease context. details: %w", err)
 	}
 
-	lease, err := c.Get(id)
+	lease, err := c.Get(ctx, id)
 	if err != nil {
 		return 0, makeError(err)
 	}
@@ -356,7 +366,7 @@ func (c *Client) GetQueuePosition(id string) (int, error) {
 		return 0, makeError(sErrors.ErrGpuLeaseNotFound)
 	}
 
-	count, err := c.Count(opts.ListGpuLeaseOpts{
+	count, err := c.Count(ctx, opts.ListGpuLeaseOpts{
 		GpuGroupID:    &lease.GpuGroupID,
 		CreatedBefore: &lease.CreatedAt,
 	})
@@ -364,7 +374,7 @@ func (c *Client) GetQueuePosition(id string) (int, error) {
 		return 0, makeError(err)
 	}
 
-	gpuGroup, err := c.V2.VMs().GpuGroups().Get(lease.GpuGroupID)
+	gpuGroup, err := c.V2.VMs().GpuGroups().Get(ctx, lease.GpuGroupID)
 	if err != nil {
 		return 0, makeError(err)
 	}

@@ -65,14 +65,22 @@ func AddExcludeDeletedFilter(filter bson.D) bson.D {
 	return newFilter
 }
 
-func GetResource[T Resource](collection *mongo.Collection, filter bson.D, projection bson.D) (*T, error) {
+func normalizeCtx(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
+}
+
+func GetResource[T Resource](ctx context.Context, collection *mongo.Collection, filter bson.D, projection bson.D) (*T, error) {
+	ctx = normalizeCtx(ctx)
 	findOptions := options.FindOne()
 	if projection != nil {
 		findOptions.SetProjection(projection)
 	}
 
 	var res T
-	err := collection.FindOne(context.Background(), filter, findOptions).Decode(&res)
+	err := collection.FindOne(ctx, filter, findOptions).Decode(&res)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -83,7 +91,8 @@ func GetResource[T Resource](collection *mongo.Collection, filter bson.D, projec
 	return &res, nil
 }
 
-func ListResources[T any](collection *mongo.Collection, filter bson.D, projection bson.D, pagination *Pagination, sortBy *SortBy) ([]T, error) {
+func ListResources[T any](ctx context.Context, collection *mongo.Collection, filter bson.D, projection bson.D, pagination *Pagination, sortBy *SortBy) ([]T, error) {
+	ctx = normalizeCtx(ctx)
 	findOptions := &options.FindOptions{}
 	if pagination != nil {
 		limit := int64(pagination.PageSize)
@@ -105,7 +114,7 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, projectio
 		findOptions.SetProjection(projection)
 	}
 
-	cursor, err := collection.Find(context.Background(), filter, findOptions)
+	cursor, err := collection.Find(ctx, filter, findOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resources. details: %w", err)
 	}
@@ -115,10 +124,10 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, projectio
 		if closeErr != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to close cursor. details: %w", closeErr))
 		}
-	}(cursor, context.Background())
+	}(cursor, ctx)
 
 	var res []T
-	err = cursor.All(context.Background(), &res)
+	err = cursor.All(ctx, &res)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resources. details: %w", err)
 	}
@@ -126,24 +135,25 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, projectio
 	return res, nil
 }
 
-func CountResources(collection *mongo.Collection, filter bson.D) (int, error) {
-	count, err := collection.CountDocuments(context.Background(), filter)
+func CountResources(ctx context.Context, collection *mongo.Collection, filter bson.D) (int, error) {
+	count, err := collection.CountDocuments(normalizeCtx(ctx), filter)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count resources. details: %w", err)
 	}
 	return int(count), nil
 }
 
-func CountDistinctResources(collection *mongo.Collection, field string, filter bson.D) (int, error) {
-	count, err := collection.Distinct(context.Background(), field, filter)
+func CountDistinctResources(ctx context.Context, collection *mongo.Collection, field string, filter bson.D) (int, error) {
+	count, err := collection.Distinct(normalizeCtx(ctx), field, filter)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count resources. details: %w", err)
 	}
 	return len(count), nil
 }
 
-func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string, data *T, filter bson.D) error {
-	result, err := collection.UpdateOne(context.TODO(), filter, bson.D{
+func CreateIfUniqueResource[T Resource](ctx context.Context, collection *mongo.Collection, id string, data *T, filter bson.D) error {
+	ctx = normalizeCtx(ctx)
+	result, err := collection.UpdateOne(ctx, filter, bson.D{
 		{Key: "$setOnInsert", Value: data},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
@@ -156,7 +166,7 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 
 	if result.UpsertedCount == 0 {
 		if result.MatchedCount == 1 {
-			fetched, err := GetResource[onlyID](collection, filter, nil)
+			fetched, err := GetResource[onlyID](ctx, collection, filter, nil)
 			if err != nil {
 				return err
 			}
@@ -177,8 +187,8 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 	return nil
 }
 
-func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D) error {
-	_, err := collection.UpdateOne(context.Background(), filter, update)
+func UpdateOneResource(ctx context.Context, collection *mongo.Collection, filter bson.D, update bson.D) error {
+	_, err := collection.UpdateOne(normalizeCtx(ctx), filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update model. details: %w", err)
 	}
@@ -186,8 +196,8 @@ func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.
 	return nil
 }
 
-func DeleteResources(collection *mongo.Collection, filter bson.D) error {
-	_, err := collection.DeleteMany(context.Background(), filter)
+func DeleteResources(ctx context.Context, collection *mongo.Collection, filter bson.D) error {
+	_, err := collection.DeleteMany(normalizeCtx(ctx), filter)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil

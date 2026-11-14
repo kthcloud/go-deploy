@@ -46,7 +46,7 @@ func GetGpuLease(c *gin.Context) {
 		return
 	}
 
-	gpuLease, err := service.V2(auth).VMs().GpuLeases().Get(requestURI.GpuLeaseID)
+	gpuLease, err := service.V2(auth).VMs().GpuLeases().Get(c.Request.Context(), requestURI.GpuLeaseID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -57,7 +57,7 @@ func GetGpuLease(c *gin.Context) {
 		return
 	}
 
-	position, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
+	position, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(c.Request.Context(), gpuLease.ID)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrGpuLeaseNotFound) {
 			position = -1
@@ -112,7 +112,7 @@ func ListGpuLeases(c *gin.Context) {
 		userID = &auth.User.ID
 	}
 
-	gpuLeases, err := service.V2(auth).VMs().GpuLeases().List(opts.ListGpuLeaseOpts{
+	gpuLeases, err := service.V2(auth).VMs().GpuLeases().List(c.Request.Context(), opts.ListGpuLeaseOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
@@ -128,7 +128,7 @@ func ListGpuLeases(c *gin.Context) {
 
 	dtoGpuLeases := make([]body.GpuLeaseRead, 0)
 	for _, gpuLease := range gpuLeases {
-		queuePosition, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
+		queuePosition, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(c.Request.Context(), gpuLease.ID)
 		if err != nil {
 			switch {
 			case errors.Is(err, sErrors.ErrGpuLeaseNotFound):
@@ -189,7 +189,7 @@ func CreateGpuLease(c *gin.Context) {
 		return
 	}
 
-	groupExists, err := deployV2.VMs().GpuGroups().Exists(requestBody.GpuGroupID)
+	groupExists, err := deployV2.VMs().GpuGroups().Exists(c.Request.Context(), requestBody.GpuGroupID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -201,7 +201,7 @@ func CreateGpuLease(c *gin.Context) {
 	}
 
 	// Right now we only allow a single lease per user, this can be updated in the future
-	anyGpuLease, err := deployV2.VMs().GpuLeases().Count(opts.ListGpuLeaseOpts{
+	anyGpuLease, err := deployV2.VMs().GpuLeases().Count(c.Request.Context(), opts.ListGpuLeaseOpts{
 		UserID: &auth.User.ID,
 	})
 
@@ -217,7 +217,7 @@ func CreateGpuLease(c *gin.Context) {
 
 	gpuLeaseID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateGpuLease, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobCreateGpuLease, version.V2, map[string]any{
 		"id":       gpuLeaseID,
 		"userId":   auth.User.ID,
 		"params":   requestBody,
@@ -272,7 +272,7 @@ func UpdateGpuLease(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
+	gpuLease, err := deployV2.VMs().GpuLeases().Get(c.Request.Context(), requestURI.GpuLeaseID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -290,7 +290,7 @@ func UpdateGpuLease(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateGpuLease, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobUpdateGpuLease, version.V2, map[string]any{
 		"id":       gpuLease.ID,
 		"params":   requestBody,
 		"authInfo": auth,
@@ -337,7 +337,7 @@ func DeleteGpuLease(c *gin.Context) {
 
 	deployV2 := service.V2(auth)
 
-	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
+	gpuLease, err := deployV2.VMs().GpuLeases().Get(c.Request.Context(), requestURI.GpuLeaseID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -349,7 +349,7 @@ func DeleteGpuLease(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuLease, version.V2, map[string]any{
+	err = deployV2.Jobs().Create(c.Request.Context(), jobID, auth.User.ID, model.JobDeleteGpuLease, version.V2, map[string]any{
 		"id":       gpuLease.ID,
 		"authInfo": auth,
 	})

@@ -1,6 +1,7 @@
 package vms
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -31,16 +32,18 @@ import (
 //
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.GetOpts) (*model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
 	vrc := vm_repo.New(version.V2)
+	vrc.ResourceClient.Ctx = ctx
 
 	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
 			WithResourceType(model.ResourceTypeVM).
 			WithCode(*o.MigrationCode)
+		rmc.Ctx = ctx
 
 		migration, err := rmc.Get()
 		if err != nil {
@@ -66,7 +69,9 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = team_repo.New().WithUserID(c.V2.Auth().User.ID).WithResourceID(id).ExistsAny()
+		tmc := team_repo.New().WithUserID(c.V2.Auth().User.ID).WithResourceID(id)
+		tmc.Ctx = ctx
+		teamCheck, err = tmc.ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -94,10 +99,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 // List lists VMs.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
-func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
+func (c *Client) List(ctx context.Context, opts ...opts.ListOpts) ([]model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
 	vrc := vm_repo.New(version.V2)
+	vrc.ResourceClient.Ctx = ctx
 
 	if o.Pagination != nil {
 		vrc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -136,6 +142,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 		}
 
 		teamClient := team_repo.New().WithUserID(effectiveUserID)
+		teamClient.Ctx = ctx
 		if o.Pagination != nil {
 			teamClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 		}
@@ -194,7 +201,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 // Create creates a new VM.
 //
 // It returns an error if the VM already exists (name clash).
-func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
+func (c *Client) Create(ctx context.Context, id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
@@ -206,7 +213,9 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return sErrors.NewZoneCapabilityMissingError(fallbackZone, configModels.ZoneCapabilityVM)
 	}
 
-	_, err := vm_repo.New(version.V2).Create(id, ownerID, &params)
+	vrc := vm_repo.New(version.V2)
+	vrc.ResourceClient.Ctx = ctx
+	_, err := vrc.Create(id, ownerID, &params)
 	if err != nil {
 		if errors.Is(err, rErrors.ErrNonUniqueField) {
 			return sErrors.ErrNonUniqueField
@@ -226,7 +235,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 // Update updates an existing VM.
 //
 // It returns an error if the VM is not found.
-func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
+func (c *Client) Update(ctx context.Context, id string, dtoVmUpdate *body.VmUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
@@ -254,7 +263,9 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vm_repo.New(version.V2).UpdateWithParams(id, &vmUpdate)
+	vrc := vm_repo.New(version.V2)
+	vrc.ResourceClient.Ctx = ctx
+	err := vrc.UpdateWithParams(id, &vmUpdate)
 	if err != nil {
 		if errors.Is(err, rErrors.ErrNonUniqueField) {
 			return sErrors.ErrNonUniqueField
@@ -285,7 +296,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 // Delete deletes an existing VM.
 //
 // It returns an error if the VM is not found.
-func (c *Client) Delete(id string) error {
+func (c *Client) Delete(ctx context.Context, id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete vm. details: %w", err)
 	}
@@ -299,17 +310,17 @@ func (c *Client) Delete(id string) error {
 		return sErrors.ErrVmNotFound
 	}
 
-	err = notification_repo.New().FilterContent("id", id).Delete()
+	err = notification_repo.New().FilterContent("id", id).WithContext(ctx).Delete()
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = resource_migration_repo.New().WithResourceID(id).Delete()
+	err = resource_migration_repo.New().WithResourceID(id).WithContext(ctx).Delete()
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = c.V2.Teams().CleanResource(id)
+	err = c.V2.Teams().CleanResource(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -319,12 +330,16 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = vm_port_repo.New().ReleaseAll(vm.ID)
+	vprc := vm_port_repo.New()
+	vprc.Ctx = ctx
+	err = vprc.ReleaseAll(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = gpu_lease_repo.New().WithVmID(id).Release()
+	glrc := gpu_lease_repo.New().WithVmID(id)
+	glrc.Ctx = ctx
+	err = glrc.Release()
 	if err != nil {
 		return makeError(err)
 	}
@@ -337,12 +352,14 @@ func (c *Client) Delete(id string) error {
 // It is lightweight since it does not require the VM to be fetched.
 //
 // It returns an error if the VM is not found.
-func (c *Client) IsAccessible(id string) (bool, error) {
+func (c *Client) IsAccessible(ctx context.Context, id string) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if user can access vm %s. details: %w", id, err)
 	}
 
-	exists, err := vm_repo.New(version.V2).ExistsByID(id)
+	vrc := vm_repo.New(version.V2)
+	vrc.ResourceClient.Ctx = ctx
+	exists, err := vrc.ExistsByID(id)
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -358,7 +375,9 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 		}
 
 		// 2. User has access through being the owner
-		vmByOwner, err := vm_repo.New(version.V2).WithOwner(c.V2.Auth().User.ID).ExistsByID(id)
+		ownerVrc := vm_repo.New(version.V2).WithOwner(c.V2.Auth().User.ID)
+		ownerVrc.ResourceClient.Ctx = ctx
+		vmByOwner, err := ownerVrc.ExistsByID(id)
 		if err != nil {
 			return false, makeError(err)
 		}
@@ -368,7 +387,7 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 		}
 
 		// 3. User has access through a team
-		teamAccess, err := c.V2.Teams().CheckResourceAccess(c.V2.Auth().User.ID, id)
+		teamAccess, err := c.V2.Teams().CheckResourceAccess(ctx, c.V2.Auth().User.ID, id)
 		if err != nil {
 			return false, makeError(err)
 		}
@@ -387,12 +406,12 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 // Repair repairs an existing VM.
 //
 // Trigger repair jobs for every subsystem.
-func (c *Client) Repair(id string) error {
+func (c *Client) Repair(ctx context.Context, id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair vm %s. details: %w", id, err)
 	}
 
-	vm, err := c.Get(id)
+	vm, err := c.Get(ctx, id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -412,7 +431,7 @@ func (c *Client) Repair(id string) error {
 }
 
 // DoAction performs an action on the VM.
-func (c *Client) DoAction(id string, dtoAction *body.VmActionCreate) error {
+func (c *Client) DoAction(_ context.Context, id string, dtoAction *body.VmActionCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to perform action on vm %s. details: %w", id, err)
 	}
@@ -443,12 +462,12 @@ func (c *Client) DoAction(id string, dtoAction *body.VmActionCreate) error {
 // This is the second step of the owner update process, where the transfer is actually done.
 //
 // It returns an error if the VM is not found.
-func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error {
+func (c *Client) UpdateOwner(ctx context.Context, id string, params *model.VmUpdateOwnerParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update vm owner. details: %w", err)
 	}
 
-	vm, err := c.Get(id, opts.GetOpts{MigrationCode: params.MigrationCode})
+	vm, err := c.Get(ctx, id, opts.GetOpts{MigrationCode: params.MigrationCode})
 	if err != nil {
 		return makeError(err)
 	}
@@ -457,7 +476,9 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 		return sErrors.ErrVmNotFound
 	}
 
-	err = vm_repo.New(version.V2).UpdateWithParams(id, &model.VmUpdateParams{
+	vrc := vm_repo.New(version.V2)
+	vrc.ResourceClient.Ctx = ctx
+	err = vrc.UpdateWithParams(id, &model.VmUpdateParams{
 		OwnerID: &params.NewOwnerID,
 	})
 	if err != nil {
@@ -469,7 +490,9 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 		return makeError(err)
 	}
 
-	err = gpu_lease_repo.New().WithVmID(id).Release()
+	glrc := gpu_lease_repo.New().WithVmID(id)
+	glrc.Ctx = ctx
+	err = glrc.Release()
 	if err != nil {
 		return makeError(err)
 	}
@@ -485,7 +508,9 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 		return makeError(err)
 	}
 
-	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationResourceTransfer).MarkReadAndCompleted()
+	nmc := notification_repo.New().FilterContent("id", id).WithType(model.NotificationResourceTransfer)
+	nmc.Ctx = ctx
+	err = nmc.MarkReadAndCompleted()
 	if err != nil {
 		return makeError(err)
 	}
@@ -497,7 +522,7 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 // GetConnectionString gets the connection string for the VM.
 //
 // It returns nil if the VM is not found.
-func (c *Client) GetConnectionString(id string) (*string, error) {
+func (c *Client) GetConnectionString(_ context.Context, id string) (*string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get connection string for vm %s. details: %w", id, err)
 	}
@@ -508,7 +533,7 @@ func (c *Client) GetConnectionString(id string) (*string, error) {
 // IsBeingDeleted checks if the VM is being deleted.
 //
 // This returns true while the VM is being deleted, and after it has been deleted.
-func (c *Client) IsBeingDeleted(id string) (bool, error) {
+func (c *Client) IsBeingDeleted(_ context.Context, id string) (bool, error) {
 	vm, err := c.VM(id, nil)
 	if err != nil {
 		return false, err
@@ -522,8 +547,10 @@ func (c *Client) IsBeingDeleted(id string) (bool, error) {
 }
 
 // NameAvailable checks if the given name is available.
-func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := vm_repo.New().ExistsByName(name)
+func (c *Client) NameAvailable(ctx context.Context, name string) (bool, error) {
+	vrc := vm_repo.New()
+	vrc.ResourceClient.Ctx = ctx
+	exists, err := vrc.ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -532,13 +559,15 @@ func (c *Client) NameAvailable(name string) (bool, error) {
 }
 
 // HttpProxyNameAvailable checks if the given name is available for an HTTP proxy.
-func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
+func (c *Client) HttpProxyNameAvailable(ctx context.Context, id, name string) (bool, error) {
 	filter := bson.D{
 		{Key: "id", Value: bson.D{{Key: "$ne", Value: id}}},
 		{Key: "portMap.httpProxy.name", Value: name},
 	}
 
-	exists, err := vm_repo.New().WithCustomFilter(filter).ExistsAny()
+	vrc := vm_repo.New().WithCustomFilter(filter)
+	vrc.ResourceClient.Ctx = ctx
+	exists, err := vrc.ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -549,7 +578,7 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 // SshConnectionString gets the SSH connection string for the VM.
 //
 // It returns nil if the VM is not found.
-func (c *Client) SshConnectionString(id string) (*string, error) {
+func (c *Client) SshConnectionString(_ context.Context, id string) (*string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get SSH connection string for vm %s. details: %w", id, err)
 	}
@@ -586,7 +615,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 // When checking quota for opts.Create and opts.CreateSnapshot, id is not used.
 //
 // It returns an error if the user does not have enough quotas.
-func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts.QuotaOpts) error {
+func (c *Client) CheckQuota(ctx context.Context, id, userID string, quota *model.Quotas, opts ...opts.QuotaOpts) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota for user %s. details: %w", userID, err)
 	}
@@ -597,7 +626,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	usage, err := c.GetUsage(userID)
+	usage, err := c.GetUsage(ctx, userID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -627,7 +656,9 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			return nil
 		}
 
-		vm, err := vm_repo.New(version.V2).GetByID(id)
+		vrc := vm_repo.New(version.V2)
+		vrc.ResourceClient.Ctx = ctx
+		vm, err := vrc.GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -665,14 +696,16 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 }
 
 // GetUsage gets the usage for the user.
-func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
-	return vm_repo.New(version.V2).WithOwner(userID).GetUsage()
+func (c *Client) GetUsage(ctx context.Context, userID string) (*model.VmUsage, error) {
+	vrc := vm_repo.New(version.V2).WithOwner(userID)
+	vrc.ResourceClient.Ctx = ctx
+	return vrc.GetUsage()
 }
 
 // GetHost gets the host for the VM.
 //
 // It returns an error if the VM is not found.
-func (c *Client) GetHost(vmID string) (*model.VmHost, error) {
+func (c *Client) GetHost(_ context.Context, vmID string) (*model.VmHost, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}

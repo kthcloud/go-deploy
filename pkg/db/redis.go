@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/redis/go-redis/v9"
@@ -10,9 +11,9 @@ import (
 
 // setupRedis initializes the Redis connection.
 // It should be called once at the start of the application.
-func (dbCtx *Context) setupRedis() error {
+func (dbCtx *Context) setupRedis(ctx context.Context) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to set up redis. details: %w", err)
+		return fmt.Errorf("failed to set up redis: %w", err)
 	}
 
 	log.Println("Setting up Redis")
@@ -23,13 +24,11 @@ func (dbCtx *Context) setupRedis() error {
 		DB:       0, // use default DB
 	})
 
-	_, err := dbCtx.RedisClient.Ping(context.TODO()).Result()
-	if err != nil {
+	if _, err := dbCtx.RedisClient.Ping(ctx).Result(); err != nil {
 		return makeError(err)
 	}
 
-	err = dbCtx.RedisClient.ConfigSet(context.TODO(), "notify-keyspace-events", "Ex").Err()
-	if err != nil {
+	if err := dbCtx.RedisClient.ConfigSet(ctx, "notify-keyspace-events", "Ex").Err(); err != nil {
 		return makeError(err)
 	}
 
@@ -39,13 +38,12 @@ func (dbCtx *Context) setupRedis() error {
 // shutdownRedis closes the Redis connection.
 // It should be called once at the end of the application.
 func (dbCtx *Context) shutdownRedis() error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to shutdown redis. details: %w", err)
+	if dbCtx.RedisClient == nil {
+		return nil
 	}
 
-	err := dbCtx.RedisClient.Close()
-	if err != nil {
-		return makeError(err)
+	if err := dbCtx.RedisClient.Close(); err != nil {
+		return fmt.Errorf("failed to shutdown redis: %w", err)
 	}
 
 	dbCtx.RedisClient = nil

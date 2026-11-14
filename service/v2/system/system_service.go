@@ -1,7 +1,9 @@
 package system
 
 import (
+	"context"
 	"fmt"
+
 	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/system_capacities_repo"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/system_stats_repo"
@@ -9,7 +11,7 @@ import (
 )
 
 // ListCapacities fetches the system capacities from the database.
-func (c *Client) ListCapacities(n int) ([]body.TimestampedSystemCapacities, error) {
+func (c *Client) ListCapacities(ctx context.Context, n int) ([]body.TimestampedSystemCapacities, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch capacities. details: %s", err)
 	}
@@ -18,7 +20,7 @@ func (c *Client) ListCapacities(n int) ([]body.TimestampedSystemCapacities, erro
 		n = 1
 	}
 
-	result, err := system_capacities_repo.New(n).List()
+	result, err := system_capacities_repo.New(n).WithContext(ctx).List()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -27,7 +29,7 @@ func (c *Client) ListCapacities(n int) ([]body.TimestampedSystemCapacities, erro
 }
 
 // ListStats fetches the system stats from the database.
-func (c *Client) ListStats(n int) ([]body.TimestampedSystemStats, error) {
+func (c *Client) ListStats(ctx context.Context, n int) ([]body.TimestampedSystemStats, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch stats. details: %s", err)
 	}
@@ -36,7 +38,7 @@ func (c *Client) ListStats(n int) ([]body.TimestampedSystemStats, error) {
 		n = 1
 	}
 
-	result, err := system_stats_repo.New(n).List()
+	result, err := system_stats_repo.New(n).WithContext(ctx).List()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -45,7 +47,7 @@ func (c *Client) ListStats(n int) ([]body.TimestampedSystemStats, error) {
 }
 
 // ListStatus fetches the system status from the database.
-func (c *Client) ListStatus(n int) ([]body.TimestampedSystemStatus, error) {
+func (c *Client) ListStatus(ctx context.Context, n int) ([]body.TimestampedSystemStatus, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch status. details: %s", err)
 	}
@@ -54,7 +56,7 @@ func (c *Client) ListStatus(n int) ([]body.TimestampedSystemStatus, error) {
 		n = 1
 	}
 
-	result, err := system_status_repo.New(n).List()
+	result, err := system_status_repo.New(n).WithContext(ctx).List()
 	if err != nil {
 		return nil, makeError(err)
 	}

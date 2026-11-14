@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -19,10 +20,11 @@ import (
 )
 
 // Get gets an existing storage manager
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.SM, error) {
+func (c *Client) Get(ctx context.Context, id string, opts ...opts.GetOpts) (*model.SM, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
 	sClient := sm_repo.New()
+	sClient.ResourceClient.Ctx = ctx
 
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
 		sClient.WithOwnerID(c.V2.Auth().User.ID)
@@ -32,10 +34,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.SM, error) {
 }
 
 // GetByUserID gets an existing storage by user ID
-func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*model.SM, error) {
+func (c *Client) GetByUserID(ctx context.Context, userID string, opts ...opts.GetOpts) (*model.SM, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
 	sClient := sm_repo.New()
+	sClient.ResourceClient.Ctx = ctx
 
 	if c.V2.Auth() != nil && userID != c.V2.Auth().User.ID && !c.V2.Auth().User.IsAdmin {
 		sClient.WithOwnerID(c.V2.Auth().User.ID)
@@ -47,10 +50,11 @@ func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*model.SM, er
 }
 
 // List lists existing storage managers
-func (c *Client) List(opts ...opts.ListOpts) ([]model.SM, error) {
+func (c *Client) List(ctx context.Context, opts ...opts.ListOpts) ([]model.SM, error) {
 	o := utils.GetFirstOrDefault(opts)
 
 	sClient := sm_repo.New()
+	sClient.ResourceClient.Ctx = ctx
 
 	if o.Pagination != nil {
 		sClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -73,12 +77,14 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.SM, error) {
 }
 
 // Create creates a new storage manager
-func (c *Client) Create(id, userID string, params *model.SmCreateParams) error {
+func (c *Client) Create(ctx context.Context, id, userID string, params *model.SmCreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
-	_, err := sm_repo.New().Create(id, userID, params)
+	sClient := sm_repo.New()
+	sClient.ResourceClient.Ctx = ctx
+	_, err := sClient.Create(id, userID, params)
 	if err != nil {
 		if errors.Is(err, sm_repo.ErrAlreadyExists) {
 			return sErrors.ErrSmAlreadyExists
@@ -96,7 +102,7 @@ func (c *Client) Create(id, userID string, params *model.SmCreateParams) error {
 }
 
 // Delete deletes an existing storage manager
-func (c *Client) Delete(id string) error {
+func (c *Client) Delete(_ context.Context, id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to delete storage manager. details: %w", err)
 	}
@@ -112,12 +118,14 @@ func (c *Client) Delete(id string) error {
 }
 
 // Repair repairs an existing storage manager
-func (c *Client) Repair(id string) error {
+func (c *Client) Repair(ctx context.Context, id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to repair storage manager %s. details: %w", id, err)
 	}
 
-	sm, err := sm_repo.New().GetByID(id)
+	sc := sm_repo.New()
+	sc.ResourceClient.Ctx = ctx
+	sm, err := sc.GetByID(id)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -138,8 +146,10 @@ func (c *Client) Repair(id string) error {
 }
 
 // Exists checks if a storage manager exists
-func (c *Client) Exists(userID string) (bool, error) {
-	return sm_repo.New().WithOwnerID(userID).ExistsAny()
+func (c *Client) Exists(ctx context.Context, userID string) (bool, error) {
+	sClient := sm_repo.New()
+	sClient.ResourceClient.Ctx = ctx
+	return sClient.WithOwnerID(userID).ExistsAny()
 }
 
 // GetZone returns the deployment zone for the storage manager
@@ -151,8 +161,10 @@ func (c *Client) GetZone() *configModels.Zone {
 }
 
 // GetUrlByUserID returns the URL for the storage manager
-func (c *Client) GetUrlByUserID(userID string) *string {
-	url, err := sm_repo.New().WithOwnerID(userID).GetURL(getSmExternalPort(c.GetZone().Name))
+func (c *Client) GetUrlByUserID(ctx context.Context, userID string) *string {
+	sClient := sm_repo.New()
+	sClient.ResourceClient.Ctx = ctx
+	url, err := sClient.WithOwnerID(userID).GetURL(getSmExternalPort(c.GetZone().Name))
 	if err != nil {
 		return nil
 	}

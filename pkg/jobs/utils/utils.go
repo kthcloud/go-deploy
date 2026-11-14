@@ -75,42 +75,67 @@ func GetAuthInfo(job *model.Job) *core.AuthInfo {
 }
 
 // WaitForJob waits for a job to reach one of the given statuses.
-func WaitForJob(context context.Context, job *model.Job, statuses []string) error {
-	if len(statuses) == 0 {
+func WaitForJob(ctx context.Context, job *model.Job, statuses []string) error {
+	if len(statuses) == 0 || job == nil {
 		return nil
 	}
 
-	if slices.IndexFunc(statuses, func(s string) bool { return s == job.Status }) != -1 {
+	if slices.Contains(statuses, job.Status) {
 		return nil
 	}
+
+	repo := job_repo.New()
+	repo.Ctx = ctx
 
 	for {
+		timer := time.NewTimer(1 * time.Second)
 		select {
-		case <-context.Done():
-			return context.Err()
-		default:
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
 			var err error
-			job, err = job_repo.New().GetByID(job.ID)
+			job, err = repo.GetByID(job.ID)
 			if err != nil {
 				return err
 			}
-
-			if slices.IndexFunc(statuses, func(s string) bool { return s == job.Status }) != -1 {
+			if job == nil {
 				return nil
 			}
 
-			time.Sleep(1 * time.Second)
+			if slices.Contains(statuses, job.Status) {
+				return nil
+			}
 		}
 	}
 }
 
 // WaitForJobs waits for a list of jobs to reach one of the given statuses.
-func WaitForJobs(context context.Context, jobs []model.Job, statuses []string) error {
+func WaitForJobs(ctx context.Context, jobs []model.Job, statuses []string) error {
 	for _, job := range jobs {
-		err := WaitForJob(context, &job, statuses)
-		if err != nil {
+		if err := WaitForJob(ctx, &job, statuses); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// WaitForRelatedJobs waits up to timeout for related jobs to reach a terminal status.
+func WaitForRelatedJobs(ctx context.Context, modelID string, relatedJobs []model.Job, timeout time.Duration) error {
+	if len(relatedJobs) == 0 {
+		return nil
+	}
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	err := WaitForJobs(waitCtx, relatedJobs, []string{model.JobStatusCompleted, model.JobStatusTerminated})
+	if err != nil {
+		if waitCtx.Err() == context.DeadlineExceeded {
+			log.Println("Timeout waiting for related jobs to finish for model", modelID)
+		}
+		return err
 	}
 
 	return nil

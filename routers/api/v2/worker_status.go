@@ -27,7 +27,7 @@ func ListWorkerStatus(c *gin.Context) {
 		return
 	}
 
-	workerStatus, err := service.V2().System().ListWorkerStatus(opts.ListWorkerStatusOpts{})
+	workerStatus, err := service.V2().System().ListWorkerStatus(c.Request.Context(), opts.ListWorkerStatusOpts{})
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return

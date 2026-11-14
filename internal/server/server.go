@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/internal/defaults"
@@ -27,11 +28,12 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/services/synchronize"
 	"github.com/kthcloud/go-deploy/pkg/services/system_state_poll"
 	"github.com/kthcloud/go-deploy/routers"
-	"github.com/kthcloud/go-deploy/service/utils"
+	"go.uber.org/zap"
 )
 
+// Options configures which server components and background workers are enabled.
 type Options struct {
-	Ctx               context.Context
+	Logger            *zap.Logger
 	Mode              string
 	API               bool
 	Confirmer         bool
@@ -46,59 +48,56 @@ type Options struct {
 	SystemStatePoller bool
 }
 
+// App manages the lifetime of the HTTP server and background workers.
 type App struct {
+	logger     *zap.Logger
 	httpServer *http.Server
-	ctx        context.Context
 	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	errCh      chan error
+	shutdownFn func(context.Context) error
+	stopOnce   sync.Once
+	stopErr    error
 }
 
-func shutdown() {
-	db.Shutdown()
+type initTask struct {
+	name string
+	run  func(context.Context, *zap.Logger) error
 }
 
-type InitTask struct {
-	Name string
-	Task func() error
+type worker struct {
+	enabled bool
+	run     func(context.Context)
 }
 
-func (it *InitTask) Begin(prefix string) {
-	log.Infof("%s %s%s%s %s...%s ", prefix, log.Orange, it.Name, log.Reset, log.Grey, log.Reset)
-}
-
-// Create creates a new App instance.
-func Create(opts *Options) *App {
-	err := log.SetupLogger(opts.Mode)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to setup logger. details: %s", err.Error()))
+// Start initializes dependencies, starts enabled workers and the HTTP server,
+// and binds their lifetimes to ctx.
+func Start(ctx context.Context, opts Options) (*App, error) {
+	if opts.Logger == nil {
+		opts.Logger = zap.NewNop()
 	}
 
-	initTasks := []InitTask{
-		{Name: "Validate application", Task: func() error { return validateApp(opts) }},
-		{Name: "Setup environment", Task: func() error { return config.SetupEnvironment(opts.Mode) }},
-		{Name: "Setup metrics", Task: metrics.Setup},
-		{Name: "Setup database", Task: db.Setup},
-		{Name: "Clean up old tests", Task: intializer.CleanUpOldTests},
-		{Name: "Synchronize VM ports", Task: intializer.SynchronizeVmPorts},
-		{Name: "Run migrations", Task: migrator.Migrate},
-		{Name: "Reset running jobs", Task: func() error { return job_repo.New().ResetRunning() }},
-		{Name: "Ensure system deployments exists", Task: intializer.EnsureSystemDeploymentsExists},
-		{Name: "Ensure test users exist", Task: intializer.EnsureTestUsersExist},
+	if err := log.SetupLogger(opts.Mode); err != nil {
+		return nil, fmt.Errorf("setup logger: %w", err)
 	}
 
-	for idx, task := range initTasks {
-		task.Begin(fmt.Sprintf("(%d/%d)", idx+1, len(initTasks)))
-		err := task.Task()
-		if err != nil {
-			log.Fatalf("Init task %s failed. details: %s", task.Name, err.Error())
-		}
+	if err := validateOptions(&opts, opts.Logger); err != nil {
+		return nil, fmt.Errorf("validate options: %w", err)
 	}
-	log.Printf("%sInitialization completed%s", log.Orange, log.Reset)
 
-	ctx, cancel := context.WithCancel(utils.FirstNonZero(opts.Ctx, context.Background()))
-	workers := []struct {
-		enabled bool
-		run     func(context.Context)
-	}{
+	tasks := []initTask{
+		{name: "Setup environment", run: func(context.Context, *zap.Logger) error { return config.SetupEnvironment(opts.Mode) }},
+		{name: "Setup metrics", run: func(context.Context, *zap.Logger) error { return metrics.Setup() }},
+		{name: "Setup database", run: db.Setup},
+		{name: "Clean up old tests", run: func(context.Context, *zap.Logger) error { return intializer.CleanUpOldTests() }},
+		{name: "Synchronize VM ports", run: func(context.Context, *zap.Logger) error { return intializer.SynchronizeVmPorts() }},
+		{name: "Run migrations", run: migrator.Migrate},
+		{name: "Reset running jobs", run: func(context.Context, *zap.Logger) error { return job_repo.New().ResetRunning() }},
+		{name: "Ensure system deployments exists", run: func(context.Context, *zap.Logger) error { return intializer.EnsureSystemDeploymentsExists() }},
+		{name: "Ensure test users exist", run: func(context.Context, *zap.Logger) error { return intializer.EnsureTestUsersExist() }},
+	}
+
+	workers := []worker{
 		{opts.Confirmer, confirm.Setup},
 		{opts.StatusUpdater, status_update.Setup},
 		{opts.Synchronizer, synchronize.Setup},
@@ -110,70 +109,137 @@ func Create(opts *Options) *App {
 		{opts.Cleaner, cleaner.Setup},
 		{opts.SystemStatePoller, system_state_poll.Setup},
 	}
-	for _, w := range workers {
-		if w.enabled {
-			go w.run(ctx)
+
+	var newHTTPServer func() *http.Server
+	if opts.API {
+		newHTTPServer = func() *http.Server {
+			if ginMode, exists := os.LookupEnv("GIN_MODE"); exists {
+				gin.SetMode(ginMode)
+			} else {
+				gin.SetMode(defaults.DefaultGinMode)
+			}
+			listenAddr := fmt.Sprintf("%s:%d", defaults.DefaultListenHost, config.Config.Port)
+			return &http.Server{
+				Addr:    listenAddr,
+				Handler: routers.NewRouter(),
+			}
 		}
 	}
 
+	return startWith(ctx, opts.Logger, tasks, workers, newHTTPServer, db.Shutdown)
+}
+
+func startWith(
+	ctx context.Context,
+	l *zap.Logger,
+	tasks []initTask,
+	workers []worker,
+	newHTTPServer func() *http.Server,
+	shutdownFn func(context.Context) error,
+) (*App, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if l == nil {
+		l = zap.NewNop()
+	}
+
+	for idx, task := range tasks {
+		l.Info("running init task", zap.Int("step", idx+1), zap.Int("total", len(tasks)), zap.String("task", task.name))
+		if err := task.run(ctx, l); err != nil {
+			return nil, fmt.Errorf("init task %q: %w", task.name, err)
+		}
+	}
+	l.Info("initialization completed")
+
 	var httpServer *http.Server
+	if newHTTPServer != nil {
+		httpServer = newHTTPServer()
+	}
 
-	if opts.API {
-		ginMode, exists := os.LookupEnv("GIN_MODE")
-		if exists {
-			gin.SetMode(ginMode)
-		} else {
-			gin.SetMode(defaults.DefaultGinMode)
+	appCtx, cancel := context.WithCancel(ctx)
+	app := &App{
+		logger:     l,
+		httpServer: httpServer,
+		cancel:     cancel,
+		errCh:      make(chan error, 1),
+		shutdownFn: shutdownFn,
+	}
+
+	for _, w := range workers {
+		if !w.enabled || w.run == nil {
+			continue
 		}
+		app.wg.Add(1)
+		go func(run func(context.Context)) {
+			defer app.wg.Done()
+			run(appCtx)
+		}(w.run)
+	}
 
-		listenAddr := fmt.Sprintf("%s:%d", defaults.DefaultListenHost, config.Config.Port)
-		httpServer = &http.Server{
-			Addr:    listenAddr,
-			Handler: routers.NewRouter(),
-			BaseContext: func(_ net.Listener) context.Context {
-				return ctx
-			},
+	if app.httpServer != nil {
+		app.httpServer.BaseContext = func(_ net.Listener) context.Context {
+			return appCtx
 		}
-
+		app.wg.Add(1)
 		go func() {
-			log.Printf("%sHTTP server listening on %s%s%s", log.Bold, log.Orange, listenAddr, log.Reset)
-			err := httpServer.ListenAndServe()
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				log.Fatalln(fmt.Errorf("failed to start http server. details: %w", err))
+			defer app.wg.Done()
+			l.Info("HTTP server listening", zap.String("addr", app.httpServer.Addr))
+			if err := app.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				l.Error("HTTP server failed", zap.Error(err))
+				select {
+				case app.errCh <- fmt.Errorf("http server: %w", err):
+				default:
+				}
+				cancel()
 			}
 		}()
 	}
 
-	return &App{
-		httpServer: httpServer,
-		ctx:        ctx,
-		cancel:     cancel,
-	}
+	return app, nil
 }
 
-func (app *App) Stop() {
-	app.cancel()
+// Errors returns a channel that emits fatal asynchronous server errors (such as HTTP listen failures).
+func (app *App) Errors() <-chan error {
+	return app.errCh
+}
 
-	if app.httpServer != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), defaults.HTTPShutdownTimeout)
-		defer cancel()
-		if err := app.httpServer.Shutdown(ctx); err != nil {
-			log.Errorln(fmt.Errorf("failed to gracefully shutdown server. details: %w", err))
-			if closeErr := app.httpServer.Close(); closeErr != nil {
-				log.Fatalln("Force close failed:", closeErr)
+// Stop cancels the application context, gracefully shuts down the HTTP server,
+// waits for all background workers to exit, and runs resource cleanup.
+func (app *App) Stop() error {
+	app.stopOnce.Do(func() {
+		app.cancel()
+
+		var errs []error
+		if app.httpServer != nil {
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), defaults.HTTPShutdownTimeout)
+			defer shutdownCancel()
+
+			if err := app.httpServer.Shutdown(shutdownCtx); err != nil {
+				errs = append(errs, fmt.Errorf("shutdown http server: %w", err))
+				if closeErr := app.httpServer.Close(); closeErr != nil {
+					errs = append(errs, fmt.Errorf("force close http server: %w", closeErr))
+				}
 			}
 		}
 
-		<-ctx.Done()
-		log.Println("Waiting for http server to shutdown...")
-	}
+		app.wg.Wait()
 
-	shutdown()
+		if app.shutdownFn != nil {
+			dbCtx, dbCancel := context.WithTimeout(context.Background(), defaults.HTTPShutdownTimeout)
+			defer dbCancel()
+			if err := app.shutdownFn(dbCtx); err != nil {
+				errs = append(errs, err)
+			}
+		}
 
-	log.Println("Server exited successfully")
+		app.logger.Info("server exited")
+		app.stopErr = errors.Join(errs...)
+	})
+	return app.stopErr
 }
 
-func validateApp(options *Options) error {
+func validateOptions(options *Options, l *zap.Logger) error {
 	anyWorker := options.API ||
 		options.Confirmer ||
 		options.StatusUpdater ||
@@ -187,7 +253,7 @@ func validateApp(options *Options) error {
 		options.SystemStatePoller
 
 	if !anyWorker {
-		log.Println("No workers specified, starting all")
+		l.Info("no workers specified, starting all")
 
 		options.API = true
 		options.Confirmer = true

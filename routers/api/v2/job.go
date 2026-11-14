@@ -46,7 +46,7 @@ func GetJob(c *gin.Context) {
 		return
 	}
 
-	job, err := service.V2(auth).Jobs().Get(requestURI.JobID)
+	job, err := service.V2(auth).Jobs().Get(c.Request.Context(), requestURI.JobID)
 	if err != nil {
 		context.ServerError(err, ErrInternal)
 		return
@@ -91,7 +91,7 @@ func ListJobs(c *gin.Context) {
 		return
 	}
 
-	jobList, err := service.V2(auth).Jobs().List(opts.ListOpts{
+	jobList, err := service.V2(auth).Jobs().List(c.Request.Context(), opts.ListOpts{
 		Pagination:      v12.GetOrDefaultPagination(requestQuery.Pagination),
 		SortBy:          v12.GetOrDefaultSortBy(requestQuery.SortBy),
 		UserID:          requestQuery.UserID,
@@ -152,7 +152,7 @@ func UpdateJob(c *gin.Context) {
 		return
 	}
 
-	updated, err := service.V2(auth).Jobs().Update(requestURI.JobID, &request)
+	updated, err := service.V2(auth).Jobs().Update(c.Request.Context(), requestURI.JobID, &request)
 	if err != nil {
 		if errors.Is(err, sErrors.ErrForbidden) {
 			context.Forbidden("User is not allowed to update jobs")

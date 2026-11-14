@@ -34,6 +34,7 @@ func PodLogger(ctx context.Context) error {
 		}
 	}
 
+	<-ctx.Done()
 	return nil
 }
 
@@ -55,7 +56,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 		switch logEvent.PodEvent {
 		case k8s.PodEventAdded:
 			// We initially use a 2x lifetime to ensure that the logger is not removed while it is being set up
-			didSet, err := kvc.SetNX(OwnerLogKey(logEvent.PodName, zone.Name), name, LoggerLifetime*2)
+			didSet, err := kvc.SetNX(ctx, OwnerLogKey(logEvent.PodName, zone.Name), name, LoggerLifetime*2)
 			if err != nil {
 				return err
 			}
@@ -72,7 +73,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 					return
 				}
 
-				err = SetLastLogged(kvc, logEvent.PodName, zone.Name, time.Now())
+				err = SetLastLogged(ctx, kvc, logEvent.PodName, zone.Name, time.Now())
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to set last logged time for pod %s. details: %w", logEvent.PodName, err))
 					return
@@ -80,8 +81,8 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			}
 
 			log.Println("Setting up log stream for pod", logEvent.PodName)
-			lastLogged := LastLogged(kvc, logEvent.PodName, zone.Name)
-			loggerCtx, cancelFunc := context.WithCancel(context.Background())
+			lastLogged := LastLogged(ctx, kvc, logEvent.PodName, zone.Name)
+			loggerCtx, cancelFunc := context.WithCancel(ctx)
 			err = service.V2().Deployments().K8s().SetupPodLogStream(loggerCtx, zone, logEvent.PodName, lastLogged, onLog)
 			if err != nil {
 				cancelFunc()
@@ -97,6 +98,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			// Set up a loop to update ownership of pod name
 			go func(ctx, loggerCtx context.Context) {
 				tick := time.NewTicker(LoggerUpdate)
+				defer tick.Stop()
 				for {
 					select {
 					case <-ctx.Done():
@@ -104,7 +106,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 					case <-loggerCtx.Done():
 						return
 					case <-tick.C:
-						didSet, err := kvc.SetXX(OwnerLogKey(logEvent.PodName, zone.Name), name, LoggerLifetime)
+						didSet, err := kvc.SetXX(ctx, OwnerLogKey(logEvent.PodName, zone.Name), name, LoggerLifetime)
 						if err != nil {
 							utils.PrettyPrintError(fmt.Errorf("failed to update ownership of pod %s. details: %w", logEvent.PodName, err))
 							return
@@ -134,11 +136,11 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 	}
 }
 
-func LastLogged(kvc *key_value.Client, podName, zoneName string) time.Time {
+func LastLogged(ctx context.Context, kvc *key_value.Client, podName, zoneName string) time.Time {
 	// This might cause overlap, but it is better than missing logs
 	fallback := time.Now().Add(-LoggerLifetime)
 
-	val, err := kvc.Get(LastLogKey(podName, zoneName))
+	val, err := kvc.Get(ctx, LastLogKey(podName, zoneName))
 	if err != nil {
 		return fallback
 	}
@@ -151,7 +153,7 @@ func LastLogged(kvc *key_value.Client, podName, zoneName string) time.Time {
 	return t
 }
 
-func SetLastLogged(kvc *key_value.Client, podName, zoneName string, t time.Time) error {
+func SetLastLogged(ctx context.Context, kvc *key_value.Client, podName, zoneName string, t time.Time) error {
 	// Keep the entry for a week, so it clears up after a while
-	return kvc.Set(LastLogKey(podName, zoneName), t.Format(time.RFC3339), time.Hour*24*7)
+	return kvc.Set(ctx, LastLogKey(podName, zoneName), t.Format(time.RFC3339), time.Hour*24*7)
 }

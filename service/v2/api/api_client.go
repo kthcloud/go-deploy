@@ -25,29 +25,29 @@ import (
 )
 
 type Deployments interface {
-	Get(id string, opts ...dOpts.GetOpts) (*model.Deployment, error)
-	GetByName(name string, opts ...dOpts.GetOpts) (*model.Deployment, error)
-	List(opts ...dOpts.ListOpts) ([]model.Deployment, error)
-	Create(id, userID string, dtoDeploymentCreate *body.DeploymentCreate) error
-	Update(id string, dtoDeploymentUpdate *body.DeploymentUpdate) error
-	UpdateOwner(id string, params *model.DeploymentUpdateOwnerParams) error
-	Delete(id string) error
-	Repair(id string) error
+	Get(ctx context.Context, id string, opts ...dOpts.GetOpts) (*model.Deployment, error)
+	GetByName(ctx context.Context, name string, opts ...dOpts.GetOpts) (*model.Deployment, error)
+	List(ctx context.Context, opts ...dOpts.ListOpts) ([]model.Deployment, error)
+	Create(ctx context.Context, id, userID string, dtoDeploymentCreate *body.DeploymentCreate) error
+	Update(ctx context.Context, id string, dtoDeploymentUpdate *body.DeploymentUpdate) error
+	UpdateOwner(ctx context.Context, id string, params *model.DeploymentUpdateOwnerParams) error
+	Delete(ctx context.Context, id string) error
+	Repair(ctx context.Context, id string) error
 
-	Restart(id string) error
-	DoCommand(id string, command string)
+	Restart(ctx context.Context, id string) error
+	DoCommand(ctx context.Context, id string, command string)
 
-	GetCiConfig(id string) (*body.CiConfig, error)
+	GetCiConfig(ctx context.Context, id string) (*body.CiConfig, error)
 
-	SetupLogStream(id string, ctx context.Context, handler func(string, string, string, time.Time), history int) error
-	AddLogs(id string, logs ...model.Log)
+	SetupLogStream(ctx context.Context, id string, handler func(string, string, string, time.Time), history int) error
+	AddLogs(ctx context.Context, id string, logs ...model.Log)
 
-	StartActivity(id string, activity string) error
-	CanAddActivity(id, activity string) (bool, string)
+	StartActivity(ctx context.Context, id string, activity string) error
+	CanAddActivity(ctx context.Context, id, activity string) (bool, string)
 
-	CheckQuota(id string, params *dOpts.QuotaOptions) error
-	NameAvailable(name string) (bool, error)
-	GetUsage(userID string) (*model.DeploymentUsage, error)
+	CheckQuota(ctx context.Context, id string, params *dOpts.QuotaOptions) error
+	NameAvailable(ctx context.Context, name string) (bool, error)
+	GetUsage(ctx context.Context, userID string) (*model.DeploymentUsage, error)
 
 	ValidateHarborToken(secret string) bool
 
@@ -56,99 +56,99 @@ type Deployments interface {
 }
 
 type Discovery interface {
-	Discover() (*model.Discover, error)
+	Discover(ctx context.Context) (*model.Discover, error)
 }
 
 type Events interface {
-	Create(id string, params *model.EventCreateParams) error
+	Create(ctx context.Context, id string, params *model.EventCreateParams) error
 }
 
 type Jobs interface {
-	Get(id string, opts ...jobOpts.GetOpts) (*model.Job, error)
-	List(opts ...jobOpts.ListOpts) ([]model.Job, error)
-	Create(id, userID, jobType, version string, args map[string]any) error
-	Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error)
+	Get(ctx context.Context, id string, opts ...jobOpts.GetOpts) (*model.Job, error)
+	List(ctx context.Context, opts ...jobOpts.ListOpts) ([]model.Job, error)
+	Create(ctx context.Context, id, userID, jobType, version string, args map[string]any) error
+	Update(ctx context.Context, id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error)
 }
 
 type Notifications interface {
-	Get(id string, opts ...nOpts.GetOpts) (*model.Notification, error)
-	List(opts ...nOpts.ListOpts) ([]model.Notification, error)
-	Create(id, userID string, params *model.NotificationCreateParams) (*model.Notification, error)
-	Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*model.Notification, error)
-	Delete(id string) error
+	Get(ctx context.Context, id string, opts ...nOpts.GetOpts) (*model.Notification, error)
+	List(ctx context.Context, opts ...nOpts.ListOpts) ([]model.Notification, error)
+	Create(ctx context.Context, id, userID string, params *model.NotificationCreateParams) (*model.Notification, error)
+	Update(ctx context.Context, id string, dtoNotificationUpdate *body.NotificationUpdate) (*model.Notification, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type SMs interface {
-	Get(id string, opts ...smOpts.GetOpts) (*model.SM, error)
-	GetByUserID(userID string, opts ...smOpts.GetOpts) (*model.SM, error)
-	List(opts ...smOpts.ListOpts) ([]model.SM, error)
-	Create(id, userID string, params *model.SmCreateParams) error
-	Delete(id string) error
-	Repair(id string) error
-	Exists(userID string) (bool, error)
+	Get(ctx context.Context, id string, opts ...smOpts.GetOpts) (*model.SM, error)
+	GetByUserID(ctx context.Context, userID string, opts ...smOpts.GetOpts) (*model.SM, error)
+	List(ctx context.Context, opts ...smOpts.ListOpts) ([]model.SM, error)
+	Create(ctx context.Context, id, userID string, params *model.SmCreateParams) error
+	Delete(ctx context.Context, id string) error
+	Repair(ctx context.Context, id string) error
+	Exists(ctx context.Context, userID string) (bool, error)
 
 	GetZone() *configModels.Zone
-	GetUrlByUserID(userID string) *string
+	GetUrlByUserID(ctx context.Context, userID string) *string
 
 	K8s() *smK8sService.Client
 }
 
 type Users interface {
-	Get(id string, opts ...userOpts.GetOpts) (*model.User, error)
-	GetByApiKey(apiKey string) (*model.User, error)
-	GetUsage(userID string) (*model.UserUsage, error)
-	List(opts ...userOpts.ListOpts) ([]model.User, error)
-	ListTestUsers() ([]model.User, error)
-	Synchronize(authParams *model.AuthParams) (*model.User, error)
-	Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error)
-	Exists(id string) (bool, error)
+	Get(ctx context.Context, id string, opts ...userOpts.GetOpts) (*model.User, error)
+	GetByApiKey(ctx context.Context, apiKey string) (*model.User, error)
+	GetUsage(ctx context.Context, userID string) (*model.UserUsage, error)
+	List(ctx context.Context, opts ...userOpts.ListOpts) ([]model.User, error)
+	ListTestUsers(ctx context.Context) ([]model.User, error)
+	Synchronize(ctx context.Context, authParams *model.AuthParams) (*model.User, error)
+	Update(ctx context.Context, userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Discover(opts ...userOpts.DiscoverOpts) ([]body.UserReadDiscovery, error)
+	Discover(ctx context.Context, opts ...userOpts.DiscoverOpts) ([]body.UserReadDiscovery, error)
 
 	ApiKeys() ApiKeys
 }
 
 type ApiKeys interface {
-	Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*model.ApiKey, error)
+	Create(ctx context.Context, userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*model.ApiKey, error)
 }
 
 type Teams interface {
-	Get(id string, opts ...teamOpts.GetOpts) (*model.Team, error)
-	List(opts ...teamOpts.ListOpts) ([]model.Team, error)
-	ListIDs(opts ...teamOpts.ListOpts) ([]string, error)
-	Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error)
-	Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error)
-	Delete(id string) error
-	CleanResource(id string) error
-	Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error)
-	CheckResourceAccess(userID, resourceID string) (bool, error)
+	Get(ctx context.Context, id string, opts ...teamOpts.GetOpts) (*model.Team, error)
+	List(ctx context.Context, opts ...teamOpts.ListOpts) ([]model.Team, error)
+	ListIDs(ctx context.Context, opts ...teamOpts.ListOpts) ([]string, error)
+	Create(ctx context.Context, id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error)
+	Update(ctx context.Context, id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error)
+	Delete(ctx context.Context, id string) error
+	CleanResource(ctx context.Context, id string) error
+	Join(ctx context.Context, id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error)
+	CheckResourceAccess(ctx context.Context, userID, resourceID string) (bool, error)
 }
 
 type ResourceMigrations interface {
-	Get(id string, opts ...resourceMigrationOpts.GetOpts) (*model.ResourceMigration, error)
-	List(opts ...resourceMigrationOpts.ListOpts) ([]model.ResourceMigration, error)
-	Create(id, userID string, migrationCreate *body.ResourceMigrationCreate) (*model.ResourceMigration, *string, error)
-	Update(id string, migrationUpdate *body.ResourceMigrationUpdate, opts ...resourceMigrationOpts.UpdateOpts) (*model.ResourceMigration, *string, error)
-	Delete(id string) error
+	Get(ctx context.Context, id string, opts ...resourceMigrationOpts.GetOpts) (*model.ResourceMigration, error)
+	List(ctx context.Context, opts ...resourceMigrationOpts.ListOpts) ([]model.ResourceMigration, error)
+	Create(ctx context.Context, id, userID string, migrationCreate *body.ResourceMigrationCreate) (*model.ResourceMigration, *string, error)
+	Update(ctx context.Context, id string, migrationUpdate *body.ResourceMigrationUpdate, opts ...resourceMigrationOpts.UpdateOpts) (*model.ResourceMigration, *string, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type VMs interface {
-	Get(id string, opts ...vmOpts.GetOpts) (*model.VM, error)
-	List(opts ...vmOpts.ListOpts) ([]model.VM, error)
-	Create(id, ownerID string, dtoVmCreate *body.VmCreate) error
-	Update(id string, dtoVmUpdate *body.VmUpdate) error
-	UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
-	Delete(id string) error
-	Repair(id string) error
+	Get(ctx context.Context, id string, opts ...vmOpts.GetOpts) (*model.VM, error)
+	List(ctx context.Context, opts ...vmOpts.ListOpts) ([]model.VM, error)
+	Create(ctx context.Context, id, ownerID string, dtoVmCreate *body.VmCreate) error
+	Update(ctx context.Context, id string, dtoVmUpdate *body.VmUpdate) error
+	UpdateOwner(ctx context.Context, id string, params *model.VmUpdateOwnerParams) error
+	Delete(ctx context.Context, id string) error
+	Repair(ctx context.Context, id string) error
 
-	IsAccessible(id string) (bool, error)
+	IsAccessible(ctx context.Context, id string) (bool, error)
 
-	CheckQuota(id, userID string, quota *model.Quotas, opts ...vmOpts.QuotaOpts) error
-	GetUsage(userID string) (*model.VmUsage, error)
-	NameAvailable(name string) (bool, error)
-	SshConnectionString(id string) (*string, error)
+	CheckQuota(ctx context.Context, id, userID string, quota *model.Quotas, opts ...vmOpts.QuotaOpts) error
+	GetUsage(ctx context.Context, userID string) (*model.VmUsage, error)
+	NameAvailable(ctx context.Context, name string) (bool, error)
+	SshConnectionString(ctx context.Context, id string) (*string, error)
 
-	DoAction(id string, action *body.VmActionCreate) error
+	DoAction(ctx context.Context, id string, action *body.VmActionCreate) error
 
 	Snapshots() Snapshots
 	GpuLeases() GpuLeases
@@ -158,46 +158,46 @@ type VMs interface {
 }
 
 type Snapshots interface {
-	Get(vmID, id string, opts ...vmOpts.GetSnapshotOpts) (*model.SnapshotV2, error)
-	GetByName(vmID, name string, opts ...vmOpts.GetSnapshotOpts) (*model.SnapshotV2, error)
-	List(vmID string, opts ...vmOpts.ListSnapshotOpts) ([]model.SnapshotV2, error)
-	Create(vmID string, opts ...vmOpts.CreateSnapshotOpts) (*model.SnapshotV2, error)
-	Delete(vmID, id string) error
-	Apply(vmID, id string) error
+	Get(ctx context.Context, vmID, id string, opts ...vmOpts.GetSnapshotOpts) (*model.SnapshotV2, error)
+	GetByName(ctx context.Context, vmID, name string, opts ...vmOpts.GetSnapshotOpts) (*model.SnapshotV2, error)
+	List(ctx context.Context, vmID string, opts ...vmOpts.ListSnapshotOpts) ([]model.SnapshotV2, error)
+	Create(ctx context.Context, vmID string, opts ...vmOpts.CreateSnapshotOpts) (*model.SnapshotV2, error)
+	Delete(ctx context.Context, vmID, id string) error
+	Apply(ctx context.Context, vmID, id string) error
 }
 
 type GPUs any
 
 type GpuLeases interface {
-	Get(id string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
-	GetByVmID(vmID string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
-	List(opts ...vmOpts.ListGpuLeaseOpts) ([]model.GpuLease, error)
-	Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error
-	Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
-	Delete(id string) error
+	Get(ctx context.Context, id string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
+	GetByVmID(ctx context.Context, vmID string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
+	List(ctx context.Context, opts ...vmOpts.ListGpuLeaseOpts) ([]model.GpuLease, error)
+	Create(ctx context.Context, leaseID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error
+	Update(ctx context.Context, id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
+	Delete(ctx context.Context, id string) error
 
-	Count(opts ...vmOpts.ListGpuLeaseOpts) (int, error)
+	Count(ctx context.Context, opts ...vmOpts.ListGpuLeaseOpts) (int, error)
 
-	GetQueuePosition(id string) (int, error)
+	GetQueuePosition(ctx context.Context, id string) (int, error)
 }
 
 type GpuGroups interface {
-	Get(id string, opts ...vmOpts.GetGpuGroupOpts) (*model.GpuGroup, error)
-	List(opts ...vmOpts.ListGpuGroupOpts) ([]model.GpuGroup, error)
-	Exists(id string) (bool, error)
+	Get(ctx context.Context, id string, opts ...vmOpts.GetGpuGroupOpts) (*model.GpuGroup, error)
+	List(ctx context.Context, opts ...vmOpts.ListGpuGroupOpts) ([]model.GpuGroup, error)
+	Exists(ctx context.Context, id string) (bool, error)
 }
 
 type System interface {
-	ListCapacities(n int) ([]body.TimestampedSystemCapacities, error)
-	ListStats(n int) ([]body.TimestampedSystemStats, error)
-	ListStatus(n int) ([]body.TimestampedSystemStatus, error)
+	ListCapacities(ctx context.Context, n int) ([]body.TimestampedSystemCapacities, error)
+	ListStats(ctx context.Context, n int) ([]body.TimestampedSystemStats, error)
+	ListStatus(ctx context.Context, n int) ([]body.TimestampedSystemStatus, error)
 
-	ListWorkerStatus(opts ...systemOpts.ListWorkerStatusOpts) ([]model.WorkerStatus, error)
+	ListWorkerStatus(ctx context.Context, opts ...systemOpts.ListWorkerStatusOpts) ([]model.WorkerStatus, error)
 
-	RegisterNode(params *body.HostRegisterParams) error
+	RegisterNode(ctx context.Context, params *body.HostRegisterParams) error
 
-	ListHosts() ([]model.Host, error)
-	ListAllHosts() ([]model.Host, error)
+	ListHosts(ctx context.Context) ([]model.Host, error)
+	ListAllHosts(ctx context.Context) ([]model.Host, error)
 
 	GetZone(name string) *configModels.Zone
 	ListZones(opts ...systemOpts.ListOpts) ([]configModels.Zone, error)
@@ -205,11 +205,11 @@ type System interface {
 }
 
 type GpuClaims interface {
-	Get(id string, opts ...gpuClaimOpts.Opts) (*model.GpuClaim, error)
-	List(opts ...gpuClaimOpts.ListOpts) ([]model.GpuClaim, error)
-	Create(id string, gpuClaimsCreateParams *model.GpuClaimCreateParams) error
-	Delete(id string) error
-	Update(id string, gpuClaimsUpdateParams *model.GpuClaimUpdateParams) error
+	Get(ctx context.Context, id string, opts ...gpuClaimOpts.Opts) (*model.GpuClaim, error)
+	List(ctx context.Context, opts ...gpuClaimOpts.ListOpts) ([]model.GpuClaim, error)
+	Create(ctx context.Context, id string, gpuClaimsCreateParams *model.GpuClaimCreateParams) error
+	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, id string, gpuClaimsUpdateParams *model.GpuClaimUpdateParams) error
 
 	K8s() *gpuClaimsK8sService.Client
 }
