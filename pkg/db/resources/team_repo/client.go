@@ -17,10 +17,8 @@ type Client struct {
 // New returns a new team client.
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[model.Team]{
-			Collection:     db.DB.GetCollection("teams"),
-			IncludeDeleted: false,
-		},
+		Collection:     db.DB.GetCollection("teams"),
+		IncludeDeleted: false,
 	}
 }
 

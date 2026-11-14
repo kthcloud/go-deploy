@@ -1,6 +1,8 @@
 package k8s
 
 import (
+	"slices"
+
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -40,11 +42,8 @@ func TestUpdateNetworkPolicy(t *testing.T) {
 	found := false
 	for _, rule := range updated.EgressRules {
 		if rule.IpBlock != nil {
-			for _, except := range rule.IpBlock.Except {
-				if except == "2.2.2.2/32" {
-					found = true
-					break
-				}
+			if slices.Contains(rule.IpBlock.Except, "2.2.2.2/32") {
+				found = true
 			}
 		}
 

@@ -145,18 +145,24 @@ func WithoutNils[T any](slice []*T) []T {
 }
 
 // StrPtr converts a string to a pointer
+//
+//go:fix inline
 func StrPtr(s string) *string {
-	return &s
+	return new(s)
 }
 
 // Int64Ptr converts an int64 to a pointer
+//
+//go:fix inline
 func Int64Ptr(i int64) *int64 {
-	return &i
+	return new(i)
 }
 
 // PtrOf converts a value to a pointer
+//
+//go:fix inline
 func PtrOf[T any](v T) *T {
-	return &v
+	return new(v)
 }
 
 func ZeroDeref[T any](v *T) T {

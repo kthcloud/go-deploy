@@ -32,7 +32,7 @@ func CleanUpOldTests() error {
 	}
 
 	for _, deployment := range oldE2eDeployments {
-		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteDeployment, version.V2, map[string]interface{}{
+		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteDeployment, version.V2, map[string]any{
 			"id": deployment.ID,
 		})
 	}
@@ -44,7 +44,7 @@ func CleanUpOldTests() error {
 
 	for _, vm := range oldE2eVms {
 		if vm.Version == version.V2 {
-			_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V2, map[string]interface{}{
+			_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V2, map[string]any{
 				"id": vm.ID,
 			})
 		}

@@ -3,6 +3,7 @@ package vms
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -151,13 +152,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 				}
 
 				// skip existing non-shared resources
-				skip := false
-				for _, skipID := range skipIDs {
-					if resource.ID == skipID {
-						skip = true
-						break
-					}
-				}
+				skip := slices.Contains(skipIDs, resource.ID)
 				if skip {
 					continue
 				}
@@ -577,7 +572,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 	if service := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-priv-22-prot-tcp", vm.Name)); service != nil {
 		for _, port := range service.Ports {
 			if port.TargetPort == 22 {
-				sshConnectionString = utils.StrPtr(fmt.Sprintf("ssh root@%s -p %d", strings.Split(zone.Domains.ParentVM, ":")[0], port.Port))
+				sshConnectionString = new(fmt.Sprintf("ssh root@%s -p %d", strings.Split(zone.Domains.ParentVM, ":")[0], port.Port))
 			}
 		}
 	}

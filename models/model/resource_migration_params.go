@@ -5,10 +5,10 @@ import (
 )
 
 type ResourceMigrationCreateParams struct {
-	Type         string      `bson:"type"`
-	ResourceType string      `bson:"resourceType"`
-	ResourceID   string      `bson:"resourceID"`
-	Params       interface{} `bson:"params"`
+	Type         string `bson:"type"`
+	ResourceType string `bson:"resourceType"`
+	ResourceID   string `bson:"resourceID"`
+	Params       any    `bson:"params"`
 }
 
 type ResourceMigrationUpdateParams struct {

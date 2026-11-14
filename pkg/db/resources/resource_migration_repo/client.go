@@ -13,9 +13,7 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[model.ResourceMigration]{
-			Collection: db.DB.GetCollection("resourceMigrations"),
-		},
+		Collection: db.DB.GetCollection("resourceMigrations"),
 	}
 }
 

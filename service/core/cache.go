@@ -15,7 +15,7 @@ type Cache struct {
 	jobStore          map[string]*model.Job
 	notificationStore map[string]*model.Notification
 
-	store map[string]interface{}
+	store map[string]any
 }
 
 // NewCache creates a new cache.
@@ -31,13 +31,13 @@ func NewCache() *Cache {
 		jobStore:          make(map[string]*model.Job),
 		notificationStore: make(map[string]*model.Notification),
 
-		store: make(map[string]interface{}),
+		store: make(map[string]any),
 	}
 }
 
 // Store stores a model in the cache.
 // It only stores the model if it is not nil.
-func (c *Cache) Store(id string, resource interface{}) {
+func (c *Cache) Store(id string, resource any) {
 	if resource != nil {
 		c.store[id] = resource
 	}
@@ -45,7 +45,7 @@ func (c *Cache) Store(id string, resource interface{}) {
 
 // Get gets a model from the cache.
 // It returns nil if the model is not in the cache.
-func (c *Cache) Get(id string) interface{} {
+func (c *Cache) Get(id string) any {
 	r, ok := c.store[id]
 	if !ok {
 		return nil
@@ -61,7 +61,7 @@ func (c *Cache) FlushResource(id string) {
 
 // Flush flushes the cache.
 func (c *Cache) Flush() {
-	c.store = make(map[string]interface{})
+	c.store = make(map[string]any)
 }
 
 // StoreDeployment stores a deployment in the cache.

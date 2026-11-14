@@ -94,7 +94,7 @@ func setupK8sClusters() error {
 	}
 
 	for idx, zone := range Config.Zones {
-		sourceType, ok := zone.K8s.ConfigSource.(map[string]interface{})
+		sourceType, ok := zone.K8s.ConfigSource.(map[string]any)
 		if !ok {
 			return makeError(fmt.Errorf("failed to parse type of config source for zone %s", zone.Name))
 		}

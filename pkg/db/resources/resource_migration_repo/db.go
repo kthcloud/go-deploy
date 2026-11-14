@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (c *Client) Create(id, userID, resourceID, migrationType, resourceType string, code *string, status string, params interface{}) (*model.ResourceMigration, error) {
+func (c *Client) Create(id, userID, resourceID, migrationType, resourceType string, code *string, status string, params any) (*model.ResourceMigration, error) {
 	migration := &model.ResourceMigration{
 		ID:         id,
 		ResourceID: resourceID,

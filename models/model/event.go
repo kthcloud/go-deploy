@@ -21,5 +21,5 @@ type Event struct {
 	Source *Source `bson:"source,omitempty"`
 
 	// Metadata contains any data related to the event.
-	Metadata map[string]interface{} `bson:"metadata,omitempty"`
+	Metadata map[string]any `bson:"metadata,omitempty"`
 }

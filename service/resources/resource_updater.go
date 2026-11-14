@@ -10,7 +10,7 @@ import (
 type SsUpdaterType[T subsystems.SsResource] struct {
 	public T
 
-	dbFunc     func(interface{}) error
+	dbFunc     func(any) error
 	updateFunc func(T) (T, error)
 }
 
@@ -22,7 +22,7 @@ func SsUpdater[T subsystems.SsResource](updateFunc func(T) (T, error)) *SsUpdate
 }
 
 // WithDbFunc sets the db func for the updater
-func (rc *SsUpdaterType[T]) WithDbFunc(dbFunc func(interface{}) error) *SsUpdaterType[T] {
+func (rc *SsUpdaterType[T]) WithDbFunc(dbFunc func(any) error) *SsUpdaterType[T] {
 	rc.dbFunc = dbFunc
 	return rc
 }

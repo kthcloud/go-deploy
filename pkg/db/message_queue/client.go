@@ -28,7 +28,7 @@ func New() *Client {
 }
 
 // Publish sends a message to the given queue.
-func (client *Client) Publish(queueName string, jsonData interface{}) error {
+func (client *Client) Publish(queueName string, jsonData any) error {
 	data, err := json.Marshal(jsonData)
 	if err != nil {
 		log.Println("Failed to marshal message. Details: " + err.Error())

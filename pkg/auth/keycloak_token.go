@@ -21,7 +21,7 @@ type KeycloakToken struct {
 	GivenName         string                 `json:"given_name,omitempty"`
 	FamilyName        string                 `json:"family_name,omitempty"`
 	Email             string                 `json:"email,omitempty"`
-	RealmAccess       ServiceRole            `json:"realm_access,omitempty"`
+	RealmAccess       ServiceRole            `json:"realm_access"`
 	Groups            []string               `json:"groups,omitempty"`
 }
 

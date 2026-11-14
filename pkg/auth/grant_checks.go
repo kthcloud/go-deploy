@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"slices"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,10 +22,8 @@ func GroupCheck(at []AccessTuple) func(tc *TokenContainer, ctx *gin.Context) boo
 			at := ats[idx]
 			if tc.KeyCloakToken.ResourceAccess != nil {
 				serviceRoles := tc.KeyCloakToken.ResourceAccess[at.Service]
-				for _, role := range serviceRoles.Roles {
-					if role == at.Role {
-						return true
-					}
+				if slices.Contains(serviceRoles.Roles, at.Role) {
+					return true
 				}
 			}
 		}
@@ -36,10 +36,8 @@ func RealmCheck(allowedRoles []string) func(tc *TokenContainer, ctx *gin.Context
 	return func(tc *TokenContainer, ctx *gin.Context) bool {
 		addTokenToContext(tc, ctx)
 		for _, allowedRole := range allowedRoles {
-			for _, role := range tc.KeyCloakToken.RealmAccess.Roles {
-				if role == allowedRole {
-					return true
-				}
+			if slices.Contains(tc.KeyCloakToken.RealmAccess.Roles, allowedRole) {
+				return true
 			}
 		}
 		return false

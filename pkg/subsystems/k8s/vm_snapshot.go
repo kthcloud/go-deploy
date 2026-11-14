@@ -100,7 +100,7 @@ func (client *Client) DeleteVmSnapshot(id string) error {
 
 func (client *Client) waitVmSnapshotDeleted(id string) error {
 	maxWait := 120
-	for i := 0; i < maxWait; i++ {
+	for range maxWait {
 		time.Sleep(1 * time.Second)
 		_, err := client.KubeVirtK8sClient.SnapshotV1alpha1().VirtualMachineSnapshots(client.Namespace).Get(context.TODO(), id, metav1.GetOptions{})
 		if err != nil && IsNotFoundErr(err) {

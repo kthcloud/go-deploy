@@ -65,8 +65,7 @@ func PeriodicWorker(ctx context.Context, name string, work func() error, interva
 		case <-tick.C:
 			if err := work(); err != nil {
 				// If errors is HostsFailedErr, disable the hosts
-				var hostsFailedErr *wErrors.HostsFailedErr
-				if errors.As(err, &hostsFailedErr) {
+				if hostsFailedErr, ok := errors.AsType[*wErrors.HostsFailedErr](err); ok {
 					deactivateDuration := 30 * time.Minute
 					log.Printf("Hosts [%s] failed when running %s. Deactivating them for %s", strings.Join(hostsFailedErr.Hosts, ", "), name, deactivateDuration.String())
 					deactivationErr := DeactivateHosts(hostsFailedErr.Hosts, time.Now().Add(deactivateDuration))

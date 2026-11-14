@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/kthcloud/go-deploy/dto/v2/body"
-	"github.com/kthcloud/go-deploy/utils"
 	"time"
 )
 
@@ -10,7 +9,7 @@ import (
 func (g *GpuLease) ToDTO(queuePosition int) body.GpuLeaseRead {
 	var expiresAt *time.Time
 	if g.ActivatedAt != nil {
-		expiresAt = utils.PtrOf(g.ActivatedAt.Add(time.Hour * time.Duration(g.LeaseDuration)))
+		expiresAt = new(g.ActivatedAt.Add(time.Hour * time.Duration(g.LeaseDuration)))
 	}
 
 	return body.GpuLeaseRead{

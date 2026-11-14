@@ -189,7 +189,7 @@ type Zone struct {
 		} `yaml:"namespaces"`
 		// ConfigSource is the source of the Kubernetes configuration
 		// It can be either RancherConfigSource or KubeConfigSource
-		ConfigSource interface{} `yaml:"configSource"`
+		ConfigSource any `yaml:"configSource"`
 		// IngressNamespace is the namespace where the ingress resources are created, e.g. "ingress-nginx"
 		IngressNamespace string `yaml:"ingressNamespace"`
 		// LoadBalancerIP is the IP of the load balancer that is used for the ingress resources

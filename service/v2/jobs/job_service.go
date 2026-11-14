@@ -76,7 +76,7 @@ func (c *Client) List(opt ...opts.ListOpts) ([]model.Job, error) {
 }
 
 // Create creates a new job.
-func (c *Client) Create(id, userID, jobType, version string, args map[string]interface{}) error {
+func (c *Client) Create(id, userID, jobType, version string, args map[string]any) error {
 	return job_repo.New().Create(id, userID, jobType, version, args)
 }
 

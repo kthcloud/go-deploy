@@ -11,7 +11,7 @@ type SsCreatorType[T subsystems.SsResource] struct {
 	name   *string
 	public T
 
-	dbFunc     func(interface{}) error
+	dbFunc     func(any) error
 	createFunc func(T) (T, error)
 }
 
@@ -23,7 +23,7 @@ func SsCreator[T subsystems.SsResource](createFunc func(T) (T, error)) *SsCreato
 }
 
 // WithDbFunc sets the db func for the creator
-func (rc *SsCreatorType[T]) WithDbFunc(dbFunc func(interface{}) error) *SsCreatorType[T] {
+func (rc *SsCreatorType[T]) WithDbFunc(dbFunc func(any) error) *SsCreatorType[T] {
 	rc.dbFunc = dbFunc
 	return rc
 }

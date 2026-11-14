@@ -68,7 +68,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 		RAM:      2,
 		DiskSize: 20,
 	}
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		longName.Name += uuid.NewString()
 	}
 	v2.WithAssumedFailedVM(t, longName)

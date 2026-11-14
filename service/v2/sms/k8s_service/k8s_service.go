@@ -494,8 +494,8 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 }
 
 // dbFunc returns a function that updates the K8s subsystem.
-func dbFunc(id, key string) func(interface{}) error {
-	return func(data interface{}) error {
+func dbFunc(id, key string) func(any) error {
+	return func(data any) error {
 		if data == nil {
 			return sm_repo.New().DeleteSubsystem(id, "k8s."+key)
 		}

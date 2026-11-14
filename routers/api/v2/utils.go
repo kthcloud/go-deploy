@@ -110,16 +110,14 @@ func CreateBindingError(err error) *body.BindingError {
 		ValidationErrors: make(map[string][]string),
 	}
 
-	var ve validator.ValidationErrors
-	if errors.As(err, &ve) {
+	if ve, ok := errors.AsType[validator.ValidationErrors](err); ok {
 		for _, fe := range ve {
 			fieldName := fe.Field()
 			out.ValidationErrors[fieldName] = append(out.ValidationErrors[fieldName], msgForTag(fe))
 		}
 	}
 
-	var je *json.UnmarshalTypeError
-	if errors.As(err, &je) {
+	if je, ok := errors.AsType[*json.UnmarshalTypeError](err); ok {
 		fieldName := je.Field
 		out.ValidationErrors[fieldName] = append(out.ValidationErrors[fieldName], "Must be of type "+je.Type.String())
 	}

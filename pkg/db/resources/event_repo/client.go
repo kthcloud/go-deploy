@@ -16,11 +16,9 @@ type Client struct {
 // New returns a new event client.
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[model.Event]{
-			Collection:     db.DB.GetCollection("events"),
-			IncludeDeleted: false,
-			Pagination:     nil,
-		},
+		Collection:     db.DB.GetCollection("events"),
+		IncludeDeleted: false,
+		Pagination:     nil,
 	}
 }
 

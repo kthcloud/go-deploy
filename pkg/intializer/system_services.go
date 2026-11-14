@@ -21,18 +21,18 @@ func EnsureSystemDeploymentsExists() error {
 
 		err := service.V2().Deployments().Create(uuid.NewString(), "system", &body.DeploymentCreate{
 			Name:     config.Config.Deployment.Fallback.Disabled.Name,
-			CpuCores: floatPtr(1),
-			RAM:      floatPtr(1),
-			Replicas: intPtr(5),
+			CpuCores: new(float64(1)),
+			RAM:      new(float64(1)),
+			Replicas: new(5),
 			Envs: []body.Env{
 				{
 					Name:  "TYPE",
 					Value: "disabled",
 				},
 			},
-			Image:           strPtr(config.Config.Registry.PlaceholderImage),
-			HealthCheckPath: strPtr(""),
-			Zone:            strPtr(zone.Name),
+			Image:           new(config.Config.Registry.PlaceholderImage),
+			HealthCheckPath: new(""),
+			Zone:            new(zone.Name),
 		})
 		if err != nil {
 			if !errors.Is(err, sErrors.ErrNonUniqueField) {
@@ -59,14 +59,17 @@ func EnsureSystemDeploymentsExists() error {
 	return nil
 }
 
+//go:fix inline
 func floatPtr(f float64) *float64 {
-	return &f
+	return new(f)
 }
 
+//go:fix inline
 func intPtr(i int) *int {
-	return &i
+	return new(i)
 }
 
+//go:fix inline
 func strPtr(s string) *string {
-	return &s
+	return new(s)
 }

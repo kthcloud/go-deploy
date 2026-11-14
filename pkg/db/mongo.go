@@ -83,7 +83,7 @@ func (dbCtx *Context) setupMongo() error {
 
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys:    keys,
-				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{Key: "deletedAt", Value: bson.D{{Key: "$in", Value: []interface{}{nil, time.Time{}}}}}}),
+				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{Key: "deletedAt", Value: bson.D{{Key: "$in", Value: []any{nil, time.Time{}}}}}}),
 			})
 			if err != nil && !isIndexExistsError(err) {
 				return makeError(err)

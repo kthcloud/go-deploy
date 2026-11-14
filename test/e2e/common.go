@@ -73,8 +73,9 @@ func GenName(base ...string) string {
 	return "e2e-" + strings.ReplaceAll(base[0], " ", "-") + "-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
 }
 
+//go:fix inline
 func StrPtr(s string) *string {
-	return &s
+	return new(s)
 }
 
 func DoPlainGetRequest(t *testing.T, path string) *http.Response {
@@ -116,7 +117,7 @@ func DoGetRequest(t *testing.T, subPath string, user ...string) *http.Response {
 	return doRequest(t, req)
 }
 
-func DoPostRequest(t *testing.T, subPath string, body interface{}, user ...string) *http.Response {
+func DoPostRequest(t *testing.T, subPath string, body any, user ...string) *http.Response {
 	t.Helper()
 
 	jsonBody, err := json.Marshal(body)
@@ -162,7 +163,7 @@ func doRequest(t *testing.T, req *http.Request) *http.Response {
 	return resp
 }
 
-func ReadResponseBody(t *testing.T, resp *http.Response, body interface{}) error {
+func ReadResponseBody(t *testing.T, resp *http.Response, body any) error {
 	t.Cleanup(func() {
 		err := resp.Body.Close()
 		assert.NoError(t, err)
@@ -185,7 +186,7 @@ func ReadRawResponseBody(t *testing.T, resp *http.Response) []byte {
 	return raw
 }
 
-func parseRawBody(body []byte, parsedBody interface{}) error {
+func parseRawBody(body []byte, parsedBody any) error {
 	err := json.Unmarshal(body, parsedBody)
 	if err != nil {
 		return fmt.Errorf("failed to parse body: %w", err)
@@ -248,7 +249,7 @@ func MustParse[okType any](t *testing.T, resp *http.Response) okType {
 	return okResp
 }
 
-func MustNotNil(t *testing.T, obj interface{}, msg string) {
+func MustNotNil(t *testing.T, obj any, msg string) {
 	if obj == nil {
 		assert.FailNow(t, msg)
 	}

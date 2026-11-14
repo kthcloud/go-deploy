@@ -18,11 +18,9 @@ type Client struct {
 // New returns a new host client.
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[model.Host]{
-			Collection:     db.DB.GetCollection("hosts"),
-			IncludeDeleted: false,
-			Pagination:     nil,
-		},
+		Collection:     db.DB.GetCollection("hosts"),
+		IncludeDeleted: false,
+		Pagination:     nil,
 	}
 }
 

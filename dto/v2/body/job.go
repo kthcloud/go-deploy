@@ -11,7 +11,7 @@ type JobRead struct {
 	CreatedAt  time.Time  `json:"createdAt"`
 	LastRunAt  *time.Time `json:"lastRunAt,omitempty"`
 	FinishedAt *time.Time `json:"finishedAt,omitempty"`
-	RunAfter   time.Time  `json:"runAfter,omitempty"`
+	RunAfter   time.Time  `json:"runAfter"`
 }
 
 type JobUpdate struct {

@@ -41,8 +41,8 @@ func GetAuthInfo(job *model.Job) *core.AuthInfo {
 	}
 
 	toTimeHookFunc := func() mapstructure.DecodeHookFunc {
-		return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
-			if t != reflect.TypeOf(time.Time{}) {
+		return func(f reflect.Type, t reflect.Type, data any) (any, error) {
+			if t != reflect.TypeFor[time.Time]() {
 				return data, nil
 			}
 
@@ -66,7 +66,7 @@ func GetAuthInfo(job *model.Job) *core.AuthInfo {
 		return nil
 	}
 
-	err = decoder.Decode(job.Args["authInfo"].(map[string]interface{}))
+	err = decoder.Decode(job.Args["authInfo"].(map[string]any))
 	if err != nil {
 		return nil
 	}

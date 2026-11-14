@@ -9,7 +9,7 @@ import (
 type SsDeleterType[IdType any] struct {
 	resourceID *IdType
 
-	dbFunc     func(interface{}) error
+	dbFunc     func(any) error
 	deleteFunc func(IdType) error
 }
 
@@ -28,7 +28,7 @@ func (rc *SsDeleterType[IdType]) WithResourceID(resourceID IdType) *SsDeleterTyp
 }
 
 // WithDbFunc sets the db func for the deleter
-func (rc *SsDeleterType[IdType]) WithDbFunc(dbFunc func(interface{}) error) *SsDeleterType[IdType] {
+func (rc *SsDeleterType[IdType]) WithDbFunc(dbFunc func(any) error) *SsDeleterType[IdType] {
 	rc.dbFunc = dbFunc
 	return rc
 }

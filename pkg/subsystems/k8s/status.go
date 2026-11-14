@@ -21,7 +21,7 @@ import (
 // SetupStatusWatcher sets up a status watcher for a given resource type in a namespace
 //
 // This should only be called once per cluster
-func (client *Client) SetupStatusWatcher(ctx context.Context, resourceType string, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
+func (client *Client) SetupStatusWatcher(ctx context.Context, resourceType string, handler func(string, any), opts ...opts.WatcherOpts) error {
 	switch resourceType {
 	case "deployment":
 		return client.deploymentStatusWatcher(ctx, handler, opts...)
@@ -36,7 +36,7 @@ func (client *Client) SetupStatusWatcher(ctx context.Context, resourceType strin
 	return nil
 }
 
-func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(string, any), _ ...opts.WatcherOpts) error {
 	setupDeploymentWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.K8sClient.AppsV1().Deployments(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
 		if err != nil {
@@ -106,7 +106,7 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 	return nil
 }
 
-func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, any), _ ...opts.WatcherOpts) error {
 	setupVmWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
 		if err != nil {
@@ -159,7 +159,7 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 	return nil
 }
 
-func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string, any), _ ...opts.WatcherOpts) error {
 	setupVmWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachineInstances(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
 		if err != nil {
@@ -212,7 +212,7 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 	return nil
 }
 
-func (client *Client) eventWatcher(ctx context.Context, handler func(string, interface{}), _ ...opts.WatcherOpts) error {
+func (client *Client) eventWatcher(ctx context.Context, handler func(string, any), _ ...opts.WatcherOpts) error {
 	setupEventWatcher := func(_ string) (watch.Interface, error) {
 		statusChan, err := client.K8sClient.CoreV1().Events(client.Namespace).Watch(ctx, metav1.ListOptions{
 			// Fields involvesObject.kind=Pod and type=Warning and reason=FailedMount or BackOff or Failed

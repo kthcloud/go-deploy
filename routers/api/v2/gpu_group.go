@@ -111,7 +111,7 @@ func ListGpuGroups(c *gin.Context) {
 	}
 
 	if gpuGroups == nil {
-		context.Ok([]interface{}{})
+		context.Ok([]any{})
 		return
 	}
 

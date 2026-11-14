@@ -70,7 +70,7 @@ func (client *Client) DeleteSubsystem(id, key string) error {
 
 // SetSubsystem sets a subsystem in a storage manager.
 // It prepends the key with `subsystems` and sets it.
-func (client *Client) SetSubsystem(id, key string, update interface{}) error {
+func (client *Client) SetSubsystem(id, key string, update any) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.SetWithBsonByID(id, bson.D{{Key: subsystemKey, Value: update}})
 }

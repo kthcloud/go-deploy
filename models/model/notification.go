@@ -13,10 +13,10 @@ const (
 )
 
 type Notification struct {
-	ID      string                 `bson:"id"`
-	UserID  string                 `bson:"userId"`
-	Type    string                 `bson:"type"`
-	Content map[string]interface{} `bson:"content"`
+	ID      string         `bson:"id"`
+	UserID  string         `bson:"userId"`
+	Type    string         `bson:"type"`
+	Content map[string]any `bson:"content"`
 
 	CreatedAt   time.Time `bson:"createdAt"`
 	ReadAt      time.Time `bson:"readAt,omitempty"`
@@ -26,8 +26,8 @@ type Notification struct {
 }
 
 type NotificationCreateParams struct {
-	Type    string                 `json:"type"`
-	Content map[string]interface{} `json:"content"`
+	Type    string         `json:"type"`
+	Content map[string]any `json:"content"`
 }
 
 // ToDTO converts a Notification to a body.NotificationRead DTO.

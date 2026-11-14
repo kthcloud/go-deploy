@@ -54,7 +54,7 @@ func (client *Client) WithType(notificationType string) *Client {
 }
 
 // FilterContent adds a filter to the client to only include notifications with the given content.
-func (client *Client) FilterContent(contentName string, filter interface{}) *Client {
+func (client *Client) FilterContent(contentName string, filter any) *Client {
 	client.AddExtraFilter(bson.D{{Key: "content." + contentName, Value: filter}})
 
 	return client

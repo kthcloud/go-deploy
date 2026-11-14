@@ -38,7 +38,7 @@ type K8SGeneratorOption func(kg *K8sGenerator)
 
 func WithImage(image string) K8SGeneratorOption {
 	return func(kg *K8sGenerator) {
-		kg.image = utils.StrPtr(image)
+		kg.image = new(image)
 	}
 }
 

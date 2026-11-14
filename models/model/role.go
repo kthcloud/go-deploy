@@ -1,7 +1,7 @@
 package model
 
 import (
-	"sort"
+	"slices"
 
 	"github.com/fatih/structs"
 	body2 "github.com/kthcloud/go-deploy/dto/v2/body"
@@ -37,9 +37,7 @@ func (r *Role) ToDTO(includeQuota bool) body2.Role {
 		quota = &dto
 	}
 
-	sort.Slice(permissions, func(i, j int) bool {
-		return permissions[i] < permissions[j]
-	})
+	slices.Sort(permissions)
 
 	return body2.Role{
 		Name:        r.Name,

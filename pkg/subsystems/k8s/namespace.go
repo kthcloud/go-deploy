@@ -160,7 +160,7 @@ func (client *Client) DeleteNamespaceIfEmpty(name string) error {
 // waitNamespaceDeleted waits for a namespace to be deleted.
 func (client *Client) waitNamespaceDeleted(name string) error {
 	maxWait := 120
-	for i := 0; i < maxWait; i++ {
+	for range maxWait {
 		time.Sleep(1 * time.Second)
 		_, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil && IsNotFoundErr(err) {

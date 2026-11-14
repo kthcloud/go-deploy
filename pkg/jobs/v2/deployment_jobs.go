@@ -28,15 +28,14 @@ func CreateDeployment(job *model.Job) error {
 	id := job.Args["id"].(string)
 	ownerID := job.Args["ownerId"].(string)
 	var params body.DeploymentCreate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
 
 	err = service.V2(utils.GetAuthInfo(job)).Deployments().Create(id, ownerID, &params)
 	if err != nil {
-		var zoneCapabilityMissingErr sErrors.ZoneCapabilityMissingErr
-		if errors.As(err, &zoneCapabilityMissingErr) {
+		if _, ok := errors.AsType[sErrors.ZoneCapabilityMissingErr](err); ok {
 			return jErrors.MakeTerminatedError(err)
 		}
 
@@ -131,7 +130,7 @@ func UpdateDeployment(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 	var update body.DeploymentUpdate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &update)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &update)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -166,7 +165,7 @@ func UpdateDeploymentOwner(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 	var params model.DeploymentUpdateOwnerParams
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}

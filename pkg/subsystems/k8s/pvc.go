@@ -90,7 +90,7 @@ func (client *Client) DeletePVC(name string) error {
 // waitPvcDeleted waits for a PersistentVolumeClaim to be deleted.
 func (client *Client) waitPvcDeleted(name string) error {
 	maxWait := 120
-	for i := 0; i < maxWait; i++ {
+	for range maxWait {
 		time.Sleep(1 * time.Second)
 		_, err := client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).Get(context.TODO(), name, v1.GetOptions{})
 		if err != nil && IsNotFoundErr(err) {

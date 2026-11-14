@@ -57,12 +57,10 @@ func GetHostStatuses() ([]body.HostStatus, error) {
 			RAM: body.RamStatus{
 				Load: hostApiStatus.RAM.Load,
 			},
-			GPU: gpuStatus,
-			HostBase: body.HostBase{
-				Name:        host.Name,
-				DisplayName: host.DisplayName,
-				Zone:        host.Zone,
-			},
+			GPU:         gpuStatus,
+			Name:        host.Name,
+			DisplayName: host.DisplayName,
+			Zone:        host.Zone,
 		}
 
 		mu.Lock()

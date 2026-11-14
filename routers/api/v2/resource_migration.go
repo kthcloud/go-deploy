@@ -93,11 +93,11 @@ func ListResourceMigrations(c *gin.Context) {
 	}
 
 	if len(resourceMigrations) == 0 {
-		context.JSONResponse(http.StatusOK, []interface{}{})
+		context.JSONResponse(http.StatusOK, []any{})
 		return
 	}
 
-	dtoResourceMigrations := make([]interface{}, len(resourceMigrations))
+	dtoResourceMigrations := make([]any, len(resourceMigrations))
 	for i, resourceMigration := range resourceMigrations {
 		dtoResourceMigrations[i] = resourceMigration.ToDTO()
 	}

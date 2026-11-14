@@ -184,7 +184,7 @@ func (c *Client) Update(id string, params *model.DeploymentUpdateParams) error {
 
 			err = resources.SsDeleter(hc.DeleteRepository).
 				WithResourceID(oldRepository.Name).
-				WithDbFunc(func(interface{}) error { return nil }).
+				WithDbFunc(func(any) error { return nil }).
 				Exec()
 			if err != nil {
 				return makeError(err)
@@ -210,7 +210,7 @@ func (c *Client) Update(id string, params *model.DeploymentUpdateParams) error {
 
 			err = resources.SsDeleter(hc.DeleteRobot).
 				WithResourceID(oldRobot.ID).
-				WithDbFunc(func(interface{}) error { return nil }).
+				WithDbFunc(func(any) error { return nil }).
 				Exec()
 			if err != nil {
 				return makeError(err)
@@ -288,7 +288,7 @@ func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 		// Delete the old repository
 		err = resources.SsDeleter(oldHC.DeleteRepository).
 			WithResourceID(oldRepository.Name).
-			WithDbFunc(func(interface{}) error { return nil }).
+			WithDbFunc(func(any) error { return nil }).
 			Exec()
 		if err != nil {
 			return makeError(err)
@@ -421,8 +421,8 @@ func (c *Client) Repair(id string) error {
 }
 
 // dbFunc returns a function that updates the Harbor subsystem.
-func dbFunc(id, key string) func(interface{}) error {
-	return func(data interface{}) error {
+func dbFunc(id, key string) func(any) error {
+	return func(data any) error {
 		if data == nil {
 			return deployment_repo.New().DeleteSubsystem(id, "harbor."+key)
 		}

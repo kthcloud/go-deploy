@@ -66,7 +66,7 @@ type Events interface {
 type Jobs interface {
 	Get(id string, opts ...jobOpts.GetOpts) (*model.Job, error)
 	List(opts ...jobOpts.ListOpts) ([]model.Job, error)
-	Create(id, userID, jobType, version string, args map[string]interface{}) error
+	Create(id, userID, jobType, version string, args map[string]any) error
 	Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error)
 }
 
@@ -166,7 +166,7 @@ type Snapshots interface {
 	Apply(vmID, id string) error
 }
 
-type GPUs interface{}
+type GPUs any
 
 type GpuLeases interface {
 	Get(id string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)

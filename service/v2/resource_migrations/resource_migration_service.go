@@ -164,7 +164,7 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 			name = &n
 		}
 
-		content := map[string]interface{}{
+		content := map[string]any{
 			"id":           resourceMigration.ID,
 			"resourceId":   resourceID,
 			"resourceName": *name,
@@ -193,7 +193,7 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 	case model.ResourceMigrationStatusAccepted:
 		// Update the owner of the resource
 		jobID := uuid.NewString()
-		args := map[string]interface{}{
+		args := map[string]any{
 			"id":                  resourceID,
 			"resourceMigrationId": resourceMigration.ID,
 			"params":              params,
@@ -325,7 +325,7 @@ func (c *Client) acceptOwnerUpdate(resourceMigration *model.ResourceMigration) (
 	var err error
 	switch resourceMigration.ResourceType {
 	case model.ResourceTypeDeployment:
-		args := map[string]interface{}{
+		args := map[string]any{
 			"id":                  resourceMigration.ResourceID,
 			"resourceMigrationId": resourceMigration.ID,
 			"params": model.DeploymentUpdateOwnerParams{
@@ -338,7 +338,7 @@ func (c *Client) acceptOwnerUpdate(resourceMigration *model.ResourceMigration) (
 
 		err = c.V2.Jobs().Create(jobID, resourceMigration.UserID, model.JobUpdateDeploymentOwner, version.V2, args)
 	case model.ResourceTypeVM:
-		args := map[string]interface{}{
+		args := map[string]any{
 			"id":                  resourceMigration.ResourceID,
 			"resourceMigrationId": resourceMigration.ID,
 			"params": model.VmUpdateOwnerParams{

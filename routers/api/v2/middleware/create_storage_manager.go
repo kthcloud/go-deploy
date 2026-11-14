@@ -36,7 +36,7 @@ func CreateSM() gin.HandlerFunc {
 		if !exists {
 			smID := uuid.New().String()
 			jobID := uuid.New().String()
-			err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateSM, version.V2, map[string]interface{}{
+			err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateSM, version.V2, map[string]any{
 				"id":     smID,
 				"userId": auth.User.ID,
 				"params": model.SmCreateParams{

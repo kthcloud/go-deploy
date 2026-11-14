@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -55,12 +56,7 @@ func (vm *VM) DoingActivity(activity string) bool {
 }
 
 func (vm *VM) DoingOneOfActivities(activities []string) bool {
-	for _, a := range activities {
-		if vm.DoingActivity(a) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(activities, vm.DoingActivity)
 }
 
 func (vm *VM) BeingCreated() bool {

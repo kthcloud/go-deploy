@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"slices"
 
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -209,13 +210,7 @@ func checkCustomDomain(domain string, secret string) (bool, bool, string, error)
 		return false, false, "", nil
 	}
 
-	match := false
-	for _, r := range txtRecord {
-		if r == secret {
-			match = true
-			break
-		}
-	}
+	match := slices.Contains(txtRecord, secret)
 
 	return exists, match, txtRecord[0], nil
 }

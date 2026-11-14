@@ -11,7 +11,7 @@ import (
 )
 
 // UpdateDbSubsystem is a common interface that services use to update subsystem resources
-type UpdateDbSubsystem func(string, string, interface{}) error
+type UpdateDbSubsystem func(string, string, any) error
 
 // ResetTimeFields resets all time.Time fields in a struct to the zero value
 // This is done when comparing structs to ignore time.Time fields, since they are not
@@ -21,17 +21,16 @@ func ResetTimeFields[T any](input T) T {
 	var resetTimeFields func(v reflect.Value)
 	resetTimeFields = func(v reflect.Value) {
 		switch v.Kind() {
-		case reflect.Ptr:
+		case reflect.Pointer:
 			resetTimeFields(v.Elem())
 		case reflect.Interface:
 			resetTimeFields(v.Elem())
 		case reflect.Struct:
-			for i := 0; i < v.NumField(); i++ {
-				field := v.Field(i)
-				if field.Kind() == reflect.Struct && field.Type() != reflect.TypeOf(time.Time{}) {
+			for _, field := range v.Fields() {
+				if field.Kind() == reflect.Struct && field.Type() != reflect.TypeFor[time.Time]() {
 					resetTimeFields(field)
-				} else if field.Type() == reflect.TypeOf(time.Time{}) {
-					v.Field(i).Set(reflect.ValueOf(time.Time{}))
+				} else if field.Type() == reflect.TypeFor[time.Time]() {
+					field.Set(reflect.ValueOf(time.Time{}))
 				}
 			}
 		}
@@ -41,7 +40,7 @@ func ResetTimeFields[T any](input T) T {
 	// If it is a pointer, we need to dereference it firs
 	inputCopy := reflect.ValueOf(input)
 	wasPointer := false
-	if inputCopy.Kind() == reflect.Ptr {
+	if inputCopy.Kind() == reflect.Pointer {
 		inputCopy = inputCopy.Elem()
 		wasPointer = true
 	}
@@ -65,7 +64,7 @@ func ResetTimeFields[T any](input T) T {
 // areTimeFieldsEqual compares two structs time.Time fields
 // This is done when comparing structs to ignore time.Time fields, since they are not
 // guaranteed to be equal using == (they have their own Equal() method)
-func areTimeFieldsEqual(a, b interface{}) bool {
+func areTimeFieldsEqual(a, b any) bool {
 	valA := reflect.ValueOf(a)
 	valB := reflect.ValueOf(b)
 
@@ -74,13 +73,13 @@ func areTimeFieldsEqual(a, b interface{}) bool {
 	}
 
 	switch valA.Kind() {
-	case reflect.Ptr, reflect.Interface:
+	case reflect.Pointer, reflect.Interface:
 		return areTimeFieldsEqual(valA.Elem().Interface(), valB.Elem().Interface())
 	case reflect.Struct:
 		for i := 0; i < valA.NumField(); i++ {
 			fieldA := valA.Field(i)
 			fieldB := valB.Field(i)
-			if fieldA.Type() == reflect.TypeOf(time.Time{}) {
+			if fieldA.Type() == reflect.TypeFor[time.Time]() {
 				if !fieldA.Interface().(time.Time).Equal(fieldB.Interface().(time.Time)) {
 					return false
 				}

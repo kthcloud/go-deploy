@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"slices"
 
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
@@ -76,19 +77,13 @@ func (client *Client) SetupPodWatcher(ctx context.Context, callback func(podName
 			v1.PodFailed,
 		}
 
-		allowed := false
-		for _, status := range allowedStatuses {
-			if pod.Status.Phase == status {
-				allowed = true
-				break
-			}
-		}
+		allowed := slices.Contains(allowedStatuses, pod.Status.Phase)
 
 		return allowed
 	}
 
 	_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+		AddFunc: func(obj any) {
 			pod, ok := obj.(*v1.Pod)
 			if !ok {
 				return
@@ -100,7 +95,7 @@ func (client *Client) SetupPodWatcher(ctx context.Context, callback func(podName
 
 			callback(pod.Name, PodEventAdded)
 		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
+		UpdateFunc: func(oldObj, newObj any) {
 			pod, ok := newObj.(*v1.Pod)
 			if !ok {
 				return
@@ -112,7 +107,7 @@ func (client *Client) SetupPodWatcher(ctx context.Context, callback func(podName
 
 			callback(pod.Name, PodEventUpdated)
 		},
-		DeleteFunc: func(obj interface{}) {
+		DeleteFunc: func(obj any) {
 			pod, ok := obj.(*v1.Pod)
 			if !ok {
 				return

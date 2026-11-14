@@ -15,108 +15,88 @@ import (
 
 // IsNotFoundErr checks if the error is a not found error.
 func IsNotFoundErr(err error) bool {
-	var apiErr *runtime.APIError
-	if errors.As(err, &apiErr) {
+	if apiErr, ok := errors.AsType[*runtime.APIError](err); ok {
 		return apiErr.Code == http.StatusNotFound
 	}
 
 	// Robot V1
-	var listRobotV1NotFoundErr *robotv1.ListRobotV1NotFound
-	if errors.As(err, &listRobotV1NotFoundErr) {
+	if _, ok := errors.AsType[*robotv1.ListRobotV1NotFound](err); ok {
 		return true
 	}
 
-	var getRobotV1NotFoundErr *robotv1.GetRobotByIDV1NotFound
-	if errors.As(err, &getRobotV1NotFoundErr) {
+	if _, ok := errors.AsType[*robotv1.GetRobotByIDV1NotFound](err); ok {
 		return true
 	}
 
-	var createRobotV1NotFoundErr *robotv1.CreateRobotV1NotFound
-	if errors.As(err, &createRobotV1NotFoundErr) {
+	if _, ok := errors.AsType[*robotv1.CreateRobotV1NotFound](err); ok {
 		return true
 	}
 
-	var updateRobotV1NotFoundErr *robotv1.UpdateRobotV1NotFound
-	if errors.As(err, &updateRobotV1NotFoundErr) {
+	if _, ok := errors.AsType[*robotv1.UpdateRobotV1NotFound](err); ok {
 		return true
 	}
 
-	var deleteRobotV1NotFoundErr *robotv1.DeleteRobotV1NotFound
-	if errors.As(err, &deleteRobotV1NotFoundErr) {
+	if _, ok := errors.AsType[*robotv1.DeleteRobotV1NotFound](err); ok {
 		return true
 	}
 
 	// Robot V2
-	var getRobotByIdNotFoundErr *robot.GetRobotByIDNotFound
-	if errors.As(err, &getRobotByIdNotFoundErr) {
+	if _, ok := errors.AsType[*robot.GetRobotByIDNotFound](err); ok {
 		return true
 	}
 
-	var listRobotNotFoundErr *robot.ListRobotNotFound
-	if errors.As(err, &listRobotNotFoundErr) {
+	if _, ok := errors.AsType[*robot.ListRobotNotFound](err); ok {
 		return true
 	}
 
-	var createRobotNotFoundErr *robot.CreateRobotNotFound
-	if errors.As(err, &createRobotNotFoundErr) {
+	if _, ok := errors.AsType[*robot.CreateRobotNotFound](err); ok {
 		return true
 	}
 
-	var updateRobotNotFoundErr *robot.UpdateRobotNotFound
-	if errors.As(err, &updateRobotNotFoundErr) {
+	if _, ok := errors.AsType[*robot.UpdateRobotNotFound](err); ok {
 		return true
 	}
 
-	var deleteRobotNotFoundErr *robot.DeleteRobotNotFound
-	if errors.As(err, &deleteRobotNotFoundErr) {
+	if _, ok := errors.AsType[*robot.DeleteRobotNotFound](err); ok {
 		return true
 	}
 
 	// Repository
-	var getRepositoryNotFoundErr *repository.GetRepositoryNotFound
-	if errors.As(err, &getRepositoryNotFoundErr) {
+	if _, ok := errors.AsType[*repository.GetRepositoryNotFound](err); ok {
 		return true
 	}
 
-	var listRepositoryNotFoundErr *repository.ListRepositoriesNotFound
-	if errors.As(err, &listRepositoryNotFoundErr) {
+	if _, ok := errors.AsType[*repository.ListRepositoriesNotFound](err); ok {
 		return true
 	}
 
-	var updateRepositoryNotFoundErr *repository.UpdateRepositoryNotFound
-	if errors.As(err, &updateRepositoryNotFoundErr) {
+	if _, ok := errors.AsType[*repository.UpdateRepositoryNotFound](err); ok {
 		return true
 	}
 
-	var deleteRepositoryNotFoundErr *repository.DeleteRepositoryNotFound
-	if errors.As(err, &deleteRepositoryNotFoundErr) {
+	if _, ok := errors.AsType[*repository.DeleteRepositoryNotFound](err); ok {
 		return true
 	}
 
 	// Webhook
-	var getPoliciesProjectNotFoundErr *webhook.GetWebhookPolicyOfProjectNotFound
-	if errors.As(err, &getPoliciesProjectNotFoundErr) {
+	if _, ok := errors.AsType[*webhook.GetWebhookPolicyOfProjectNotFound](err); ok {
 		return true
 	}
 
-	var updatePoliciesProjectNotFoundErr *webhook.UpdateWebhookPolicyOfProjectNotFound
-	if errors.As(err, &updatePoliciesProjectNotFoundErr) {
+	if _, ok := errors.AsType[*webhook.UpdateWebhookPolicyOfProjectNotFound](err); ok {
 		return true
 	}
 
-	var deletePoliciesProjectNotFoundErr *webhook.DeleteWebhookPolicyOfProjectNotFound
-	if errors.As(err, &deletePoliciesProjectNotFoundErr) {
+	if _, ok := errors.AsType[*webhook.DeleteWebhookPolicyOfProjectNotFound](err); ok {
 		return true
 	}
 
 	// Project
-	var updateProjectNotFoundErr *project.UpdateProjectNotFound
-	if errors.As(err, &updateProjectNotFoundErr) {
+	if _, ok := errors.AsType[*project.UpdateProjectNotFound](err); ok {
 		return true
 	}
 
-	var deleteProjectNotFoundErr *project.DeleteProjectNotFound
-	if errors.As(err, &deleteProjectNotFoundErr) {
+	if _, ok := errors.AsType[*project.DeleteProjectNotFound](err); ok {
 		return true
 	}
 

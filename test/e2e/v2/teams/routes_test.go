@@ -202,8 +202,8 @@ func TestUpdate(t *testing.T) {
 	})
 
 	requestBody := body.TeamUpdate{
-		Name:        e2e.StrPtr(e2e.GenName("new-team")),
-		Description: e2e.StrPtr(e2e.GenName("new-description")),
+		Name:        new(e2e.GenName("new-team")),
+		Description: new(e2e.GenName("new-description")),
 		Resources:   nil,
 		Members:     nil,
 	}

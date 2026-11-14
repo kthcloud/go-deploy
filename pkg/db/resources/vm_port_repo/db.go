@@ -20,7 +20,7 @@ var (
 
 // CreateIfNotExists creates the given port range if it does not already exist.
 func (client *Client) CreateIfNotExists(publicPortStart, publicPortEnd int, zone string) (int, error) {
-	toInsert := make([]interface{}, publicPortEnd-publicPortStart)
+	toInsert := make([]any, publicPortEnd-publicPortStart)
 	for i := range toInsert {
 		toInsert[i] = model.VmPort{
 			PublicPort: publicPortStart + i,

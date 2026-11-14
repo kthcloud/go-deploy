@@ -29,7 +29,7 @@ func CreateVM(job *model.Job) error {
 	id := job.Args["id"].(string)
 	ownerID := job.Args["ownerId"].(string)
 	var params body.VmCreate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -127,7 +127,7 @@ func UpdateVM(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 	var update body.VmUpdate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &update)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &update)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -167,7 +167,7 @@ func CreateGpuLease(job *model.Job) error {
 	id := job.Args["id"].(string)
 	userID := job.Args["userId"].(string)
 	var params body.GpuLeaseCreate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -197,7 +197,7 @@ func UpdateGpuLease(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 	var params body.GpuLeaseUpdate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -248,7 +248,7 @@ func CreateSystemVmSnapshot(job *model.Job) error {
 
 	vmID := job.Args["id"].(string)
 	var params model.CreateSnapshotParams
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -270,7 +270,7 @@ func CreateUserVmSnapshot(job *model.Job) error {
 
 	vmID := job.Args["id"].(string)
 	var params body.VmSnapshotCreate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -310,7 +310,7 @@ func DoVmAction(job *model.Job) error {
 
 	vmID := job.Args["id"].(string)
 	var params body.VmActionCreate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -332,7 +332,7 @@ func UpdateVmOwner(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 	var params model.VmUpdateOwnerParams
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}

@@ -33,7 +33,7 @@ func SmRepairScheduler() error {
 		jobID := uuid.New().String()
 		runAfter := GetRandomRunAfter(config.Config.Timer.SmRepair.Seconds())
 
-		err = job_repo.New().CreateScheduled(jobID, sm.OwnerID, model.JobRepairSM, version.V2, runAfter, map[string]interface{}{
+		err = job_repo.New().CreateScheduled(jobID, sm.OwnerID, model.JobRepairSM, version.V2, runAfter, map[string]any{
 			"id": sm.ID,
 		})
 		if err != nil {

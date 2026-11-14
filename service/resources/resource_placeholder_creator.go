@@ -8,7 +8,7 @@ import (
 // It contains the functions that should be used to create it.
 // A placeholder subsystem creator is essentially a normal subsystem creator without any public model
 type SsPlaceholderCreatorType struct {
-	dbFunc func(interface{}) error
+	dbFunc func(any) error
 }
 
 // SsPlaceholderCreator create a new creator that can be used for a single model
@@ -17,7 +17,7 @@ func SsPlaceholderCreator() *SsPlaceholderCreatorType {
 }
 
 // WithDbFunc sets the db func for the creator
-func (rc *SsPlaceholderCreatorType) WithDbFunc(dbFunc func(interface{}) error) *SsPlaceholderCreatorType {
+func (rc *SsPlaceholderCreatorType) WithDbFunc(dbFunc func(any) error) *SsPlaceholderCreatorType {
 	rc.dbFunc = dbFunc
 	return rc
 }

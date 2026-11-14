@@ -13,8 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Resource interface {
-}
+type Resource any
 
 type onlyID struct {
 	ID string `bson:"id"`
@@ -22,14 +21,14 @@ type onlyID struct {
 
 var ErrUniqueConstraint = errors.New("unique constraint error")
 
-func AddIfNotNil(data *bson.D, key string, value interface{}) {
-	if value == nil || (reflect.ValueOf(value).Kind() == reflect.Ptr && reflect.ValueOf(value).IsNil()) {
+func AddIfNotNil(data *bson.D, key string, value any) {
+	if value == nil || (reflect.ValueOf(value).Kind() == reflect.Pointer && reflect.ValueOf(value).IsNil()) {
 		return
 	}
 	*data = append(*data, bson.E{Key: key, Value: value})
 }
 
-func Add(data *bson.D, key string, value interface{}) {
+func Add(data *bson.D, key string, value any) {
 	*data = append(*data, bson.E{Key: key, Value: value})
 }
 

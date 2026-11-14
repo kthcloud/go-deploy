@@ -19,13 +19,13 @@ type FlagDefinition struct {
 	ValueType    string
 	FlagType     string
 	Description  string
-	DefaultValue interface{}
-	PassedValue  interface{}
+	DefaultValue any
+	PassedValue  any
 	Run          func(ctx context.Context, cancel context.CancelFunc)
 }
 
 // GetPassedValue returns the value passed to the flag.
-func (flag *FlagDefinition) GetPassedValue() interface{} {
+func (flag *FlagDefinition) GetPassedValue() any {
 	return flag.PassedValue
 }
 
@@ -35,7 +35,7 @@ type FlagDefinitionList []FlagDefinition
 func (list *FlagDefinitionList) IsPassed(name string) bool {
 	for _, flag := range *list {
 		if flag.Name == name {
-			return flag.GetPassedValue() != interface{}(nil)
+			return flag.GetPassedValue() != any(nil)
 		}
 	}
 
@@ -43,7 +43,7 @@ func (list *FlagDefinitionList) IsPassed(name string) bool {
 }
 
 // GetPassedValue returns the value passed to the flag.
-func (list *FlagDefinitionList) GetPassedValue(name string) interface{} {
+func (list *FlagDefinitionList) GetPassedValue(name string) any {
 	for _, flag := range *list {
 		if flag.Name == name {
 			return flag.GetPassedValue()
@@ -54,7 +54,7 @@ func (list *FlagDefinitionList) GetPassedValue(name string) interface{} {
 }
 
 // SetPassedValue sets the value passed to the flag.
-func (list *FlagDefinitionList) SetPassedValue(name string, value interface{}) {
+func (list *FlagDefinitionList) SetPassedValue(name string, value any) {
 	for idx, flag := range *list {
 		if flag.Name == name {
 			(*list)[idx].PassedValue = value

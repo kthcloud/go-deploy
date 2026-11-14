@@ -24,7 +24,7 @@ func VmStatusListener(ctx context.Context) error {
 		log.Println("Setting up VM status watcher for zone", zone.Name)
 
 		z := zone
-		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "vm", func(name string, incomingStatus interface{}) {
+		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "vm", func(name string, incomingStatus any) {
 			if status, ok := incomingStatus.(*model.VmStatus); ok {
 				kubeVirtStatus := parseVmStatus(status)
 				err := vm_repo.New(version.V2).SetWithBsonByName(name, bson.D{{Key: "status", Value: kubeVirtStatus}})
@@ -43,7 +43,7 @@ func VmStatusListener(ctx context.Context) error {
 			}
 		})
 
-		err = k8s_service.New().SetupStatusWatcher(ctx, &z, "vmi", func(name string, incomingStatus interface{}) {
+		err = k8s_service.New().SetupStatusWatcher(ctx, &z, "vmi", func(name string, incomingStatus any) {
 			if status, ok := incomingStatus.(*model.VmiStatus); ok {
 				if status.Host == nil {
 					err = vm_repo.New(version.V2).UnsetCurrentHost(name)

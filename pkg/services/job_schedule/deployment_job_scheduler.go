@@ -33,7 +33,7 @@ func DeploymentRepairScheduler() error {
 		jobID := uuid.New().String()
 		runAfter := GetRandomRunAfter(config.Config.Timer.DeploymentRepair.Seconds())
 
-		err = job_repo.New().CreateScheduled(jobID, deployment.OwnerID, model.JobRepairDeployment, version.V2, runAfter, map[string]interface{}{
+		err = job_repo.New().CreateScheduled(jobID, deployment.OwnerID, model.JobRepairDeployment, version.V2, runAfter, map[string]any{
 			"id": deployment.ID,
 		})
 		if err != nil {

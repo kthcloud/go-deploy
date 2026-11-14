@@ -68,12 +68,10 @@ func (kg *K8sGenerator) ResourceClaims() []models.ResourceClaimPublic {
 		}
 
 		rcer := &models.ResourceClaimExactlyRequestPublic{
-			ResourceClaimBaseRequestPublic: models.ResourceClaimBaseRequestPublic{
-				AllocationMode:   string(req.AllocationMode),
-				Count:            utils.ZeroDeref(req.Count),
-				DeviceClassName:  req.DeviceClassName,
-				SelectorCelExprs: req.Selectors,
-			},
+			AllocationMode:   string(req.AllocationMode),
+			Count:            utils.ZeroDeref(req.Count),
+			DeviceClassName:  req.DeviceClassName,
+			SelectorCelExprs: req.Selectors,
 		}
 		rcer.CapacityRequests = make(map[v1.QualifiedName]resource.Quantity, len(req.Capacity))
 		for k, v := range req.Capacity {

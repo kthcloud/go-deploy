@@ -44,11 +44,9 @@ func GetHostCapacities() ([]body.HostCapacities, error) {
 			GPU: body.GpuCapacities{
 				Total: hostApiCapacities.GPU.Count,
 			},
-			HostBase: body.HostBase{
-				Name:        host.Name,
-				DisplayName: host.DisplayName,
-				Zone:        host.Zone,
-			},
+			Name:        host.Name,
+			DisplayName: host.DisplayName,
+			Zone:        host.Zone,
 		}
 
 		mu.Lock()

@@ -67,7 +67,7 @@ func CreateVmAction(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDoVmAction, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDoVmAction, version.V2, map[string]any{
 		"id":       vm.ID,
 		"params":   requestBody,
 		"authInfo": auth,

@@ -7,7 +7,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
-	"github.com/kthcloud/go-deploy/utils"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 )
@@ -67,7 +67,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 		return nil, nil
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		vm, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), public.ID, metav1.GetOptions{})
 		if err != nil {
 			if IsNotFoundErr(err) {
@@ -139,7 +139,7 @@ func (client *Client) DeleteVMIs(vmID string) error {
 	}
 
 	err = client.KubeVirtK8sClient.KubevirtV1().VirtualMachineInstances(client.Namespace).Delete(context.TODO(), vm.Name, metav1.DeleteOptions{
-		GracePeriodSeconds: utils.Int64Ptr(0),
+		GracePeriodSeconds: new(int64(0)),
 	})
 	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
@@ -188,7 +188,7 @@ func (client *Client) ListVmiStatus() ([]*models.VmiStatus, error) {
 
 func (client *Client) waitVmDeleted(id string) error {
 	maxWait := 120
-	for i := 0; i < maxWait; i++ {
+	for range maxWait {
 		time.Sleep(1 * time.Second)
 		_, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), id, metav1.GetOptions{})
 		if err != nil && IsNotFoundErr(err) {

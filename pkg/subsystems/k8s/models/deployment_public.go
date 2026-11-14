@@ -1,6 +1,7 @@
 package models
 
 import (
+	"slices"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -185,8 +186,8 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	}
 
 	// Delete any k8sVolumes that does not have a mount path, they need to be recreated
-	for i := len(volumes) - 1; i >= 0; i-- {
-		if volumes[i].MountPath == "" {
+	for i, volume := range slices.Backward(volumes) {
+		if volume.MountPath == "" {
 			volumes = append(volumes[:i], volumes[i+1:]...)
 		}
 	}

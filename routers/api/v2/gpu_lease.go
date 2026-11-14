@@ -122,7 +122,7 @@ func ListGpuLeases(c *gin.Context) {
 	}
 
 	if gpuLeases == nil {
-		context.Ok([]interface{}{})
+		context.Ok([]any{})
 		return
 	}
 
@@ -217,7 +217,7 @@ func CreateGpuLease(c *gin.Context) {
 
 	gpuLeaseID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateGpuLease, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateGpuLease, version.V2, map[string]any{
 		"id":       gpuLeaseID,
 		"userId":   auth.User.ID,
 		"params":   requestBody,
@@ -290,7 +290,7 @@ func UpdateGpuLease(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateGpuLease, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateGpuLease, version.V2, map[string]any{
 		"id":       gpuLease.ID,
 		"params":   requestBody,
 		"authInfo": auth,
@@ -349,7 +349,7 @@ func DeleteGpuLease(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuLease, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuLease, version.V2, map[string]any{
 		"id":       gpuLease.ID,
 		"authInfo": auth,
 	})

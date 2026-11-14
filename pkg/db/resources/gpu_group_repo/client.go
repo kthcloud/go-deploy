@@ -15,9 +15,7 @@ type Client struct {
 // New returns a new GPU group client.
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[model.GpuGroup]{
-			Collection: db.DB.GetCollection("gpuGroups"),
-		},
+		Collection: db.DB.GetCollection("gpuGroups"),
 	}
 }
 

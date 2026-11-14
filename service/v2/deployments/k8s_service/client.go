@@ -41,8 +41,8 @@ func OptsNoGenerator(deploymentID string, overwriteOps ...opts.ExtraOpts) *opts.
 
 func OptsOnlyClient(zone *configModels.Zone) *opts.Opts {
 	return &opts.Opts{
-		Client:    true,
-		ExtraOpts: opts.ExtraOpts{Zone: zone},
+		Client: true,
+		Zone:   zone,
 	}
 }
 

@@ -107,7 +107,7 @@ func ListJobs(c *gin.Context) {
 	}
 
 	if jobList == nil {
-		context.Ok(make([]interface{}, 0))
+		context.Ok(make([]any, 0))
 		return
 	}
 

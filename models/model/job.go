@@ -70,11 +70,11 @@ const (
 )
 
 type Job struct {
-	ID      string                 `bson:"id"`
-	UserID  string                 `bson:"userId"`
-	Type    string                 `bson:"type"`
-	Args    map[string]interface{} `bson:"args"`
-	Version string                 `bson:"version"`
+	ID      string         `bson:"id"`
+	UserID  string         `bson:"userId"`
+	Type    string         `bson:"type"`
+	Args    map[string]any `bson:"args"`
+	Version string         `bson:"version"`
 
 	CreatedAt  time.Time `bson:"createdAt"`
 	LastRunAt  time.Time `bson:"lastRunAt,omitempty"`

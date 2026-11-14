@@ -82,8 +82,7 @@ func HandleHarborHook(c *gin.Context) {
 
 		err = deployV2.Deployments().Restart(deployment.ID)
 		if err != nil {
-			var failedToStartActivityErr *sErrors.FailedToStartActivityError
-			if errors.As(err, &failedToStartActivityErr) {
+			if failedToStartActivityErr, ok := errors.AsType[*sErrors.FailedToStartActivityError](err); ok {
 				context.Locked(failedToStartActivityErr.Error())
 				return
 			}

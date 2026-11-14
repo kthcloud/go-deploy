@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -52,13 +53,7 @@ func SetupAuthUser(c *gin.Context) {
 			return
 		}
 
-		isAdmin := false
-		for _, group := range jwtToken.Groups {
-			if group == config.Config.Keycloak.AdminGroup {
-				isAdmin = true
-				break
-			}
-		}
+		isAdmin := slices.Contains(jwtToken.Groups, config.Config.Keycloak.AdminGroup)
 
 		authParams := &model.AuthParams{
 			UserID:    jwtToken.Sub,

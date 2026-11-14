@@ -194,11 +194,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				userEmailMap[kg.deployment.OwnerID] = ownerEmail
 			}
 
-			command := "mkdir -p /mnt/config && echo \""
+			var command strings.Builder
+			command.WriteString("mkdir -p /mnt/config && echo \"")
 			for _, email := range userEmailMap {
-				command += email + "\n"
+				command.WriteString(email + "\n")
 			}
-			command += "\" > /mnt/config/authenticated-emails-list"
+			command.WriteString("\" > /mnt/config/authenticated-emails-list")
 
 			var redirectURL string
 			if mainApp.CustomDomain != nil {
@@ -252,7 +253,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				InitContainers: []models.InitContainer{{
 					Name:    "oauth-proxy-config-init",
 					Image:   "busybox",
-					Command: []string{"sh", "-c", command},
+					Command: []string{"sh", "-c", command.String()},
 					Args:    nil,
 				}},
 				Volumes: []models.Volume{
@@ -745,9 +746,9 @@ func authProxyName(name string) string {
 
 // encodeDockerConfig encodes docker config to json to be able to use it as a secret
 func encodeDockerConfig(registry, username, password string) []byte {
-	dockerConfig := map[string]interface{}{
-		"auths": map[string]interface{}{
-			registry: map[string]interface{}{
+	dockerConfig := map[string]any{
+		"auths": map[string]any{
+			registry: map[string]any{
 				"username": username,
 				"password": password,
 				"auth":     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),

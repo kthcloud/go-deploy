@@ -20,9 +20,7 @@ func New(n ...int) *Client {
 	}
 
 	return &Client{
-		TimestampedResourceClient: base_clients.TimestampedResourceClient[body.TimestampedSystemGpuInfo]{
-			Collection:   db.DB.GetCollection("systemGpuInfo"),
-			MaxDocuments: maxDocs,
-		},
+		Collection:   db.DB.GetCollection("systemGpuInfo"),
+		MaxDocuments: maxDocs,
 	}
 }

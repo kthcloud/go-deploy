@@ -9,8 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Resource interface {
-}
+type Resource any
 
 // ResourceClient is a type of base client that adds methods to manage a model in the database.
 // It includes many useful operations such as listing, searching, and pagination.
@@ -219,7 +218,7 @@ func (client *ResourceClient[T]) DeleteByID(id string) error {
 func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 	filter := bson.D{
 		{Key: "id", Value: id},
-		{Key: "deletedAt", Value: bson.M{"$nin": []interface{}{nil, time.Time{}}}},
+		{Key: "deletedAt", Value: bson.M{"$nin": []any{nil, time.Time{}}}},
 	}
 	count, err := db.CountResources(client.Collection, db.GroupFilters(filter, client.ExtraFilter, client.Search, true))
 	if err != nil {

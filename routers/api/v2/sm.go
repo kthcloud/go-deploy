@@ -104,7 +104,7 @@ func ListSMs(c *gin.Context) {
 	}
 
 	if len(smList) == 0 {
-		context.JSONResponse(200, []interface{}{})
+		context.JSONResponse(200, []any{})
 		return
 	}
 
@@ -159,7 +159,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteSM, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteSM, version.V2, map[string]any{
 		"id":      sm.ID,
 		"ownerId": sm.OwnerID,
 	})

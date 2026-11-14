@@ -149,8 +149,8 @@ func (c *Client) Generator(gc *model.GpuClaim, client *k8s.Client, zone *configM
 
 func OptsOnlyClient(zone *configModels.Zone) *opts.Opts {
 	return &opts.Opts{
-		Client:    true,
-		ExtraOpts: opts.ExtraOpts{Zone: zone},
+		Client: true,
+		Zone:   zone,
 	}
 }
 

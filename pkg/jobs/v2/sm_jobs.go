@@ -27,7 +27,7 @@ func CreateSM(job *model.Job) error {
 	userID := job.Args["userId"].(string)
 
 	var params model.SmCreateParams
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	err = mapstructure.Decode(job.Args["params"].(map[string]any), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}

@@ -393,7 +393,7 @@ func (c *Client) createMemberIfAccessible(current *model.Team, memberID string) 
 func (c *Client) createInvitationNotification(userID, teamID, teamName, invitationCode string) error {
 	_, err := c.V2.Notifications().Create(uuid.NewString(), userID, &model.NotificationCreateParams{
 		Type: model.NotificationTeamInvite,
-		Content: map[string]interface{}{
+		Content: map[string]any{
 			"id":   teamID,
 			"name": teamName,
 			"code": invitationCode,

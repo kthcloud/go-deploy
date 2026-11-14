@@ -22,7 +22,7 @@ func DeploymentStatusListener(ctx context.Context) error {
 		log.Println("Setting up deployment status watcher for zone", zone.Name)
 
 		z := zone
-		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "deployment", func(name string, incomingStatus interface{}) {
+		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "deployment", func(name string, incomingStatus any) {
 			if status, ok := incomingStatus.(*model.DeploymentStatus); ok {
 				deploymentStatus := parseDeploymentStatus(status)
 
@@ -63,7 +63,7 @@ func DeploymentEventListener(ctx context.Context) error {
 		log.Println("Setting up deployment event listener for zone", zone.Name)
 
 		z := zone
-		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "event", func(name string, incomingStatus interface{}) {
+		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "event", func(name string, incomingStatus any) {
 			if event, ok := incomingStatus.(*model.DeploymentEvent); ok {
 				if event.Type != models.EventTypeWarning {
 					return

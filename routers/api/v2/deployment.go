@@ -135,7 +135,7 @@ func ListDeployments(c *gin.Context) {
 	}
 
 	if deployments == nil {
-		context.JSONResponse(200, []interface{}{})
+		context.JSONResponse(200, []any{})
 		return
 	}
 
@@ -258,8 +258,7 @@ func CreateDeployment(c *gin.Context) {
 
 	err = deployV2.Deployments().CheckQuota("", &opts.QuotaOptions{Create: &requestBody})
 	if err != nil {
-		var quotaExceededErr sErrors.QuotaExceededError
-		if errors.As(err, &quotaExceededErr) {
+		if quotaExceededErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceededErr.Error())
 			return
 		}
@@ -270,7 +269,7 @@ func CreateDeployment(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateDeployment, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateDeployment, version.V2, map[string]any{
 		"id":       deploymentID,
 		"ownerId":  auth.User.ID,
 		"params":   requestBody,
@@ -338,8 +337,7 @@ func DeleteDeployment(c *gin.Context) {
 
 	err = deployV2.Deployments().StartActivity(requestURI.DeploymentID, model.ActivityBeingDeleted)
 	if err != nil {
-		var failedToStartActivityErr sErrors.FailedToStartActivityError
-		if errors.As(err, &failedToStartActivityErr) {
+		if failedToStartActivityErr, ok := errors.AsType[sErrors.FailedToStartActivityError](err); ok {
 			context.Locked(failedToStartActivityErr.Error())
 			return
 		}
@@ -354,7 +352,7 @@ func DeleteDeployment(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteDeployment, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteDeployment, version.V2, map[string]any{
 		"id":       currentDeployment.ID,
 		"ownerId":  auth.User.ID,
 		"authInfo": auth,
@@ -452,8 +450,7 @@ func UpdateDeployment(c *gin.Context) {
 
 	err = deployV2.Deployments().CheckQuota(requestURI.DeploymentID, &opts.QuotaOptions{Update: &requestBody})
 	if err != nil {
-		var quotaExceededErr sErrors.QuotaExceededError
-		if errors.As(err, &quotaExceededErr) {
+		if quotaExceededErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceededErr.Error())
 			return
 		}
@@ -469,7 +466,7 @@ func UpdateDeployment(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateDeployment, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateDeployment, version.V2, map[string]any{
 		"id":       deployment.ID,
 		"params":   requestBody,
 		"authInfo": auth,

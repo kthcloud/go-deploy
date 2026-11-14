@@ -107,7 +107,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	t.Parallel()
 
 	longName := body.DeploymentCreate{Name: "e2e-"}
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		longName.Name += uuid.NewString()
 	}
 	v2.WithAssumedFailedDeployment(t, longName)

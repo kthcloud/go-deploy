@@ -17,11 +17,11 @@ var metricsFuncMap = map[string]func() error{
 	"monthly-active-users": monthlyActiveUsers,
 	"daily-active-users":   dailyActiveUsers,
 	"jobs-total":           jobMetrics(metrics.KeyJobsTotal, nil),
-	"jobs-pending":         jobMetrics(metrics.KeyJobsPending, strPtr(model.JobStatusPending)),
-	"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(model.JobStatusRunning)),
-	"jobs-failed":          jobMetrics(metrics.KeyJobsFailed, strPtr(model.JobStatusFailed)),
-	"jobs-terminated":      jobMetrics(metrics.KeyJobsTerminated, strPtr(model.JobStatusTerminated)),
-	"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(model.JobStatusCompleted)),
+	"jobs-pending":         jobMetrics(metrics.KeyJobsPending, new(model.JobStatusPending)),
+	"jobs-running":         jobMetrics(metrics.KeyJobsRunning, new(model.JobStatusRunning)),
+	"jobs-failed":          jobMetrics(metrics.KeyJobsFailed, new(model.JobStatusFailed)),
+	"jobs-terminated":      jobMetrics(metrics.KeyJobsTerminated, new(model.JobStatusTerminated)),
+	"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, new(model.JobStatusCompleted)),
 }
 
 // MetricsUpdater is a worker that updates metrics.
@@ -106,6 +106,8 @@ func jobMetrics(key string, status *string) func() error {
 }
 
 // strPtr is a helper function that returns a pointer to a string.
+//
+//go:fix inline
 func strPtr(s string) *string {
-	return &s
+	return new(s)
 }

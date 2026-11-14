@@ -48,7 +48,7 @@ func (client *Client) List(pattern string) ([]string, error) {
 }
 
 // Set sets the value of the given key.
-func (client *Client) Set(key string, value interface{}, expiration time.Duration) error {
+func (client *Client) Set(key string, value any, expiration time.Duration) error {
 	return client.RedisClient.Set(context.TODO(), key, value, expiration).Err()
 }
 
@@ -58,12 +58,12 @@ func (client *Client) Del(key string) error {
 }
 
 // SetNX sets the value of the given key if it does not exist.
-func (client *Client) SetNX(key string, value interface{}, expiration time.Duration) (bool, error) {
+func (client *Client) SetNX(key string, value any, expiration time.Duration) (bool, error) {
 	return client.RedisClient.SetNX(context.TODO(), key, value, expiration).Result()
 }
 
 // SetXX sets the value of the given key if it exists.
-func (client *Client) SetXX(key string, value interface{}, expiration time.Duration) (bool, error) {
+func (client *Client) SetXX(key string, value any, expiration time.Duration) (bool, error) {
 	return client.RedisClient.SetXX(context.TODO(), key, value, expiration).Result()
 }
 

@@ -9,8 +9,7 @@ import (
 
 // IsNotFoundErr returns true if the error is a Kubernetes NotFound error.
 func IsNotFoundErr(err error) bool {
-	var statusError *k8sErrors.StatusError
-	if errors.As(err, &statusError) {
+	if statusError, ok := errors.AsType[*k8sErrors.StatusError](err); ok {
 		if statusError.ErrStatus.Reason == v1.StatusReasonNotFound {
 			return true
 		}

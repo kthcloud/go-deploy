@@ -18,11 +18,9 @@ type Client struct {
 // New returns a new job client.
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[model.Job]{
-			Collection:     db.DB.GetCollection("jobs"),
-			IncludeDeleted: false,
-			Pagination:     nil,
-		},
+		Collection:     db.DB.GetCollection("jobs"),
+		IncludeDeleted: false,
+		Pagination:     nil,
 	}
 }
 
@@ -76,7 +74,7 @@ func (client *Client) ExcludeTypes(types ...string) *Client {
 }
 
 // FilterArgs adds a filter to the client to only include jobs with the given args.
-func (client *Client) FilterArgs(argName string, filter interface{}) *Client {
+func (client *Client) FilterArgs(argName string, filter any) *Client {
 	client.AddExtraFilter(bson.D{{Key: "args." + argName, Value: filter}})
 
 	return client

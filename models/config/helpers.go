@@ -1,6 +1,8 @@
 package config
 
 import (
+	"slices"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -126,10 +128,5 @@ func (c *ConfigType) GetZone(name string) *Zone {
 // If the capability is not found, false is returned.
 // All capabilities are loaded locally by the configuration file
 func (z *Zone) HasCapability(capability string) bool {
-	for _, c := range z.Capabilities {
-		if c == capability {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(z.Capabilities, capability)
 }

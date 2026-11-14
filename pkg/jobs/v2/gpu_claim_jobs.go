@@ -132,12 +132,10 @@ func DecodeGpuClaimCreateParams(raw map[string]any) (model.GpuClaimCreateParams,
 
 	for i, r := range temp.Requested {
 		req := model.RequestedGpuCreate{
-			RequestedGpu: model.RequestedGpu{
-				AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
-				DeviceClassName: r.DeviceClassName,
-				Count:           r.Count,
-				Selectors:       r.Selectors,
-			},
+			AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
+			DeviceClassName: r.DeviceClassName,
+			Count:           r.Count,
+			Selectors:       r.Selectors,
 
 			Name: r.Name,
 		}
@@ -208,12 +206,10 @@ func DecodeGpuClaimUpdateParams(raw map[string]any) (model.GpuClaimUpdateParams,
 
 		for i, r := range *temp.Requested {
 			req := model.RequestedGpuCreate{
-				RequestedGpu: model.RequestedGpu{
-					AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
-					DeviceClassName: r.DeviceClassName,
-					Count:           r.Count,
-					Selectors:       r.Selectors,
-				},
+				AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
+				DeviceClassName: r.DeviceClassName,
+				Count:           r.Count,
+				Selectors:       r.Selectors,
 
 				Name: r.Name,
 			}

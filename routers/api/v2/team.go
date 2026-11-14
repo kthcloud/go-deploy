@@ -312,14 +312,12 @@ func getMember(member *model.TeamMember) *body.TeamMember {
 	}
 
 	return &body.TeamMember{
-		UserReadDiscovery: body.UserReadDiscovery{
-			ID:          user.ID,
-			Username:    user.Username,
-			Email:       user.Email,
-			FirstName:   user.FirstName,
-			LastName:    user.LastName,
-			GravatarURL: user.Gravatar.URL,
-		},
+		ID:           user.ID,
+		Username:     user.Username,
+		Email:        user.Email,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		GravatarURL:  user.Gravatar.URL,
 		TeamRole:     member.TeamRole,
 		JoinedAt:     joinedAt,
 		AddedAt:      addedAt,

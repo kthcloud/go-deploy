@@ -32,20 +32,16 @@ func (host *Host) ApiURL() string {
 
 func (host *Host) ToDTO() body.HostRead {
 	return body.HostRead{
-		HostBase: body.HostBase{
-			Name:        host.Name,
-			DisplayName: host.DisplayName,
-			Zone:        host.Zone,
-		},
+		Name:        host.Name,
+		DisplayName: host.DisplayName,
+		Zone:        host.Zone,
 	}
 }
 func (host *Host) ToVerboseDTO() body.HostVerboseRead {
 	return body.HostVerboseRead{
-		HostBase: body.HostBase{
-			Name:        host.Name,
-			DisplayName: host.DisplayName,
-			Zone:        host.Zone,
-		},
+		Name:             host.Name,
+		DisplayName:      host.DisplayName,
+		Zone:             host.Zone,
 		IP:               host.IP,
 		Port:             host.Port,
 		Enabled:          host.Enabled,

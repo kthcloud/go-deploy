@@ -80,12 +80,12 @@ func (context *ClientContext) ErrorResponse(httpCode int, errCode int, message s
 }
 
 // JSONResponse is a helper function to return a JSON response.
-func (context *ClientContext) JSONResponse(httpCode int, data interface{}) {
+func (context *ClientContext) JSONResponse(httpCode int, data any) {
 	context.GinContext.JSON(httpCode, data)
 }
 
 // Ok is a helper function to return an OK response.
-func (context *ClientContext) Ok(data interface{}) {
+func (context *ClientContext) Ok(data any) {
 	context.GinContext.JSON(http.StatusOK, data)
 }
 
@@ -125,6 +125,6 @@ func (context *ClientContext) NotImplemented() {
 }
 
 // OkCreated is a helper function to return a created response.
-func (context *ClientContext) OkCreated(data interface{}) {
+func (context *ClientContext) OkCreated(data any) {
 	context.GinContext.JSON(http.StatusCreated, data)
 }

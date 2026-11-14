@@ -677,13 +677,13 @@ func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error 
 
 // SetupStatusWatcher sets up a status watcher for a zone.
 // For every status change, it triggers the callback.
-func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, interface{})) error {
+func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, any)) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
 	if err != nil {
 		return err
 	}
 
-	handler := func(name string, incomingStatus interface{}) {
+	handler := func(name string, incomingStatus any) {
 		if vmStatus, ok := incomingStatus.(*k8sModels.VmStatus); ok {
 			callback(name, &model.VmStatus{
 				Name:            vmStatus.Name,
@@ -749,8 +749,8 @@ func (c *Client) ListVmiStatus(zone *configModels.Zone) ([]model.VmiStatus, erro
 }
 
 // dbFunc returns a function that updates the K8s subsystem.
-func dbFunc(id, key string) func(interface{}) error {
-	return func(data interface{}) error {
+func dbFunc(id, key string) func(any) error {
+	return func(data any) error {
 		if data == nil {
 			return vm_repo.New(version.V2).DeleteSubsystem(id, "k8s."+key)
 		}

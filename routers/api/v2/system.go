@@ -35,7 +35,7 @@ func ListSystemCapacities(c *gin.Context) {
 	}
 
 	if capacities == nil {
-		context.JSONResponse(200, make([]interface{}, 0))
+		context.JSONResponse(200, make([]any, 0))
 		return
 	}
 
@@ -68,7 +68,7 @@ func ListSystemStats(c *gin.Context) {
 	}
 
 	if stats == nil {
-		context.JSONResponse(200, make([]interface{}, 0))
+		context.JSONResponse(200, make([]any, 0))
 		return
 	}
 
@@ -101,7 +101,7 @@ func ListSystemStatus(c *gin.Context) {
 	}
 
 	if status == nil {
-		context.JSONResponse(200, make([]interface{}, 0))
+		context.JSONResponse(200, make([]any, 0))
 		return
 	}
 

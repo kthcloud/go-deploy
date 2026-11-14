@@ -66,7 +66,7 @@ func GetTokenContainer(token *oauth2.Token, config KeycloakConfig) (*TokenContai
 	}, nil
 }
 
-func getPublicKey(keyId string, config KeycloakConfig) (interface{}, error) {
+func getPublicKey(keyId string, config KeycloakConfig) (any, error) {
 
 	keyEntry, err := getPublicKeyFromCacheOrBackend(keyId, config)
 	if err != nil {
@@ -189,7 +189,7 @@ func decodeToken(token *oauth2.Token, config KeycloakConfig) (*KeycloakToken, er
 	return nil, fmt.Errorf("invalid JWT or claims")
 }
 
-func mapToStruct(m jwt.MapClaims, v interface{}) error {
+func mapToStruct(m jwt.MapClaims, v any) error {
 	data, err := json.Marshal(m)
 	if err != nil {
 		return err

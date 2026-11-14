@@ -139,7 +139,7 @@ func ListUsers(c *gin.Context) {
 		}
 
 		if userList == nil {
-			context.Ok([]interface{}{})
+			context.Ok([]any{})
 			return
 		}
 

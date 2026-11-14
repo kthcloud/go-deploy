@@ -170,11 +170,9 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 			}
 
 			result.HostGpuInfo = append(result.HostGpuInfo, body.HostGpuInfo{
-				HostBase: body.HostBase{
-					Name:        "Mock Host 1",
-					DisplayName: "Mock Host 1",
-					Zone:        zone.Name,
-				},
+				Name:        "Mock Host 1",
+				DisplayName: "Mock Host 1",
+				Zone:        zone.Name,
 				GPUs: []body.GpuInfo{{
 					Name:        "Mock GPU 1",
 					Vendor:      "NVIDIA",
@@ -191,11 +189,9 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 			})
 
 			result.HostGpuInfo = append(result.HostGpuInfo, body.HostGpuInfo{
-				HostBase: body.HostBase{
-					Name:        "Mock Host 2",
-					DisplayName: "Mock Host 2",
-					Zone:        zone.Name,
-				},
+				Name:        "Mock Host 2",
+				DisplayName: "Mock Host 2",
+				Zone:        zone.Name,
 				GPUs: []body.GpuInfo{{
 					Name:        "Mock GPU 1",
 					Vendor:      "NVIDIA",

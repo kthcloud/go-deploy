@@ -134,7 +134,7 @@ func ListVMs(c *gin.Context) {
 	}
 
 	if vms == nil {
-		context.Ok([]interface{}{})
+		context.Ok([]any{})
 		return
 	}
 
@@ -228,8 +228,7 @@ func CreateVM(c *gin.Context) {
 
 	err = deployV2.VMs().CheckQuota("", auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
 	if err != nil {
-		var quotaExceedErr sErrors.QuotaExceededError
-		if errors.As(err, &quotaExceedErr) {
+		if quotaExceedErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceedErr.Error())
 			return
 		}
@@ -240,7 +239,7 @@ func CreateVM(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateVM, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateVM, version.V2, map[string]any{
 		"id":       vmID,
 		"ownerId":  auth.User.ID,
 		"params":   requestBody,
@@ -306,7 +305,7 @@ func DeleteVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVM, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVM, version.V2, map[string]any{
 		"id":       vm.ID,
 		"authInfo": auth,
 	})
@@ -410,8 +409,7 @@ func UpdateVM(c *gin.Context) {
 
 	err = deployV2.VMs().CheckQuota(vm.ID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
-		var quotaExceededErr sErrors.QuotaExceededError
-		if errors.As(err, &quotaExceededErr) {
+		if quotaExceededErr, ok := errors.AsType[sErrors.QuotaExceededError](err); ok {
 			context.Forbidden(quotaExceededErr.Error())
 			return
 		}
@@ -421,7 +419,7 @@ func UpdateVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateVM, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateVM, version.V2, map[string]any{
 		"id":       vm.ID,
 		"params":   requestBody,
 		"authInfo": auth,

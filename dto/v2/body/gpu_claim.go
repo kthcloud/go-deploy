@@ -135,7 +135,7 @@ func (w GpuDeviceConfigurationWrapper) MarshalBSON() ([]byte, error) {
 
 // UnmarshalBSON implements bson.Unmarshaler
 func (w *GpuDeviceConfigurationWrapper) UnmarshalBSON(data []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := bson.Unmarshal(data, &raw); err != nil {
 		return err
 	}

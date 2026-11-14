@@ -8,28 +8,28 @@ import (
 )
 
 // TimeGTE checks if the first time is greater than the second time
-func TimeGTE(t *testing.T, expected, actual time.Time, msgAndArgs ...interface{}) {
+func TimeGTE(t *testing.T, expected, actual time.Time, msgAndArgs ...any) {
 	t.Helper()
 
 	assert.True(t, actual.After(expected) || actual.Equal(expected), msgAndArgs)
 }
 
 // TimeEq checks if two times are equal
-func TimeEq(t *testing.T, expected, actual time.Time, msgAndArgs ...interface{}) {
+func TimeEq(t *testing.T, expected, actual time.Time, msgAndArgs ...any) {
 	t.Helper()
 
 	assert.True(t, expected.Equal(actual), msgAndArgs)
 }
 
 // TimeNotZero checks if the time is not zero
-func TimeNotZero(t *testing.T, actual time.Time, msgAndArgs ...interface{}) {
+func TimeNotZero(t *testing.T, actual time.Time, msgAndArgs ...any) {
 	t.Helper()
 
 	assert.NotEqual(t, time.Time{}, actual, msgAndArgs)
 }
 
 // EqualOrEmpty checks if two lists are equal, where [] == nil
-func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) {
+func EqualOrEmpty(t *testing.T, expected, actual any, msgAndArgs ...any) {
 	t.Helper()
 
 	// Check if "expected" is a slice, and if so, check how many elements it has
@@ -47,7 +47,7 @@ func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...inte
 }
 
 // NoError fails the test if there is an error
-func NoError(t *testing.T, err error, msgAndArgs ...interface{}) {
+func NoError(t *testing.T, err error, msgAndArgs ...any) {
 	t.Helper()
 
 	if err != nil {

@@ -28,7 +28,7 @@ func Created(resource SsResource) bool {
 
 // NotNil returns true if the model is not nil.
 func NotNil(resource SsResource) bool {
-	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
+	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Pointer && reflect.ValueOf(resource).IsNil()) {
 		return false
 	}
 	return true

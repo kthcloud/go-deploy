@@ -3,6 +3,7 @@ package deployments
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"time"
 
@@ -187,13 +188,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 				}
 
 				// Skip existing non-shared resources
-				skip := false
-				for _, skipID := range skipIDs {
-					if resource.ID == skipID {
-						skip = true
-						break
-					}
-				}
+				skip := slices.Contains(skipIDs, resource.ID)
 				if skip {
 					continue
 				}

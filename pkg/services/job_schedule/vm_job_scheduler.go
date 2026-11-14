@@ -33,7 +33,7 @@ func VmRepairScheduler() error {
 		jobID := uuid.New().String()
 		runAfter := GetRandomRunAfter(config.Config.Timer.VmRepair.Seconds())
 
-		err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, version.V2, runAfter, map[string]interface{}{
+		err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, version.V2, runAfter, map[string]any{
 			"id": vm.ID,
 		})
 		if err != nil {

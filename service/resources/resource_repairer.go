@@ -21,7 +21,7 @@ type SsRepairerType[idType any, T subsystems.SsResource] struct {
 	genPublic     T
 	genPublicFunc func() T
 
-	dbFunc     func(interface{}) error
+	dbFunc     func(any) error
 	fetchFunc  func(idType) (T, error)
 	createFunc func(T) (T, error)
 	updateFunc func(T) (T, error)
@@ -51,7 +51,7 @@ func (rc *SsRepairerType[idType, T]) WithResourceID(resourceID idType) *SsRepair
 }
 
 // WithDbFunc sets the db func for the repairer
-func (rc *SsRepairerType[idType, T]) WithDbFunc(dbFunc func(interface{}) error) *SsRepairerType[idType, T] {
+func (rc *SsRepairerType[idType, T]) WithDbFunc(dbFunc func(any) error) *SsRepairerType[idType, T] {
 	rc.dbFunc = dbFunc
 	return rc
 }

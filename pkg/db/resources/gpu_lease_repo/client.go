@@ -17,9 +17,7 @@ type Client struct {
 // New returns a new GPU lease client.
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[model.GpuLease]{
-			Collection: db.DB.GetCollection("gpuLeases"),
-		},
+		Collection: db.DB.GetCollection("gpuLeases"),
 	}
 }
 
