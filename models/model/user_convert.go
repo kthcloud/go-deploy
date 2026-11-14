@@ -3,20 +3,12 @@ package model
 import (
 	"math"
 
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/log"
 )
 
 // ToDTO converts a User to a body.UserRead DTO.
 func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *string) body.UserRead {
-	publicKeys := make([]body.PublicKey, len(user.PublicKeys))
-	for i, key := range user.PublicKeys {
-		publicKeys[i] = body.PublicKey{
-			Name: key.Name,
-			Key:  key.Key,
-		}
-	}
-
 	if usage == nil {
 		usage = &UserUsage{}
 	}
@@ -29,23 +21,6 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 		}
 	}
 
-	apiKeys := make([]body.ApiKey, len(user.ApiKeys))
-	for i, key := range user.ApiKeys {
-		apiKeys[i] = body.ApiKey{
-			Name:      key.Name,
-			CreatedAt: key.CreatedAt,
-			ExpiresAt: key.ExpiresAt,
-		}
-	}
-
-	userData := make([]body.UserData, len(user.UserData))
-	for i, data := range user.UserData {
-		userData[i] = body.UserData{
-			Key:   data.Key,
-			Value: data.Value,
-		}
-	}
-
 	userRead := body.UserRead{
 		ID:          user.ID,
 		Username:    user.Username,
@@ -54,9 +29,9 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 		LastName:    user.LastName,
 		GravatarURL: user.Gravatar.URL,
 
-		PublicKeys: publicKeys,
-		ApiKeys:    apiKeys,
-		UserData:   userData,
+		PublicKeys: dtoConverter.PublicKeysToDTO(user.PublicKeys),
+		ApiKeys:    dtoConverter.ApiKeysToDTO(user.ApiKeys),
+		UserData:   dtoConverter.UserDataSliceToDTO(user.UserData),
 
 		Role:  effectiveRole.ToDTO(false),
 		Admin: user.IsAdmin,

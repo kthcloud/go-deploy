@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="Load go-deploy image into kind cluster"
+set -euo pipefail
+
+CLUSTER_NAME="${1:-go-deploy-dev}"
+IMAGE="${2:-ghcr.io/kthcloud/go-deploy:latest}"
+
+echo "Loading ${IMAGE} into kind cluster '${CLUSTER_NAME}'..."
+kind load docker-image "${IMAGE}" --name "${CLUSTER_NAME}"

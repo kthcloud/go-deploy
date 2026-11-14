@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_lease_repo"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"

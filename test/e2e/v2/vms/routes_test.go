@@ -1,8 +1,10 @@
+//go:build e2e
+
 package vms
 
 import (
 	"github.com/google/uuid"
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/test/e2e"
 	"github.com/kthcloud/go-deploy/test/e2e/v2"

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#MISE description="Generate config.local.yml from template"
+set -euo pipefail
+
+TEMPLATE="environments/dev/config.local.yml.tmpl"
+TARGET="config.local.yml"
+
+if [[ -f "$TARGET" && "${1:-}" != "--force" ]]; then
+  echo "$TARGET already exists (pass --force to overwrite)."
+  exit 0
+fi
+
+cp "$TEMPLATE" "$TARGET"
+echo "Generated $TARGET from $TEMPLATE"

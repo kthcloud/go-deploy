@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#MISE description="Create kind cluster"
+set -euo pipefail
+
+CLUSTER_NAME="${1:-go-deploy-dev}"
+CONFIG_FILE="${2:-kind.yaml}"
+TIMEOUT="${3:-120}"
+KUBECONFIG_FILE="${4:-.secrets/${CLUSTER_NAME}-kubeconfig}"
+
+if kind get clusters | grep -q "^${CLUSTER_NAME}$"; then
+  echo "Kind cluster '${CLUSTER_NAME}' already exists. Skipping creation."
+else
+  echo "Creating kind cluster '${CLUSTER_NAME}'..."
+  kind create cluster --name "${CLUSTER_NAME}" --config "${CONFIG_FILE}"
+  echo "Kind cluster '${CLUSTER_NAME}' created!"
+fi
+
+mkdir -p "$(dirname "${KUBECONFIG_FILE}")"
+
+if [[ ! -s "$KUBECONFIG_FILE" ]]; then
+  echo "Exporting kubeconfig to $KUBECONFIG_FILE"
+  kind get kubeconfig --name "$CLUSTER_NAME" > "${KUBECONFIG_FILE}.tmp" && mv "${KUBECONFIG_FILE}.tmp" "$KUBECONFIG_FILE"
+fi
+
+export KUBECONFIG="$KUBECONFIG_FILE"
+
+echo "Waiting for all nodes to be Ready..."
+end=$((SECONDS + TIMEOUT))
+while true; do
+  not_ready=$(kubectl get nodes --no-headers 2>/dev/null | grep -v 'Ready' || true)
+  if [[ -z "$not_ready" ]]; then
+    echo "All nodes are Ready!"
+    break
+  fi
+  if [[ $SECONDS -ge $end ]]; then
+    echo "Timeout waiting for nodes to be Ready."
+    kubectl get nodes
+    exit 1
+  fi
+  sleep 2
+done

@@ -1,7 +1,7 @@
 package system_gpu_info_repo
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/db"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 )

@@ -1,0 +1,6075 @@
+components:
+  schemas:
+    AllocatedGpu:
+      properties:
+        adminAccess:
+          type: boolean
+          x-go-name: AdminAccess
+          x-go-type-skip-optional-pointer: true
+        device:
+          type: string
+          x-go-name: Device
+          x-go-type-skip-optional-pointer: true
+        pool:
+          type: string
+          x-go-name: Pool
+          x-go-type-skip-optional-pointer: true
+        shareID:
+          type: string
+          x-go-name: ShareID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ApiKey:
+      properties:
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        expiresAt:
+          type: string
+          x-go-name: ExpiresAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ApiKeyCreate:
+      properties:
+        expiresAt:
+          type: string
+          x-go-name: ExpiresAt
+          format: date-time
+          x-oapi-codegen-extra-tags:
+            binding: required,time_in_future
+        name:
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required
+      required:
+      - expiresAt
+      - name
+      type: object
+    ApiKeyCreated:
+      properties:
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        expiresAt:
+          type: string
+          x-go-name: ExpiresAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        key:
+          type: string
+          x-go-name: Key
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+      type: object
+    BindingError:
+      properties:
+        validationErrors:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          type: object
+          x-go-name: ValidationErrors
+          x-go-type-skip-optional-pointer: true
+      type: object
+    CiConfig:
+      properties:
+        config:
+          type: string
+          x-go-name: Config
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ClusterCapacities:
+      properties:
+        cluster:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cluster
+        cpuCore:
+          $ref: '#/components/schemas/CpuCoreCapacities'
+          x-go-name: CpuCore
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cpuCore
+        gpu:
+          $ref: '#/components/schemas/GpuCapacities'
+          x-go-name: GPU
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: gpu
+        ram:
+          $ref: '#/components/schemas/RamCapacities'
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: ram
+      type: object
+    ClusterRegisterParams:
+      type: object
+      properties: {}
+    ClusterStats:
+      properties:
+        cluster:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cluster
+        podCount:
+          type: integer
+          x-go-name: PodCount
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: podCount
+      type: object
+    CpuCoreCapacities:
+      description: Total
+      properties:
+        total:
+          type: integer
+          x-go-name: Total
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: total
+      type: object
+    CpuStatus:
+      properties:
+        load:
+          $ref: '#/components/schemas/CpuStatusLoad'
+          x-go-name: Load
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: load
+        temp:
+          $ref: '#/components/schemas/CpuStatusTemp'
+          x-go-name: Temp
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: temp
+      type: object
+    CpuStatusLoad:
+      properties:
+        cores:
+          items:
+            type: integer
+          type: array
+          uniqueItems: false
+          x-go-name: Cores
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cores
+        main:
+          type: number
+          x-go-name: Main
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: main
+          format: double
+        max:
+          type: number
+          x-go-name: Max
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: max
+          format: double
+      type: object
+    CpuStatusTemp:
+      properties:
+        cores:
+          items:
+            type: integer
+          type: array
+          uniqueItems: false
+          x-go-name: Cores
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cores
+        main:
+          type: number
+          x-go-name: Main
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: main
+          format: double
+        max:
+          type: number
+          x-go-name: Max
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: max
+          format: double
+      type: object
+    CustomDomainRead:
+      properties:
+        domain:
+          type: string
+          x-go-name: Domain
+          x-go-type-skip-optional-pointer: true
+        secret:
+          type: string
+          x-go-name: Secret
+          x-go-type-skip-optional-pointer: true
+        status:
+          type: string
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+        url:
+          type: string
+          x-go-name: URL
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DeploymentBuild:
+      type: object
+      properties: {}
+    DeploymentCommand:
+      properties:
+        command:
+          enum:
+          - restart
+          type: string
+          x-go-name: Command
+          x-oapi-codegen-extra-tags:
+            binding: required,oneof=restart
+            bson: command
+          x-go-type: string
+      required:
+      - command
+      type: object
+    DeploymentCreate:
+      properties:
+        args:
+          items:
+            type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Args
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive,min=0,max=100
+            bson: args
+        cpuCores:
+          type: number
+          x-go-name: CpuCores
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0.1
+            bson: cpuCores,omitempty
+          format: double
+        customDomain:
+          description: 'CustomDomain is the domain that the deployment will be available
+            on.
+
+            The max length is set to 243 to allow for a subdomain when confirming
+            the domain.'
+          type: string
+          x-go-name: CustomDomain
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,domain_name
+            bson: customDomain,omitempty
+        envs:
+          items:
+            $ref: '#/components/schemas/Env'
+          maxItems: 1000
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Envs
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,env_list,min=0,max=1000,dive
+            bson: envs
+        gpus:
+          items:
+            $ref: '#/components/schemas/DeploymentGPU'
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: GPUs
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0
+            bson: gpus,omitempty
+        healthCheckPath:
+          maxLength: 1000
+          minLength: 0
+          type: string
+          x-go-name: HealthCheckPath
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=1000,health_check_path
+            bson: healthCheckPath,omitempty
+        image:
+          maxLength: 1000
+          minLength: 1
+          type: string
+          x-go-name: Image
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=1,max=1000
+            bson: image,omitempty
+        initCommands:
+          items:
+            type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: InitCommands
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive,min=0,max=100
+            bson: initCommands
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1035,min=3,max=30,deployment_name
+            bson: name
+        neverStale:
+          description: Boolean to make deployment never get disabled, despite being
+            stale
+          type: boolean
+          x-go-name: NeverStale
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,boolean
+            bson: neverStale
+        private:
+          description: 'Deprecated: Use Visibility instead.'
+          type: boolean
+          x-go-name: Private
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,boolean
+            bson: private
+        ram:
+          type: number
+          x-go-name: RAM
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0.1
+            bson: ram,omitempty
+          format: double
+        replicas:
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-name: Replicas
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100
+            bson: replicas,omitempty
+        visibility:
+          enum:
+          - public
+          - private
+          - auth
+          type: string
+          x-go-name: Visibility
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,oneof=public private auth
+            bson: visibility
+          x-go-type: string
+        volumes:
+          items:
+            $ref: '#/components/schemas/Volume'
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Volumes
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive
+            bson: volumes
+        zone:
+          description: 'Zone is the zone that the deployment will be created in.
+
+            If the zone is not set, the deployment will be created in the default
+            zone.'
+          type: string
+          x-go-name: Zone
+          x-oapi-codegen-extra-tags:
+            binding: omitempty
+            bson: zone,omitempty
+      required:
+      - name
+      type: object
+    DeploymentCreated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DeploymentDeleted:
+      type: object
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+    DeploymentGPU:
+      properties:
+        claimName:
+          type: string
+          x-go-name: ClaimName
+          x-oapi-codegen-extra-tags:
+            binding: required
+        name:
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required
+      required:
+      - claimName
+      - name
+      type: object
+    DeploymentRead:
+      properties:
+        accessedAt:
+          type: string
+          x-go-name: AccessedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        args:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: Args
+          x-go-type-skip-optional-pointer: true
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        customDomain:
+          $ref: '#/components/schemas/CustomDomainRead'
+          x-go-name: CustomDomain
+        envs:
+          items:
+            $ref: '#/components/schemas/Env'
+          type: array
+          uniqueItems: false
+          x-go-name: Envs
+          x-go-type-skip-optional-pointer: true
+        error:
+          type: string
+          x-go-name: Error
+        healthCheckPath:
+          type: string
+          x-go-name: HealthCheckPath
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        image:
+          type: string
+          x-go-name: Image
+        initCommands:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: InitCommands
+          x-go-type-skip-optional-pointer: true
+        integrations:
+          description: 'Integrations are currently not used, but could be used if
+            we wanted to add a list of integrations to the deployment
+
+
+            For example GitHub'
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: Integrations
+          x-go-type-skip-optional-pointer: true
+        internalPort:
+          type: integer
+          x-go-name: InternalPort
+          x-go-type-skip-optional-pointer: true
+        internalPorts:
+          items:
+            type: integer
+          type: array
+          uniqueItems: false
+          x-go-name: InternalPorts
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        neverStale:
+          type: boolean
+          x-go-name: NeverStale
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,boolean
+            bson: neverStale
+        ownerId:
+          type: string
+          x-go-name: OwnerID
+          x-go-type-skip-optional-pointer: true
+        pingResult:
+          type: integer
+          x-go-name: PingResult
+        private:
+          description: 'Deprecated: Use Visibility instead.'
+          type: boolean
+          x-go-name: Private
+          x-go-type-skip-optional-pointer: true
+        repairedAt:
+          type: string
+          x-go-name: RepairedAt
+          format: date-time
+        replicaStatus:
+          $ref: '#/components/schemas/ReplicaStatus'
+          x-go-name: ReplicaStatus
+        restartedAt:
+          type: string
+          x-go-name: RestartedAt
+          format: date-time
+        specs:
+          $ref: '#/components/schemas/DeploymentSpecs'
+          x-go-name: Specs
+          x-go-type-skip-optional-pointer: true
+        status:
+          type: string
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+        storageUrl:
+          type: string
+          x-go-name: StorageURL
+        teams:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: Teams
+          x-go-type-skip-optional-pointer: true
+        type:
+          type: string
+          x-go-name: Type
+          x-go-type-skip-optional-pointer: true
+        updatedAt:
+          type: string
+          x-go-name: UpdatedAt
+          format: date-time
+        url:
+          type: string
+          x-go-name: URL
+        visibility:
+          type: string
+          x-go-name: Visibility
+          x-go-type-skip-optional-pointer: true
+        volumes:
+          items:
+            $ref: '#/components/schemas/Volume'
+          type: array
+          uniqueItems: false
+          x-go-name: Volumes
+          x-go-type-skip-optional-pointer: true
+        zone:
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DeploymentSpecs:
+      properties:
+        cpuCores:
+          type: number
+          x-go-name: CpuCores
+          x-go-type-skip-optional-pointer: true
+          format: double
+        gpus:
+          items:
+            $ref: '#/components/schemas/DeploymentGPU'
+          type: array
+          uniqueItems: false
+          x-go-name: GPUs
+          x-go-type-skip-optional-pointer: true
+        ram:
+          type: number
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+          format: double
+        replicas:
+          type: integer
+          x-go-name: Replicas
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DeploymentUpdate:
+      properties:
+        args:
+          items:
+            type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Args
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive,min=0,max=100
+            bson: args,omitempty
+        cpuCores:
+          type: number
+          x-go-name: CpuCores
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0.1
+            bson: cpuCores,omitempty
+          format: double
+        customDomain:
+          description: 'CustomDomain is the domain that the deployment will be available
+            on.
+
+            The max length is set to 243 to allow for a subdomain when confirming
+            the domain.'
+          type: string
+          x-go-name: CustomDomain
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,domain_name
+            bson: customDomain,omitempty
+        envs:
+          items:
+            $ref: '#/components/schemas/Env'
+          maxItems: 1000
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Envs
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,env_list,min=0,max=1000,dive
+            bson: envs,omitempty
+        gpus:
+          items:
+            $ref: '#/components/schemas/DeploymentGPU'
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: GPUs
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0
+            bson: gpus,omitempty
+        healthCheckPath:
+          maxLength: 1000
+          minLength: 0
+          type: string
+          x-go-name: HealthCheckPath
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=1000,health_check_path
+            bson: healthCheckPath,omitempty
+        image:
+          maxLength: 1000
+          minLength: 1
+          type: string
+          x-go-name: Image
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=1,max=1000
+            bson: image,omitempty
+        initCommands:
+          items:
+            type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: InitCommands
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive,min=0,max=100
+            bson: initCommands,omitempty
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,required,rfc1035,min=3,max=30,deployment_name
+            bson: name,omitempty
+        neverStale:
+          type: boolean
+          x-go-name: NeverStale
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,boolean
+            bson: neverStale
+        private:
+          description: 'Deprecated: Use Visibility instead.'
+          type: boolean
+          x-go-name: Private
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,boolean
+            bson: private,omitempty
+        ram:
+          type: number
+          x-go-name: RAM
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0.1
+            bson: ram,omitempty
+          format: double
+        replicas:
+          maximum: 100
+          minimum: 0
+          type: integer
+          x-go-name: Replicas
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100
+            bson: replicas,omitempty
+        visibility:
+          enum:
+          - public
+          - private
+          - auth
+          type: string
+          x-go-name: Visibility
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,oneof=public private auth
+            bson: visibility
+          x-go-type: string
+        volumes:
+          items:
+            $ref: '#/components/schemas/Volume'
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Volumes
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive
+            bson: volumes,omitempty
+      type: object
+    DeploymentUpdated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+      type: object
+    DiscoverRead:
+      properties:
+        roles:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+          uniqueItems: false
+          x-go-name: Roles
+          x-go-type-skip-optional-pointer: true
+        version:
+          type: string
+          x-go-name: Version
+          x-go-type-skip-optional-pointer: true
+      type: object
+    Env:
+      properties:
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,env_name,min=1,max=100
+            bson: name
+        value:
+          maxLength: 10000
+          minLength: 1
+          type: string
+          x-go-name: Value
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=10000
+            bson: value
+      required:
+      - name
+      - value
+      type: object
+    Error:
+      properties:
+        code:
+          type: string
+        msg:
+          type: string
+      type: object
+    ErrorResponse:
+      properties:
+        errors:
+          items:
+            $ref: '#/components/schemas/Error'
+          type: array
+          uniqueItems: false
+      type: object
+    GpuCapacities:
+      properties:
+        total:
+          type: integer
+          x-go-name: Total
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: total
+      type: object
+    GpuClaimConsumer:
+      properties:
+        apiGroup:
+          type: string
+          x-go-name: APIGroup
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        resource:
+          type: string
+          x-go-name: Resource
+          x-go-type-skip-optional-pointer: true
+        uid:
+          type: string
+          x-go-name: UID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    GpuClaimCreate:
+      properties:
+        allowedRoles:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: AllowedRoles
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: allowedRoles,omitempty
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1035,min=3,max=30
+            bson: name
+        requested:
+          description: Requested contains all requested GPU configurations by key
+            (request.Name).
+          items:
+            $ref: '#/components/schemas/RequestedGpuCreate'
+          minItems: 1
+          type: array
+          uniqueItems: false
+          x-go-name: Requested
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: min=1,dive
+            bson: requested,omitempty
+        zone:
+          type: string
+          x-go-name: Zone
+          x-oapi-codegen-extra-tags:
+            bson: zone
+      required:
+      - name
+      type: object
+    GpuClaimCreated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    GpuClaimRead:
+      properties:
+        allocated:
+          additionalProperties:
+            items:
+              $ref: '#/components/schemas/AllocatedGpu'
+            type: array
+          description: Allocated contains the GPUs that have been successfully bound/allocated.
+          type: object
+          x-go-name: Allocated
+          x-go-type-skip-optional-pointer: true
+        allowedRoles:
+          description: Roles allowed to use this GpuClaim, empty means all
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: AllowedRoles
+          x-go-type-skip-optional-pointer: true
+        consumers:
+          description: Consumers are the workloads currently using this claim.
+          items:
+            $ref: '#/components/schemas/GpuClaimConsumer'
+          type: array
+          uniqueItems: false
+          x-go-name: Consumers
+          x-go-type-skip-optional-pointer: true
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        lastError:
+          description: LastError holds the last reconciliation or provisioning error
+            message.
+          type: string
+          x-go-name: LastError
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        requested:
+          additionalProperties:
+            $ref: '#/components/schemas/RequestedGpu'
+          description: Requested contains all requested GPU configurations by key
+            (request.Name).
+          type: object
+          x-go-name: Requested
+          x-go-type-skip-optional-pointer: true
+        status:
+          $ref: '#/components/schemas/GpuClaimStatus'
+          x-go-name: Status
+        updatedAt:
+          type: string
+          x-go-name: UpdatedAt
+          format: date-time
+        zone:
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+      type: object
+    GpuClaimStatus:
+      description: Status reflects the reconciliation and/or lifecycle state.
+      properties:
+        lastSynced:
+          type: string
+          x-go-name: LastSynced
+          format: date-time
+        message:
+          type: string
+          x-go-name: Message
+          x-go-type-skip-optional-pointer: true
+        phase:
+          type: string
+          x-go-name: Phase
+          x-go-type-skip-optional-pointer: true
+        updatedAt:
+          type: string
+          x-go-name: UpdatedAt
+          format: date-time
+      type: object
+    GpuGroupRead:
+      properties:
+        available:
+          type: integer
+          x-go-name: Available
+          x-go-type-skip-optional-pointer: true
+        displayName:
+          type: string
+          x-go-name: DisplayName
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        total:
+          type: integer
+          x-go-name: Total
+          x-go-type-skip-optional-pointer: true
+        vendor:
+          type: string
+          x-go-name: Vendor
+          x-go-type-skip-optional-pointer: true
+        zone:
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+      type: object
+    GpuInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: name
+        slot:
+          type: string
+          x-go-name: Slot
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: slot
+        vendor:
+          type: string
+          x-go-name: Vendor
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: vendor
+        vendorId:
+          type: string
+          x-go-name: VendorID
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: vendorId
+        bus:
+          type: string
+          x-go-name: Bus
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: bus
+        deviceId:
+          type: string
+          x-go-name: DeviceID
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: deviceId
+        passthrough:
+          type: boolean
+          x-go-name: Passthrough
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: passthrough
+    GpuLeaseCreate:
+      properties:
+        gpuGroupId:
+          description: 'GpuGroupID is used to specify the GPU to lease.
+
+            As such, the lease does not specify which specific GPU to lease, but rather
+            the type of GPU to lease.'
+          type: string
+          x-go-name: GpuGroupID
+          x-oapi-codegen-extra-tags:
+            binding: required
+            bson: gpuGroupId
+        leaseForever:
+          description: LeaseForever is used to specify whether the lease should be
+            created forever.
+          type: boolean
+          x-go-name: LeaseForever
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: leaseForever
+      required:
+      - gpuGroupId
+      type: object
+    GpuLeaseCreated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    GpuLeaseDeleted:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    GpuLeaseGpuGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        displayName:
+          type: string
+          x-go-name: DisplayName
+          x-go-type-skip-optional-pointer: true
+    GpuLeaseRead:
+      properties:
+        activatedAt:
+          description: 'ActivatedAt specifies the time when the lease was activated.
+            This is the time the user first attached the GPU
+
+            or 1 day after the lease was created if the user did not attach the GPU.'
+          type: string
+          x-go-name: ActivatedAt
+          format: date-time
+        active:
+          type: boolean
+          x-go-name: Active
+          x-go-type-skip-optional-pointer: true
+        assignedAt:
+          description: AssignedAt specifies the time when the lease was assigned to
+            the user.
+          type: string
+          x-go-name: AssignedAt
+          format: date-time
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        expiredAt:
+          type: string
+          x-go-name: ExpiredAt
+          format: date-time
+        expiresAt:
+          description: 'ExpiresAt specifies the time when the lease will expire.
+
+            This is only present if the lease is active.'
+          type: string
+          x-go-name: ExpiresAt
+          format: date-time
+        gpuGroupId:
+          type: string
+          x-go-name: GpuGroupID
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        leaseDuration:
+          type: number
+          x-go-name: LeaseDuration
+          x-go-type-skip-optional-pointer: true
+          format: double
+        queuePosition:
+          type: integer
+          x-go-name: QueuePosition
+          x-go-type-skip-optional-pointer: true
+        userId:
+          type: string
+          x-go-name: UserID
+          x-go-type-skip-optional-pointer: true
+        vmId:
+          description: VmID is set when the lease is attached to a VM.
+          type: string
+          x-go-name: VmID
+      type: object
+    GpuLeaseUpdate:
+      properties:
+        vmId:
+          description: 'VmID is used to specify the VM to attach the lease to.
+
+
+            - If specified, the lease will be attached to the VM.
+
+
+            - If the lease is already attached to a VM, it will be detached from the
+            current VM and attached to the new VM.
+
+
+            - If the lease is not active, specifying a VM will activate the lease.
+
+
+            - If the lease is not assigned, an error will be returned.'
+          type: string
+          x-go-name: VmID
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,uuid4
+            bson: vmId,omitempty
+      type: object
+    GpuLeaseUpdated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    GpuStatus:
+      properties:
+        temp:
+          items:
+            $ref: '#/components/schemas/GpuStatusTemp'
+          type: array
+          uniqueItems: false
+          x-go-name: Temp
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: temp
+      type: object
+    GpuStatusTemp:
+      properties:
+        main:
+          type: number
+          x-go-name: Main
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: main
+          format: double
+      type: object
+    HarborWebhook:
+      properties:
+        event_data:
+          properties:
+            repository:
+              properties:
+                date_created:
+                  type: integer
+                  x-go-type-skip-optional-pointer: true
+                name:
+                  type: string
+                  x-go-type-skip-optional-pointer: true
+                namespace:
+                  type: string
+                  x-go-type-skip-optional-pointer: true
+                repo_full_name:
+                  type: string
+                  x-go-type-skip-optional-pointer: true
+                repo_type:
+                  type: string
+                  x-go-type-skip-optional-pointer: true
+              type: object
+              x-go-type-skip-optional-pointer: true
+            resources:
+              items:
+                properties:
+                  digest:
+                    type: string
+                    x-go-type-skip-optional-pointer: true
+                  resource_url:
+                    type: string
+                    x-go-type-skip-optional-pointer: true
+                  tag:
+                    type: string
+                    x-go-type-skip-optional-pointer: true
+                type: object
+              type: array
+              uniqueItems: false
+              x-go-type-skip-optional-pointer: true
+          type: object
+          x-go-type-skip-optional-pointer: true
+        occur_at:
+          type: integer
+          x-go-name: OccurAt
+          x-go-type-skip-optional-pointer: true
+        operator:
+          type: string
+          x-go-name: Operator
+          x-go-type-skip-optional-pointer: true
+        type:
+          type: string
+          x-go-name: Type
+          x-go-type-skip-optional-pointer: true
+      type: object
+    HostBase:
+      type: object
+      properties:
+        name: &id001
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        displayName: &id002
+          type: string
+          x-go-name: DisplayName
+          x-go-type-skip-optional-pointer: true
+        zone: &id003
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+    HostCapacities:
+      properties:
+        cpuCore:
+          $ref: '#/components/schemas/CpuCoreCapacities'
+          x-go-name: CpuCore
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cpuCore
+        gpu:
+          $ref: '#/components/schemas/GpuCapacities'
+          x-go-name: GPU
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: gpu
+        ram:
+          $ref: '#/components/schemas/RamCapacities'
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: ram
+        name: *id001
+        displayName: *id002
+        zone: *id003
+      type: object
+    HostGpuInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        displayName:
+          type: string
+          x-go-name: DisplayName
+          x-go-type-skip-optional-pointer: true
+        zone:
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+        gpus:
+          type: array
+          items:
+            $ref: '#/components/schemas/GpuInfo'
+          x-go-name: GPUs
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: gpus
+    HostRead:
+      type: object
+      properties:
+        name: *id001
+        displayName: *id002
+        zone: *id003
+    HostRegisterParams:
+      type: object
+      properties:
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required,min=3
+        displayName:
+          type: string
+          x-go-name: DisplayName
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: min=3
+        ip:
+          type: string
+          x-go-name: IP
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required
+        port:
+          type: integer
+          x-go-name: Port
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required
+        zone:
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required
+        token:
+          type: string
+          x-go-name: Token
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required
+        enabled:
+          type: boolean
+          x-go-name: Enabled
+          x-go-type-skip-optional-pointer: true
+        schedulable:
+          type: boolean
+          x-go-name: Schedulable
+          x-go-type-skip-optional-pointer: true
+    HostStatus:
+      properties:
+        cpu:
+          $ref: '#/components/schemas/CpuStatus'
+          x-go-name: CPU
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cpu
+        gpu:
+          $ref: '#/components/schemas/GpuStatus'
+          x-go-name: GPU
+          x-oapi-codegen-extra-tags:
+            bson: gpu,omitempty
+        ram:
+          $ref: '#/components/schemas/RamStatus'
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: ram
+        name: *id001
+        displayName: *id002
+        zone: *id003
+      type: object
+    HostVerboseRead:
+      properties:
+        deactivatedUntil:
+          type: string
+          x-go-name: DeactivatedUntil
+          format: date-time
+        enabled:
+          type: boolean
+          x-go-name: Enabled
+          x-go-type-skip-optional-pointer: true
+        ip:
+          type: string
+          x-go-name: IP
+          x-go-type-skip-optional-pointer: true
+        lastSeenAt:
+          type: string
+          x-go-name: LastSeenAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        port:
+          type: integer
+          x-go-name: Port
+          x-go-type-skip-optional-pointer: true
+        registeredAt:
+          type: string
+          x-go-name: RegisteredAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        schedulable:
+          type: boolean
+          x-go-name: Schedulable
+          x-go-type-skip-optional-pointer: true
+        name: *id001
+        displayName: *id002
+        zone: *id003
+      type: object
+    HttpProxyCreate:
+      properties:
+        customDomain:
+          description: 'CustomDomain is the domain that the deployment will be available
+            on.
+
+            The max length is set to 243 to allow for a subdomain when confirming
+            the domain.'
+          type: string
+          x-go-name: CustomDomain
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,domain_name
+            bson: customDomain,omitempty
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1035,min=3,max=30
+            bson: name,omitempty
+      required:
+      - name
+      type: object
+    HttpProxyRead:
+      properties:
+        customDomain:
+          $ref: '#/components/schemas/CustomDomainRead'
+          x-go-name: CustomDomain
+          x-oapi-codegen-extra-tags:
+            bson: customDomain,omitempty
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: name
+        url:
+          type: string
+          x-go-name: URL
+          x-oapi-codegen-extra-tags:
+            bson: url,omitempty
+      type: object
+    HttpProxyUpdate:
+      properties:
+        customDomain:
+          description: 'CustomDomain is the domain that the deployment will be available
+            on.
+
+            The max length is set to 243 to allow for a subdomain when confirming
+            the domain.'
+          type: string
+          x-go-name: CustomDomain
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,domain_name
+            bson: customDomain,omitempty
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1035,min=3,max=30
+            bson: name,omitempty
+      required:
+      - name
+      type: object
+    JobRead:
+      properties:
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        finishedAt:
+          type: string
+          x-go-name: FinishedAt
+          format: date-time
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        lastError:
+          type: string
+          x-go-name: LastError
+        lastRunAt:
+          type: string
+          x-go-name: LastRunAt
+          format: date-time
+        runAfter:
+          type: string
+          x-go-name: RunAfter
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        status:
+          type: string
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+        type:
+          type: string
+          x-go-name: Type
+          x-go-type-skip-optional-pointer: true
+        userId:
+          type: string
+          x-go-name: UserID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    JobUpdate:
+      properties:
+        status:
+          enum:
+          - pending
+          - running
+          - failed
+          - terminated
+          - finished
+          - completed
+          type: string
+          x-go-name: Status
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,oneof=pending running failed terminated finished completed
+          x-go-type: string
+      type: object
+    K8sStats:
+      properties:
+        clusters:
+          items:
+            $ref: '#/components/schemas/ClusterStats'
+          type: array
+          uniqueItems: false
+          x-go-name: Clusters
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: clusters
+        podCount:
+          type: integer
+          x-go-name: PodCount
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: podCount
+      type: object
+    LogMessage:
+      type: object
+      properties:
+        source:
+          type: string
+          x-go-name: Source
+          x-go-type-skip-optional-pointer: true
+        prefix:
+          type: string
+          x-go-name: Prefix
+          x-go-type-skip-optional-pointer: true
+        line:
+          type: string
+          x-go-name: Line
+          x-go-type-skip-optional-pointer: true
+        createdAt:
+          type: string
+          format: date-time
+          x-go-name: CreatedAt
+          x-go-type-skip-optional-pointer: true
+    NotificationRead:
+      properties:
+        completedAt:
+          type: string
+          x-go-name: CompletedAt
+          format: date-time
+        content:
+          additionalProperties: {}
+          type: object
+          x-go-name: Content
+          x-go-type: map[string]any
+          x-go-type-skip-optional-pointer: true
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        readAt:
+          type: string
+          x-go-name: ReadAt
+          format: date-time
+        toastedAt:
+          type: string
+          x-go-name: ToastedAt
+          format: date-time
+        type:
+          type: string
+          x-go-name: Type
+          x-go-type-skip-optional-pointer: true
+        userId:
+          type: string
+          x-go-name: UserID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    NotificationUpdate:
+      properties:
+        read:
+          type: boolean
+          x-go-name: Read
+          x-go-type-skip-optional-pointer: true
+        toasted:
+          type: boolean
+          x-go-name: Toasted
+          x-go-type-skip-optional-pointer: true
+      type: object
+    PortCreate:
+      properties:
+        httpProxy:
+          $ref: '#/components/schemas/HttpProxyCreate'
+          x-go-name: HttpProxy
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,dive
+            bson: httpProxy,omitempty
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=100
+            bson: name
+        port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          x-go-name: Port
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=65535
+            bson: port
+        protocol:
+          enum:
+          - tcp
+          - udp
+          type: string
+          x-go-name: Protocol
+          x-oapi-codegen-extra-tags:
+            binding: required,oneof=tcp udp
+            bson: protocol,
+          x-go-type: string
+      required:
+      - name
+      - port
+      - protocol
+      type: object
+    PortRead:
+      properties:
+        externalPort:
+          type: integer
+          x-go-name: ExternalPort
+          x-oapi-codegen-extra-tags:
+            bson: externalPort,omitempty
+        httpProxy:
+          $ref: '#/components/schemas/HttpProxyRead'
+          x-go-name: HttpProxy
+          x-oapi-codegen-extra-tags:
+            bson: httpProxy,omitempty
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: name
+        port:
+          type: integer
+          x-go-name: Port
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: port
+        protocol:
+          type: string
+          x-go-name: Protocol
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: protocol,
+      type: object
+    PortUpdate:
+      properties:
+        httpProxy:
+          $ref: '#/components/schemas/HttpProxyUpdate'
+          x-go-name: HttpProxy
+          x-oapi-codegen-extra-tags:
+            binding: omitempty
+            bson: httpProxy,omitempty
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=100
+            bson: name
+        port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          x-go-name: Port
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=65535
+            bson: port
+        protocol:
+          enum:
+          - tcp
+          - udp
+          type: string
+          x-go-name: Protocol
+          x-oapi-codegen-extra-tags:
+            binding: required,oneof=tcp udp
+            bson: protocol,
+          x-go-type: string
+      required:
+      - name
+      - port
+      - protocol
+      type: object
+    PublicKey:
+      properties:
+        key:
+          type: string
+          x-go-name: Key
+          x-oapi-codegen-extra-tags:
+            binding: required,ssh_public_key
+        name:
+          maxLength: 30
+          minLength: 1
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=30
+      required:
+      - key
+      - name
+      type: object
+    Quota:
+      properties:
+        cpuCores:
+          type: number
+          x-go-name: CpuCores
+          x-go-type-skip-optional-pointer: true
+          format: double
+        diskSize:
+          type: number
+          x-go-name: DiskSize
+          x-go-type-skip-optional-pointer: true
+          format: double
+        gpuLeaseDuration:
+          description: in hours
+          type: number
+          x-go-name: GpuLeaseDuration
+          x-go-type-skip-optional-pointer: true
+          format: double
+        gpus:
+          type: integer
+          x-go-name: Gpus
+          x-go-type-skip-optional-pointer: true
+        ram:
+          type: number
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+          format: double
+        snapshots:
+          type: integer
+          x-go-name: Snapshots
+          x-go-type-skip-optional-pointer: true
+      type: object
+    RamCapacities:
+      properties:
+        total:
+          type: integer
+          x-go-name: Total
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: total
+      type: object
+    RamStatus:
+      properties:
+        load:
+          $ref: '#/components/schemas/RamStatusLoad'
+          x-go-name: Load
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: load
+      type: object
+    RamStatusLoad:
+      properties:
+        main:
+          type: number
+          x-go-name: Main
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: main
+          format: double
+      type: object
+    ReplicaStatus:
+      properties:
+        availableReplicas:
+          description: AvailableReplicas is the number of replicas that are available.
+          type: integer
+          x-go-name: AvailableReplicas
+          x-go-type-skip-optional-pointer: true
+        desiredReplicas:
+          description: DesiredReplicas is the number of replicas that the deployment
+            should have.
+          type: integer
+          x-go-name: DesiredReplicas
+          x-go-type-skip-optional-pointer: true
+        readyReplicas:
+          description: ReadyReplicas is the number of replicas that are ready.
+          type: integer
+          x-go-name: ReadyReplicas
+          x-go-type-skip-optional-pointer: true
+        unavailableReplicas:
+          description: UnavailableReplicas is the number of replicas that are unavailable.
+          type: integer
+          x-go-name: UnavailableReplicas
+          x-go-type-skip-optional-pointer: true
+      type: object
+    RequestedGpu:
+      properties:
+        allocationMode:
+          enum:
+          - All
+          - ExactCount
+          type: string
+          x-go-name: AllocationMode
+          x-oapi-codegen-extra-tags:
+            binding: required,oneof=All ExactCount
+            bson: allocationMode
+          x-go-type: string
+        capacity:
+          additionalProperties:
+            type: string
+          type: object
+          x-go-name: Capacity
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: capacity,omitempty
+        config:
+          x-go-type: GpuDeviceConfigurationWrapper
+        count:
+          type: integer
+          x-go-name: Count
+          x-oapi-codegen-extra-tags:
+            bson: count,omitempty
+          format: int64
+        deviceClassName:
+          type: string
+          x-go-name: DeviceClassName
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1123
+            bson: deviceClassName
+        selectors:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: Selectors
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: selectors,omitempty
+      required:
+      - allocationMode
+      - deviceClassName
+      type: object
+    RequestedGpuCreate:
+      properties:
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1035,min=3,max=30
+            bson: name
+      required:
+      - name
+      type: object
+    ResourceMigrationCreate:
+      properties:
+        resourceId:
+          description: 'ResourceID is the ID of the resource that is being migrated.
+
+            This can be a VM ID, deployment ID, etc. depending on the type of the
+            migration.'
+          type: string
+          x-go-name: ResourceID
+          x-oapi-codegen-extra-tags:
+            binding: required,uuid4
+        status:
+          description: 'Status is the status of the resource migration.
+
+            It is used by privileged admins to directly accept or reject a migration.
+
+            The field is ignored by non-admins.
+
+
+            Possible values:
+
+            - accepted
+
+            - pending'
+          type: string
+          x-go-name: Status
+        type:
+          description: 'Type is the type of the resource migration.
+
+
+            Possible values:
+
+            - updateOwner'
+          enum:
+          - updateOwner
+          type: string
+          x-go-name: Type
+          x-oapi-codegen-extra-tags:
+            binding: required,oneof=updateOwner
+          x-go-type: string
+        updateOwner:
+          description: 'UpdateOwner is the set of parameters that are required for
+            the updateOwner migration type.
+
+            It is ignored if the migration type is not updateOwner.'
+          properties:
+            ownerId:
+              type: string
+              x-go-name: OwnerID
+              x-go-type-skip-optional-pointer: true
+              x-oapi-codegen-extra-tags:
+                binding: required,uuid4
+          required:
+          - ownerId
+          type: object
+      required:
+      - resourceId
+      - type
+      type: object
+    ResourceMigrationCreated:
+      allOf:
+      - $ref: '#/components/schemas/ResourceMigrationRead'
+      - type: object
+        properties:
+          jobId:
+            description: 'JobID is the ID of the job that was created for the resource
+              migration.
+
+              It will only be set if the migration was created with status ''accepted''.'
+            type: string
+            x-go-name: JobID
+    ResourceMigrationRead:
+      properties:
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        deletedAt:
+          type: string
+          x-go-name: DeletedAt
+          format: date-time
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        resourceId:
+          description: 'ResourceID is the ID of the resource that is being migrated.
+
+            This can be a VM ID, deployment ID, etc. depending on the type of the
+            migration.'
+          type: string
+          x-go-name: ResourceID
+          x-go-type-skip-optional-pointer: true
+        resourceType:
+          description: 'ResourceType is the type of the resource that is being migrated.
+
+
+            Possible values:
+
+            - vm
+
+            - deployment'
+          type: string
+          x-go-name: ResourceType
+          x-go-type-skip-optional-pointer: true
+        status:
+          description: 'Status is the status of the resource migration.
+
+            When this field is set to ''accepted'', the migration will take place
+            and then automatically be deleted.'
+          type: string
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+        type:
+          description: 'Type is the type of the resource migration.
+
+
+            Possible values:
+
+            - updateOwner'
+          type: string
+          x-go-name: Type
+          x-go-type-skip-optional-pointer: true
+        updateOwner:
+          description: 'UpdateOwner is the set of parameters that are required for
+            the updateOwner migration type.
+
+            It is empty if the migration type is not updateOwner.'
+          properties:
+            ownerId:
+              type: string
+              x-go-name: OwnerID
+              x-go-type-skip-optional-pointer: true
+          type: object
+          required:
+          - ownerId
+        userId:
+          description: UserID is the ID of the user who initiated the migration.
+          type: string
+          x-go-name: UserID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ResourceMigrationUpdate:
+      properties:
+        code:
+          description: 'Code is a token required when accepting a migration if the
+            acceptor is not an admin.
+
+            It is sent to the acceptor using the notification API'
+          type: string
+          x-go-name: Code
+        status:
+          description: 'Status is the status of the resource migration.
+
+            It is used to accept a migration by setting the status to ''accepted''.
+
+            If the acceptor is not an admin, a Code must be provided.
+
+
+            Possible values:
+
+            - accepted
+
+            - pending'
+          type: string
+          x-go-name: Status
+          x-oapi-codegen-extra-tags:
+            binding: required
+      required:
+      - status
+      type: object
+    ResourceMigrationUpdated:
+      allOf:
+      - $ref: '#/components/schemas/ResourceMigrationRead'
+      - type: object
+        properties:
+          jobId:
+            description: 'JobID is the ID of the job that was created for the resource
+              migration.
+
+              It will only be set if the migration was updated with status ''accepted''.'
+            type: string
+            x-go-name: JobID
+    Role:
+      properties:
+        description:
+          type: string
+          x-go-name: Description
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        permissions:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: Permissions
+          x-go-type-skip-optional-pointer: true
+        quota:
+          $ref: '#/components/schemas/Quota'
+          x-go-name: Quota
+      type: object
+    SmDeleted:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    SmRead:
+      properties:
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        ownerId:
+          type: string
+          x-go-name: OwnerID
+          x-go-type-skip-optional-pointer: true
+        url:
+          type: string
+          x-go-name: URL
+        zone:
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+      type: object
+    SystemCapacities:
+      properties:
+        clusters:
+          description: Per Cluster
+          items:
+            $ref: '#/components/schemas/ClusterCapacities'
+          type: array
+          uniqueItems: false
+          x-go-name: Clusters
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: clusters
+        cpuCore:
+          $ref: '#/components/schemas/CpuCoreCapacities'
+          x-go-name: CpuCore
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: cpuCore
+        gpu:
+          $ref: '#/components/schemas/GpuCapacities'
+          x-go-name: GPU
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: gpu
+        hosts:
+          description: Per Host
+          items:
+            $ref: '#/components/schemas/HostCapacities'
+          type: array
+          uniqueItems: false
+          x-go-name: Hosts
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: hosts
+        ram:
+          $ref: '#/components/schemas/RamCapacities'
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: ram
+      type: object
+    SystemGpuInfo:
+      type: object
+      properties:
+        hosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/HostGpuInfo'
+          x-go-name: HostGpuInfo
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: hosts
+    SystemStats:
+      properties:
+        k8s:
+          $ref: '#/components/schemas/K8sStats'
+          x-go-name: K8sStats
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: k8s
+      type: object
+    SystemStatus:
+      properties:
+        hosts:
+          items:
+            $ref: '#/components/schemas/HostStatus'
+          type: array
+          uniqueItems: false
+          x-go-name: Hosts
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: hosts
+      type: object
+    TeamCreate:
+      properties:
+        description:
+          maxLength: 1000
+          type: string
+          x-go-name: Description
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,max=1000
+        members:
+          items:
+            $ref: '#/components/schemas/TeamMemberCreate'
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Members
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,team_member_list,min=0,max=100,dive
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=100
+        resources:
+          items:
+            type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Resources
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,team_resource_list,min=0,max=100,dive,uuid4
+      required:
+      - name
+      type: object
+    TeamJoin:
+      type: object
+      properties:
+        invitationCode:
+          type: string
+          x-go-name: InvitationCode
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=1000
+    TeamMember:
+      properties:
+        addedAt:
+          type: string
+          x-go-name: AddedAt
+          format: date-time
+        joinedAt:
+          type: string
+          x-go-name: JoinedAt
+          format: date-time
+        memberStatus:
+          type: string
+          x-go-name: MemberStatus
+          x-go-type-skip-optional-pointer: true
+        teamRole:
+          type: string
+          x-go-name: TeamRole
+          x-go-type-skip-optional-pointer: true
+        id: &id004
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        username: &id005
+          type: string
+          x-go-name: Username
+          x-go-type-skip-optional-pointer: true
+        firstName: &id006
+          type: string
+          x-go-name: FirstName
+          x-go-type-skip-optional-pointer: true
+        lastName: &id007
+          type: string
+          x-go-name: LastName
+          x-go-type-skip-optional-pointer: true
+        email: &id008
+          type: string
+          x-go-name: Email
+          x-go-type-skip-optional-pointer: true
+        gravatarUrl: &id009
+          type: string
+          x-go-name: GravatarURL
+      type: object
+    TeamMemberCreate:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-oapi-codegen-extra-tags:
+            binding: required,uuid4
+        teamRole:
+          description: default to MemberRoleAdmin right now
+          type: string
+          x-go-name: TeamRole
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty
+      required:
+      - id
+      type: object
+    TeamMemberUpdate:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-oapi-codegen-extra-tags:
+            binding: required,uuid4
+        teamRole:
+          description: default to MemberRoleAdmin right now
+          type: string
+          x-go-name: TeamRole
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty
+      required:
+      - id
+      type: object
+    TeamRead:
+      properties:
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        description:
+          type: string
+          x-go-name: Description
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        members:
+          items:
+            $ref: '#/components/schemas/TeamMember'
+          type: array
+          uniqueItems: false
+          x-go-name: Members
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        ownerId:
+          type: string
+          x-go-name: OwnerID
+          x-go-type-skip-optional-pointer: true
+        resources:
+          items:
+            $ref: '#/components/schemas/TeamResource'
+          type: array
+          uniqueItems: false
+          x-go-name: Resources
+          x-go-type-skip-optional-pointer: true
+        updatedAt:
+          type: string
+          x-go-name: UpdatedAt
+          format: date-time
+      type: object
+    TeamResource:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        type:
+          type: string
+          x-go-name: Type
+          x-go-type-skip-optional-pointer: true
+      type: object
+    TeamUpdate:
+      properties:
+        description:
+          maxLength: 1000
+          type: string
+          x-go-name: Description
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,max=1000
+        members:
+          items:
+            $ref: '#/components/schemas/TeamMemberUpdate'
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Members
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,team_member_list,min=0,max=100,dive
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=1,max=100
+        resources:
+          items:
+            type: string
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Resources
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,team_resource_list,min=0,max=100,dive,uuid4
+      type: object
+    TimestampedSystemCapacities:
+      properties:
+        capacities:
+          $ref: '#/components/schemas/SystemCapacities'
+          x-go-name: Capacities
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: capacities
+        timestamp:
+          type: string
+          x-go-name: Timestamp
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: timestamp
+      type: object
+    TimestampedSystemGpuInfo:
+      type: object
+      properties:
+        gpuInfo:
+          $ref: '#/components/schemas/SystemGpuInfo'
+          x-go-name: GpuInfo
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: gpuInfo
+        timestamp:
+          type: string
+          format: date-time
+          x-go-name: Timestamp
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: timestamp
+    TimestampedSystemStats:
+      properties:
+        stats:
+          $ref: '#/components/schemas/SystemStats'
+          x-go-name: Stats
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: stats
+        timestamp:
+          type: string
+          x-go-name: Timestamp
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: timestamp
+      type: object
+    TimestampedSystemStatus:
+      properties:
+        status:
+          $ref: '#/components/schemas/SystemStatus'
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: status
+        timestamp:
+          type: string
+          x-go-name: Timestamp
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            bson: timestamp
+      type: object
+    Usage:
+      properties:
+        cpuCores:
+          type: number
+          x-go-name: CpuCores
+          x-go-type-skip-optional-pointer: true
+          format: double
+        diskSize:
+          type: integer
+          x-go-name: DiskSize
+          x-go-type-skip-optional-pointer: true
+        gpus:
+          type: integer
+          x-go-name: Gpus
+          x-go-type-skip-optional-pointer: true
+        ram:
+          type: number
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+          format: double
+      type: object
+    UserData:
+      properties:
+        key:
+          maxLength: 255
+          minLength: 1
+          type: string
+          x-go-name: Key
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=255
+        value:
+          maxLength: 255
+          minLength: 1
+          type: string
+          x-go-name: Value
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=255
+      required:
+      - key
+      - value
+      type: object
+    UserRead:
+      properties:
+        admin:
+          type: boolean
+          x-go-name: Admin
+          x-go-type-skip-optional-pointer: true
+        apiKeys:
+          items:
+            $ref: '#/components/schemas/ApiKey'
+          type: array
+          uniqueItems: false
+          x-go-name: ApiKeys
+          x-go-type-skip-optional-pointer: true
+        email:
+          type: string
+          x-go-name: Email
+          x-go-type-skip-optional-pointer: true
+        firstName:
+          type: string
+          x-go-name: FirstName
+          x-go-type-skip-optional-pointer: true
+        gravatarUrl:
+          type: string
+          x-go-name: GravatarURL
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        lastName:
+          type: string
+          x-go-name: LastName
+          x-go-type-skip-optional-pointer: true
+        publicKeys:
+          items:
+            $ref: '#/components/schemas/PublicKey'
+          type: array
+          uniqueItems: false
+          x-go-name: PublicKeys
+          x-go-type-skip-optional-pointer: true
+        quota:
+          $ref: '#/components/schemas/Quota'
+          x-go-name: Quota
+          x-go-type-skip-optional-pointer: true
+        role:
+          $ref: '#/components/schemas/Role'
+          x-go-name: Role
+          x-go-type-skip-optional-pointer: true
+        storageUrl:
+          type: string
+          x-go-name: StorageURL
+        usage:
+          $ref: '#/components/schemas/Usage'
+          x-go-name: Usage
+          x-go-type-skip-optional-pointer: true
+        userData:
+          items:
+            $ref: '#/components/schemas/UserData'
+          type: array
+          uniqueItems: false
+          x-go-name: UserData
+          x-go-type-skip-optional-pointer: true
+        username:
+          type: string
+          x-go-name: Username
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UserReadDiscovery:
+      type: object
+      properties:
+        id: *id004
+        username: *id005
+        firstName: *id006
+        lastName: *id007
+        email: *id008
+        gravatarUrl: *id009
+    UserUpdate:
+      properties:
+        apiKeys:
+          description: 'ApiKeys specifies the API keys that should remain. If an API
+            key is not in this list, it will be deleted.
+
+            However, API keys cannot be created, use /apiKeys endpoint to create new
+            API keys.'
+          items:
+            $ref: '#/components/schemas/ApiKey'
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: ApiKeys
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive
+            bson: apiKeys,omitempty
+        publicKeys:
+          items:
+            $ref: '#/components/schemas/PublicKey'
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: PublicKeys
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive
+            bson: publicKeys,omitempty
+        userData:
+          items:
+            $ref: '#/components/schemas/UserData'
+          maxItems: 100
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: UserData
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=0,max=100,dive
+            bson: publicKeys,omitempty
+      type: object
+    VmActionCreate:
+      properties:
+        action:
+          enum:
+          - start
+          - stop
+          - restart
+          - repair
+          type: string
+          x-go-name: Action
+          x-oapi-codegen-extra-tags:
+            binding: required,oneof=start stop restart repair
+          x-go-type: string
+      required:
+      - action
+      type: object
+    VmActionCreated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmCreate:
+      properties:
+        cpuCores:
+          minimum: 1
+          type: integer
+          x-go-name: CpuCores
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1
+            bson: cpuCores
+        diskSize:
+          minimum: 10
+          type: integer
+          x-go-name: DiskSize
+          x-oapi-codegen-extra-tags:
+            binding: required,min=10
+            bson: diskSize
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1035,min=3,max=30,vm_name
+            bson: name
+        neverStale:
+          type: boolean
+          x-go-name: NeverStale
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,boolean
+            bson: neverStale
+        ports:
+          items:
+            $ref: '#/components/schemas/PortCreate'
+          maxItems: 10
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Ports
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive
+            bson: ports
+        ram:
+          minimum: 1
+          type: integer
+          x-go-name: RAM
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1
+            bson: ram
+        sshPublicKey:
+          type: string
+          x-go-name: SshPublicKey
+          x-oapi-codegen-extra-tags:
+            binding: required,ssh_public_key
+            bson: sshPublicKey
+        zone:
+          type: string
+          x-go-name: Zone
+          x-oapi-codegen-extra-tags:
+            binding: omitempty
+            bson: zone,omitempty
+      required:
+      - cpuCores
+      - diskSize
+      - name
+      - ram
+      - sshPublicKey
+      type: object
+    VmCreated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmDeleted:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmGpuLease:
+      properties:
+        activatedAt:
+          description: 'ActivatedAt specifies the time when the lease was activated.
+            This is the time the user first attached the GPU
+
+            or 1 day after the lease was created if the user did not attach the GPU.'
+          type: string
+          x-go-name: ActivatedAt
+          format: date-time
+        assignedAt:
+          description: AssignedAt specifies the time when the lease was assigned to
+            the user.
+          type: string
+          x-go-name: AssignedAt
+          format: date-time
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        expiredAt:
+          description: 'ExpiredAt specifies the time when the lease expired.
+
+            This is only present if the lease is expired.'
+          type: string
+          x-go-name: ExpiredAt
+          format: date-time
+        expiresAt:
+          description: 'ExpiresAt specifies the time when the lease will expire.
+
+            This is only present if the lease is active.'
+          type: string
+          x-go-name: ExpiresAt
+          format: date-time
+        gpuGroupId:
+          type: string
+          x-go-name: GpuGroupID
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        leaseDuration:
+          type: number
+          x-go-name: LeaseDuration
+          x-go-type-skip-optional-pointer: true
+          format: double
+      type: object
+    VmRead:
+      properties:
+        accessedAt:
+          type: string
+          x-go-name: AccessedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        createdAt:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        gpu:
+          $ref: '#/components/schemas/VmGpuLease'
+          x-go-name: GPU
+        host:
+          type: string
+          x-go-name: Host
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        internalName:
+          type: string
+          x-go-name: InternalName
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        neverStale:
+          type: boolean
+          x-go-name: NeverStale
+          x-go-type-skip-optional-pointer: true
+        ownerId:
+          type: string
+          x-go-name: OwnerID
+          x-go-type-skip-optional-pointer: true
+        ports:
+          items:
+            $ref: '#/components/schemas/PortRead'
+          type: array
+          uniqueItems: false
+          x-go-name: Ports
+          x-go-type-skip-optional-pointer: true
+        repairedAt:
+          type: string
+          x-go-name: RepairedAt
+          format: date-time
+        specs:
+          $ref: '#/components/schemas/VmSpecs'
+          x-go-name: Specs
+          x-go-type-skip-optional-pointer: true
+        sshConnectionString:
+          type: string
+          x-go-name: SshConnectionString
+        sshPublicKey:
+          type: string
+          x-go-name: SshPublicKey
+          x-go-type-skip-optional-pointer: true
+        status:
+          type: string
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+        teams:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: Teams
+          x-go-type-skip-optional-pointer: true
+        updatedAt:
+          type: string
+          x-go-name: UpdatedAt
+          format: date-time
+        zone:
+          type: string
+          x-go-name: Zone
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmSnapshotCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required,rfc1035,min=3,max=30
+    VmSnapshotCreated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmSnapshotDeleted:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmSnapshotRead:
+      properties:
+        created:
+          type: string
+          x-go-name: CreatedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        status:
+          type: string
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmSpecs:
+      properties:
+        cpuCores:
+          type: integer
+          x-go-name: CpuCores
+          x-go-type-skip-optional-pointer: true
+        diskSize:
+          type: integer
+          x-go-name: DiskSize
+          x-go-type-skip-optional-pointer: true
+        ram:
+          type: integer
+          x-go-name: RAM
+          x-go-type-skip-optional-pointer: true
+      type: object
+    VmUpdate:
+      properties:
+        cpuCores:
+          minimum: 1
+          type: integer
+          x-go-name: CpuCores
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=1
+            bson: cpuCores,omitempty
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,rfc1035,min=3,max=30,vm_name
+            bson: name,omitempty
+        neverStale:
+          type: boolean
+          x-go-name: NeverStale
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,boolean
+            bson: neverStale
+        ports:
+          items:
+            $ref: '#/components/schemas/PortUpdate'
+          maxItems: 10
+          minItems: 0
+          type: array
+          uniqueItems: false
+          x-go-name: Ports
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive
+            bson: ports,omitempty
+        ram:
+          minimum: 1
+          type: integer
+          x-go-name: RAM
+          x-oapi-codegen-extra-tags:
+            binding: omitempty,min=1
+            bson: ram,omitempty
+      type: object
+    VmUpdateOwner:
+      type: object
+      properties:
+        newOwnerId:
+          type: string
+          x-go-name: NewOwnerID
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required,uuid4
+            bson: newOwnerId
+        oldOwnerId:
+          type: string
+          x-go-name: OldOwnerID
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            binding: required,uuid4
+            bson: oldOwnerId
+    VmUpdated:
+      properties:
+        id:
+          type: string
+          x-go-name: ID
+          x-go-type-skip-optional-pointer: true
+        jobId:
+          type: string
+          x-go-name: JobID
+      type: object
+    Volume:
+      properties:
+        appPath:
+          maxLength: 255
+          minLength: 1
+          type: string
+          x-go-name: AppPath
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=255
+            bson: appPath
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+          x-go-name: Name
+          x-oapi-codegen-extra-tags:
+            binding: required,volume_name,min=3,max=30
+            bson: name
+        serverPath:
+          maxLength: 255
+          minLength: 1
+          type: string
+          x-go-name: ServerPath
+          x-oapi-codegen-extra-tags:
+            binding: required,min=1,max=255
+            bson: serverPath
+      required:
+      - appPath
+      - name
+      - serverPath
+      type: object
+    WorkerStatusRead:
+      properties:
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+        reportedAt:
+          type: string
+          x-go-name: ReportedAt
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+        status:
+          type: string
+          x-go-name: Status
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ZoneEndpoints:
+      properties:
+        deployment:
+          type: string
+          x-go-name: Deployment
+          x-go-type-skip-optional-pointer: true
+        storage:
+          type: string
+          x-go-name: Storage
+          x-go-type-skip-optional-pointer: true
+        vm:
+          type: string
+          x-go-name: VM
+          x-go-type-skip-optional-pointer: true
+        vmApp:
+          type: string
+          x-go-name: VmApp
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ZoneRead:
+      properties:
+        capabilities:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+          x-go-name: Capabilities
+          x-go-type-skip-optional-pointer: true
+        description:
+          type: string
+          x-go-name: Description
+          x-go-type-skip-optional-pointer: true
+        enabled:
+          type: boolean
+          x-go-name: Enabled
+          x-go-type-skip-optional-pointer: true
+        endpoints:
+          $ref: '#/components/schemas/ZoneEndpoints'
+          x-go-name: Endpoints
+          x-go-type-skip-optional-pointer: true
+        legacy:
+          type: boolean
+          x-go-name: Legacy
+          x-go-type-skip-optional-pointer: true
+        name:
+          type: string
+          x-go-name: Name
+          x-go-type-skip-optional-pointer: true
+      type: object
+  securitySchemes:
+    ApiKeyAuth:
+      in: header
+      name: X-Api-Key
+      type: apiKey
+    KeycloakOAuth:
+      flows:
+        authorizationCode:
+          authorizationUrl: https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/auth
+          tokenUrl: https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/token
+      in: header
+      type: oauth2
+externalDocs:
+  description: ''
+  url: ''
+info:
+  contact:
+    name: Support
+    url: https://github.com/kthcloud/go-deploy
+  description: This is the API explorer for the go-deploy API. You can use it as a
+    reference for the API endpoints.
+  license:
+    name: MIT License
+    url: https://github.com/kthcloud/go-deploy?tab=MIT-1-ov-file#readme
+  termsOfService: http://swagger.io/terms/
+  title: go-deploy API
+  version: '1.0'
+openapi: 3.0.3
+paths:
+  /v2/deployments:
+    get:
+      description: List deployments
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        schema:
+          type: string
+      - description: Include shared
+        in: query
+        name: shared
+        schema:
+          type: boolean
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeploymentRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List deployments
+      tags:
+      - Deployment
+      operationId: GetDeployments
+    post:
+      description: Create deployment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/DeploymentCreate'
+                description: Deployment body
+                summary: body
+        description: Deployment body
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create deployment
+      tags:
+      - Deployment
+      operationId: PostDeployments
+  /v2/deployments/{deploymentId}:
+    delete:
+      description: Delete deployment
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete deployment
+      tags:
+      - Deployment
+      operationId: DeleteDeploymentsByDeploymentId
+    get:
+      description: Get deployment
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get deployment
+      tags:
+      - Deployment
+      operationId: GetDeploymentsByDeploymentId
+    post:
+      description: Update deployment
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/DeploymentUpdate'
+                description: Deployment update
+                summary: body
+        description: Deployment update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentUpdated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update deployment
+      tags:
+      - Deployment
+      operationId: PostDeploymentsByDeploymentId
+  /v2/deployments/{deploymentId}/ciConfig:
+    get:
+      description: Get CI config
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CiConfig'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get CI config
+      tags:
+      - Deployment
+      operationId: GetDeploymentsByDeploymentIdCiConfig
+  /v2/deployments/{deploymentId}/command:
+    post:
+      description: Do command
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/DeploymentCommand'
+                description: Command body
+                summary: body
+        description: Command body
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Do command
+      tags:
+      - Deployment
+      operationId: PostDeploymentsByDeploymentIdCommand
+  /v2/deployments/{deploymentId}/logs-sse:
+    get:
+      description: Get logs using Server-Sent Events
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get logs using Server-Sent Events
+      tags:
+      - Deployment
+      operationId: GetDeploymentsByDeploymentIdLogsSse
+  /v2/discover:
+    get:
+      description: Discover
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverRead'
+          description: OK
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: Discover
+      tags:
+      - Discover
+      operationId: GetDiscover
+  /v2/gpuClaims:
+    get:
+      description: List GPU claims
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      - description: Admin detailed list
+        in: query
+        name: detailed
+        schema:
+          type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GpuClaimRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List GPU claims
+      tags:
+      - GpuClaim
+      operationId: GetGpuClaims
+    post:
+      description: Create GpuClaim
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/GpuClaimCreate'
+                description: GpuClaim body
+                summary: body
+        description: GpuClaim body
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuClaimCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create GpuClaim
+      tags:
+      - GpuClaim
+      operationId: PostGpuClaims
+  /v2/gpuClaims/{gpuClaimId}:
+    delete:
+      description: Delete GpuClaim
+      parameters:
+      - description: GpuClaim ID
+        in: path
+        name: gpuClaimId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuClaimCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete GpuClaim
+      tags:
+      - GpuClaim
+      operationId: DeleteGpuClaimsByGpuClaimId
+    get:
+      description: Get GPU claim
+      parameters:
+      - description: GPU claim ID
+        in: path
+        name: gpuClaimId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuClaimRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get GPU claim
+      tags:
+      - GpuClaim
+      operationId: GetGpuClaimsByGpuClaimId
+  /v2/gpuGroups:
+    get:
+      description: List GPU groups
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GpuGroupRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List GPU groups
+      tags:
+      - GpuGroup
+      operationId: GetGpuGroups
+  /v2/gpuGroups/{gpuGroupId}:
+    get:
+      description: Get GPU group
+      parameters:
+      - description: GPU group ID
+        in: path
+        name: gpuGroupId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuGroupRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get GPU group
+      tags:
+      - GpuGroup
+      operationId: GetGpuGroupsByGpuGroupId
+  /v2/gpuLeases:
+    get:
+      description: List GPU leases
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Filter by VM ID
+        in: query
+        name: vmId
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GpuLeaseRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List GPU leases
+      tags:
+      - GpuLease
+      operationId: GetGpuLeases
+    post:
+      description: Create GPU lease
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/GpuLeaseCreate'
+                description: GPU lease
+                summary: body
+        description: GPU lease
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuLeaseCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create GPU Lease
+      tags:
+      - GpuLease
+      operationId: PostGpuLeases
+  /v2/gpuLeases/{gpuLeaseId}:
+    delete:
+      description: Delete GPU lease
+      parameters:
+      - description: GPU lease ID
+        in: path
+        name: gpuLeaseId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuLeaseDeleted'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete GPU lease
+      tags:
+      - GpuLease
+      operationId: DeleteGpuLeasesByGpuLeaseId
+    get:
+      description: Get GPU lease
+      parameters:
+      - description: GPU lease ID
+        in: path
+        name: gpuLeaseId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuLeaseRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get GPU lease
+      tags:
+      - GpuLease
+      operationId: GetGpuLeasesByGpuLeaseId
+    post:
+      description: Update GPU lease
+      parameters:
+      - description: GPU lease ID
+        in: path
+        name: gpuLeaseId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/GpuLeaseUpdate'
+                description: GPU lease
+                summary: body
+        description: GPU lease
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GpuLeaseUpdated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update GPU lease
+      tags:
+      - GpuLease
+      operationId: PostGpuLeasesByGpuLeaseId
+  /v2/hooks/deployments/harbor:
+    post:
+      description: Handle Harbor hook
+      parameters:
+      - description: Basic auth token
+        in: header
+        name: Authorization
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/HarborWebhook'
+                description: Harbor webhook body
+                summary: body
+        description: Harbor webhook body
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: Handle Harbor hook
+      tags:
+      - Deployment
+      operationId: PostHooksDeploymentsHarbor
+  /v2/hosts:
+    get:
+      description: List Hosts
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/HostRead'
+                type: array
+          description: OK
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: List Hosts
+      tags:
+      - Host
+      operationId: GetHosts
+  /v2/hosts/verbose:
+    get:
+      description: List Hosts verbose
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/HostVerboseRead'
+                type: array
+          description: OK
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: List Hosts verbose
+      tags:
+      - Host
+      operationId: GetHostsVerbose
+  /v2/jobs:
+    get:
+      description: List jobs
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        schema:
+          type: string
+      - description: Filter by type
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: Filter by status
+        in: query
+        name: status
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/JobRead'
+                type: array
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List jobs
+      tags:
+      - Job
+      operationId: GetJobs
+  /v2/jobs/{jobId}:
+    get:
+      description: GetJob job by id
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: GetJob job by id
+      tags:
+      - Job
+      operationId: GetJobsByJobId
+    post:
+      description: Update job. Only allowed for admins.
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/JobUpdate'
+                description: Job update
+                summary: body
+        description: Job update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRead'
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update job
+      tags:
+      - Job
+      operationId: PostJobsByJobId
+  /v2/metrics:
+    get:
+      description: Get metrics
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: Get metrics
+      tags:
+      - Metrics
+      operationId: GetMetrics
+  /v2/notifications:
+    get:
+      description: List notifications
+      parameters:
+      - description: List all notifications
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NotificationRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List notifications
+      tags:
+      - Notification
+      operationId: GetNotifications
+  /v2/notifications/{notificationId}:
+    delete:
+      description: Delete notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete notification
+      tags:
+      - Notification
+      operationId: DeleteNotificationsByNotificationId
+    get:
+      description: Get notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get notification
+      tags:
+      - Notification
+      operationId: GetNotificationsByNotificationId
+    post:
+      description: Update notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/NotificationUpdate'
+                description: Notification update
+                summary: body
+        description: Notification update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update notification
+      tags:
+      - Notification
+      operationId: PostNotificationsByNotificationId
+  /v2/register:
+    post:
+      description: Register resource
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: Register resource
+      tags:
+      - Register
+      operationId: PostRegister
+  /v2/resourceMigrations:
+    get:
+      description: List resource migrations
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResourceMigrationRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List resource migrations
+      tags:
+      - ResourceMigration
+      operationId: GetResourceMigrations
+    post:
+      description: Create resource migration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/ResourceMigrationCreate'
+                description: Resource Migration Create
+                summary: body
+        description: Resource Migration Create
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceMigrationCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create resource migration
+      tags:
+      - ResourceMigration
+      operationId: PostResourceMigrations
+  /v2/resourceMigrations/{resourceMigrationId}:
+    delete:
+      description: Delete resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete resource migration
+      tags:
+      - ResourceMigration
+      operationId: DeleteResourceMigrationsByResourceMigrationId
+    get:
+      description: Get resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceMigrationRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get resource migration
+      tags:
+      - ResourceMigration
+      operationId: GetResourceMigrationsByResourceMigrationId
+    post:
+      description: Update resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/ResourceMigrationUpdate'
+                description: Resource Migration Update
+                summary: body
+        description: Resource Migration Update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceMigrationUpdated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update resource migration
+      tags:
+      - ResourceMigration
+      operationId: PostResourceMigrationsByResourceMigrationId
+  /v2/snapshots:
+    get:
+      description: List snapshots
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VmSnapshotRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '423':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Locked
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List snapshots
+      tags:
+      - Snapshot
+      operationId: GetSnapshots
+    post:
+      operationId: PostSnapshots
+      summary: Create snapshot
+      tags:
+      - Snapshot
+      security:
+      - KeycloakOAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+  /v2/snapshots/{snapshotId}:
+    get:
+      description: Get snapshot
+      parameters:
+      - name: snapshotId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VmSnapshotRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get snapshot
+      tags:
+      - Snapshot
+      operationId: GetSnapshotsBySnapshotId
+    delete:
+      description: Delete snapshot
+      parameters:
+      - name: snapshotId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VmSnapshotDeleted'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete snapshot
+      tags:
+      - Snapshot
+      operationId: DeleteSnapshotsBySnapshotId
+  /v2/storageManagers:
+    get:
+      description: Get storage manager list
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SmRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get storage manager list
+      tags:
+      - StorageManager
+      operationId: GetStorageManagers
+  /v2/storageManagers/{storageManagerId}:
+    delete:
+      description: Delete storage manager
+      parameters:
+      - description: Storage manager ID
+        in: path
+        name: storageManagerId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmDeleted'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete storage manager
+      tags:
+      - StorageManager
+      operationId: DeleteStorageManagersByStorageManagerId
+    get:
+      description: Get storage manager
+      parameters:
+      - description: Storage manager ID
+        in: path
+        name: storageManagerId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmDeleted'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get storage manager
+      tags:
+      - StorageManager
+      operationId: GetStorageManagersByStorageManagerId
+  /v2/systemCapacities:
+    get:
+      description: List system capacities
+      parameters:
+      - description: n
+        in: query
+        name: n
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TimestampedSystemCapacities'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: List system capacities
+      tags:
+      - System
+      operationId: GetSystemCapacities
+  /v2/systemStats:
+    get:
+      description: List system stats
+      parameters:
+      - description: n
+        in: query
+        name: n
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TimestampedSystemStats'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: List system stats
+      tags:
+      - System
+      operationId: GetSystemStats
+  /v2/systemStatus:
+    get:
+      description: List system stats
+      parameters:
+      - description: n
+        in: query
+        name: n
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TimestampedSystemStatus'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: List system stats
+      tags:
+      - System
+      operationId: GetSystemStatus
+  /v2/teams:
+    get:
+      description: List teams
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TeamRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List teams
+      tags:
+      - Team
+      operationId: GetTeams
+    post:
+      description: Create team
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/TeamCreate'
+                description: Team
+                summary: body
+        description: Team
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create team
+      tags:
+      - Team
+      operationId: PostTeams
+  /v2/teams/{teamId}:
+    delete:
+      description: Delete team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete team
+      tags:
+      - Team
+      operationId: DeleteTeamsByTeamId
+    get:
+      description: Get team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get team
+      tags:
+      - Team
+      operationId: GetTeamsByTeamId
+    post:
+      description: Update team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/TeamUpdate'
+                description: Team
+                summary: body
+        description: Team
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingError'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update team
+      tags:
+      - Team
+      operationId: PostTeamsByTeamId
+  /v2/users:
+    get:
+      description: List users
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Discovery mode
+        in: query
+        name: discover
+        schema:
+          type: boolean
+      - description: Search query
+        in: query
+        name: search
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List users
+      tags:
+      - User
+      operationId: GetUsers
+    post:
+      operationId: PostUsers
+      summary: Update current user
+      tags:
+      - User
+      security:
+      - KeycloakOAuth: []
+      - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+  /v2/users/{userId}:
+    get:
+      description: Get user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      - description: Discovery mode
+        in: query
+        name: discover
+        schema:
+          type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get user
+      tags:
+      - User
+      operationId: GetUsersByUserId
+    post:
+      description: Update user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/UserUpdate'
+                description: User update
+                summary: body
+        description: User update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update user
+      tags:
+      - User
+      operationId: PostUsersByUserId
+  /v2/users/{userId}/apiKeys:
+    post:
+      description: Create API key
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/ApiKeyCreate'
+                description: API key create body
+                summary: body
+        description: API key create body
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create API key
+      tags:
+      - User
+      operationId: PostUsersByUserIdApiKeys
+  /v2/vmActions:
+    post:
+      description: Creates a new action
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/VmActionCreate'
+                description: actions body
+                summary: body
+        description: actions body
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VmActionCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Creates a new action
+      tags:
+      - VmAction
+      operationId: PostVmActions
+  /v2/vms:
+    get:
+      description: List VMs
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        schema:
+          type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        schema:
+          type: string
+      - description: Page number
+        in: query
+        name: page
+        schema:
+          type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VmRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List VMs
+      tags:
+      - VM
+      operationId: GetVms
+    post:
+      description: Create VM
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/VmCreate'
+                description: VM body
+                summary: body
+        description: VM body
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VmCreated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Create VM
+      tags:
+      - VM
+      operationId: PostVms
+  /v2/vms/{vmId}:
+    delete:
+      description: Delete VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VmDeleted'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Delete VM
+      tags:
+      - VM
+      operationId: DeleteVmsByVmId
+    get:
+      description: Get VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VmRead'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get VM
+      tags:
+      - VM
+      operationId: GetVmsByVmId
+    post:
+      description: Update VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+              - $ref: '#/components/schemas/VmUpdate'
+                description: VM update
+                summary: body
+        description: VM update
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VmUpdated'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Update VM
+      tags:
+      - VM
+      operationId: PostVmsByVmId
+  /v2/workerStatus:
+    get:
+      description: List of worker status
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/WorkerStatusRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: List worker status
+      tags:
+      - Status
+      operationId: GetWorkerStatus
+  /v2/zones:
+    get:
+      description: List zones
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ZoneRead'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List zones
+      tags:
+      - Zone
+      operationId: GetZones
+servers:
+- url: /

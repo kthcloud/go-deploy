@@ -13,37 +13,53 @@ on:
       - '.github/workflows/run-tests.yml'
 
 jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Lint
+        run: make lint
+
+      - name: Run unit tests
+        run: go test -race -cover ./...
+
   tests:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.0'
+          go-version-file: go.mod
+
+      - name: Set up mise
+        uses: jdx/mise-action@v2
 
       - name: Install local environment
         id: setup-local
-        run: |
-          cd scripts/local
-          chmod +x ./setup.sh && ./setup.sh -y --configure-dns
-          cd ../..
-          ls -la
+        run: mise run up
 
       - name: Export configuration file path
         run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
       - name: Run acceptance tests
         run: |
-          go test -timeout 90m ./test/acc/...
+          go test -tags=acc -timeout 90m ./test/acc/...
 
       - name: Start main program
         run: |
-          go build -o go-deploy .     # Build go-deploy
+          go build -o go-deploy ./cmd/go-deploy     # Build go-deploy
           ./go-deploy --mode=test &   # Starts in the background
-          
+
           # Wait for the API to return 200 on /healthz
           until $(curl --output /dev/null --silent --head --fail http://localhost:8080/healthz); do
               echo "Waiting for API to start"
@@ -51,22 +67,22 @@ jobs:
           done
 
       - name: Run e2e tests (VMs)
-        run: go test -timeout 90m ./test/e2e/v2/gpu_groups ./test/e2e/v2/gpu_leases ./test/e2e/v2/vms
+        run: go test -tags=e2e -timeout 90m ./test/e2e/v2/gpu_groups ./test/e2e/v2/gpu_leases ./test/e2e/v2/vms
 
       - name: Run e2e tests (Deployments)
-        run: go test -timeout 90m ./test/e2e/v2/deployments
+        run: go test -tags=e2e -timeout 90m ./test/e2e/v2/deployments
 
       - name: Run e2e tests (SMs)
-        run: go test -timeout 90m ./test/e2e/v2/sms
+        run: go test -tags=e2e -timeout 90m ./test/e2e/v2/sms
 
       - name: Run e2e tests (Jobs)
-        run: go test -timeout 90m ./test/e2e/v2/jobs
+        run: go test -tags=e2e -timeout 90m ./test/e2e/v2/jobs
 
       - name: Run e2e tests (Resource Migrations)
-        run: go test -timeout 90m ./test/e2e/v2/resource_migrations
+        run: go test -tags=e2e -timeout 90m ./test/e2e/v2/resource_migrations
 
       - name: Run e2e tests (Users)
-        run: go test -timeout 90m ./test/e2e/v2/users ./test/e2e/v2/teams ./test/e2e/v2/notifications
+        run: go test -tags=e2e -timeout 90m ./test/e2e/v2/users ./test/e2e/v2/teams ./test/e2e/v2/notifications
 
       - name: Run e2e tests (System)
-        run: go test -timeout 90m ./test/e2e/v2/zones
+        run: go test -tags=e2e -timeout 90m ./test/e2e/v2/zones

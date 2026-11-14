@@ -1,0 +1,12 @@
+controller:
+  admissionWebhooks:
+    enabled: false
+  ingressClassResource:
+    default: true
+  config:
+    allow-snippet-annotations: "true"
+  service:
+    type: NodePort
+    nodePorts:
+      http: 30080
+      https: 30443

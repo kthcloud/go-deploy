@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"time"
 )
 
@@ -32,7 +32,5 @@ func (g *GpuLease) ToDTO(queuePosition int) body.GpuLeaseRead {
 
 // FromDTO converts body.GpuLeaseUpdate DTO to GpuLeaseUpdateParams.
 func (p GpuLeaseUpdateParams) FromDTO(dto *body.GpuLeaseUpdate) *GpuLeaseUpdateParams {
-	return &GpuLeaseUpdateParams{
-		VmID: dto.VmID,
-	}
+	return dtoConverter.GpuLeaseUpdateFromDTO(dto)
 }

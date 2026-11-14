@@ -12,14 +12,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Build docs
-        run: |
-          cd scripts
-          source ./path-cmd.sh
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
-          chmod +x ./generate-docs.sh
-          ./generate-docs.sh
-
-          cd ..
+      - name: Generate OpenAPI code and docs
+        run: go generate ./api/... ./models/...

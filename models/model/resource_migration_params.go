@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 )
 
 type ResourceMigrationCreateParams struct {
@@ -16,6 +16,5 @@ type ResourceMigrationUpdateParams struct {
 }
 
 func (r ResourceMigrationUpdateParams) FromDTO(dto *body.ResourceMigrationUpdate) *ResourceMigrationUpdateParams {
-	r.Status = dto.Status
-	return &r
+	return dtoConverter.ResourceMigrationUpdateFromDTO(dto)
 }

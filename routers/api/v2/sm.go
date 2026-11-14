@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/dto/v2/query"
 	"github.com/kthcloud/go-deploy/dto/v2/uri"
 	"github.com/kthcloud/go-deploy/models/model"

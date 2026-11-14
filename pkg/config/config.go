@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/kthcloud/go-deploy/internal/defaults"
 	"github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/mode"
 	"github.com/kthcloud/go-deploy/models/version"
@@ -30,7 +31,7 @@ func SetupEnvironment(appMode string) error {
 
 	filepath, ok := os.LookupEnv("DEPLOY_CONFIG_FILE")
 	if !ok || filepath == "" {
-		filepath = "config.local.yml"
+		filepath = defaults.DefaultConfigFile
 	}
 
 	yamlFile, err := os.ReadFile(filepath)

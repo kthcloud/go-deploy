@@ -1,0 +1,11 @@
+domain: localtest.me
+
+ports:
+  mongodb: 30017
+  redis: 30379
+  keycloak: 30088
+
+namespaces:
+  - deploy
+  - deploy-vms
+  - deploy-system

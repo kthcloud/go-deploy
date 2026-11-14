@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfs-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+  namespace: nfs-server
+spec:
+  selector:
+    matchLabels:
+      app: nfs-server
+  template:
+    metadata:
+      labels:
+        app: nfs-server
+    spec:
+      initContainers:
+        - name: init-exports
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /exports/deployments/955f0f87-37fd-4792-90eb-9bf6989e698b/user /exports/deployments/955f0f87-37fd-4792-90eb-9bf6989e698b/data /exports/vms /exports/scratch /exports/snapshots /exports/misc"]
+          volumeMounts:
+            - name: storage
+              mountPath: /exports
+      containers:
+        - name: nfs-server
+          image: itsthenetwork/nfs-server-alpine:latest
+          env:
+            - name: SHARED_DIRECTORY
+              value: /exports
+          ports:
+            - name: nfs
+              containerPort: 2049
+            - name: mountd
+              containerPort: 20048
+            - name: rpcbind
+              containerPort: 111
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: storage
+              mountPath: /exports
+      volumes:
+        - name: storage
+          emptyDir:
+            medium: Memory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nfs-server
+  namespace: nfs-server
+spec:
+  clusterIP: 10.96.200.2
+  ports:
+    - name: nfs
+      port: 2049
+      targetPort: 2049
+    - name: mountd
+      port: 20048
+      targetPort: 20048
+    - name: rpcbind
+      port: 111
+      targetPort: 111
+  selector:
+    app: nfs-server

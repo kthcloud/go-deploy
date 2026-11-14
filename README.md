@@ -13,14 +13,20 @@ It is hosted at [https://api.cloud.cbh.kth.se/deploy/v2](https://api.cloud.cbh.k
 
 ## 🛠️ Local environment
 
-go-deploy can be hosted locally using the `setup.sh` script found under the `scripts/local` directory. The script will set up an entire local environment with every service installed in a Kind Kubernetes cluster on your local machine. 
+A reproducible local development environment (Kind cluster + Helmfile dependencies + `config.local.yml`) is configured via `mise.toml`, `kind.yaml`, and `helmfile.yaml.gotmpl`:
 
-Refer to the [local environment documentation](scripts/local/README.md) for more information.
+```bash
+mise install
+mise run up
+mise run run
+```
+
+Tear down with `mise run down`.
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome!\
-You can install a local development environment by following the [local environment documentation](scripts/local/README.md). 
+Contributions, issues, and feature requests are welcome!
+Set up the local development environment with `mise run up`.
 
 Remember to run the tests before creating a pull request.
 
@@ -44,7 +50,7 @@ The code base is documented using godoc. You can view the documentation by runni
 ### API
 The API is documented using OpenAPI 3.1.0 specification and is available at [https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html](https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html).
 
-You can also run the API locally by [setting up the local environment](scripts/local/README.md) and visiting [http://localhost:8080/v2/docs/index.html](http://localhost:8080/v2/docs/index.html).
+You can also run the API locally (`mise run up && mise run run`) and visit [http://localhost:8080/v2/docs/index.html](http://localhost:8080/v2/docs/index.html).
 
 
 Contributions, issues, and feature requests are welcome!

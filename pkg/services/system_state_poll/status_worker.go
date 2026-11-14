@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/host_repo"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/system_status_repo"
@@ -51,11 +51,19 @@ func GetHostStatuses() ([]body.HostStatus, error) {
 
 		hostStatus := body.HostStatus{
 			CPU: body.CpuStatus{
-				Load: hostApiStatus.CPU.Load,
-				Temp: hostApiStatus.CPU.Temp,
+				Load: body.CpuStatusLoad{
+					Main:  hostApiStatus.CPU.Load.Main,
+					Cores: hostApiStatus.CPU.Load.Cores,
+					Max:   hostApiStatus.CPU.Load.Max,
+				},
+				Temp: body.CpuStatusTemp{
+					Main:  hostApiStatus.CPU.Temp.Main,
+					Cores: hostApiStatus.CPU.Temp.Cores,
+					Max:   hostApiStatus.CPU.Temp.Max,
+				},
 			},
 			RAM: body.RamStatus{
-				Load: hostApiStatus.RAM.Load,
+				Load: body.RamStatusLoad(hostApiStatus.RAM.Load),
 			},
 			GPU:         gpuStatus,
 			Name:        host.Name,

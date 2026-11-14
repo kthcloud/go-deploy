@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/system_stats_repo"
 	wErrors "github.com/kthcloud/go-deploy/pkg/services/errors"

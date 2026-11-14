@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dev-deps
+description: Local development dependencies for go-deploy (MongoDB, Redis, Keycloak, storage classes, cert-manager issuer)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

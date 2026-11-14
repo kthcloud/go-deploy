@@ -1,0 +1,87 @@
+[tools]
+kind = "0.31"
+helm = "4.1"
+helmfile = "1.2"
+kubectl = "1.34"
+
+[tasks.create-cluster]
+description = "Create local kind dev cluster"
+run = "mise-tasks/create-kind-cluster go-deploy-dev"
+
+[tasks.delete-cluster]
+description = "Delete kind dev cluster and clean up kubeconfig"
+run = "mise-tasks/delete-kind-cluster go-deploy-dev"
+
+[tasks.lint]
+env = { KUBECONFIG = ".secrets/go-deploy-dev-kubeconfig" }
+description = "Lint helmfile for dev environment"
+run = "helmfile -e dev lint"
+
+[tasks.lint-go]
+description = "Run golangci-lint and go vet"
+run = "go tool golangci-lint run ./... && go vet ./..."
+
+[tasks.generate]
+description = "Run go generate for OpenAPI specs and goverter converters"
+run = "go generate ./api/... ./models/..."
+
+[tasks.deploy]
+env = { KUBECONFIG = ".secrets/go-deploy-dev-kubeconfig" }
+depends = ["create-cluster"]
+description = "Deploy local dev dependencies (ingress-nginx, cert-manager, mongodb, redis, keycloak) via helmfile"
+run = "helmfile -e dev sync"
+
+[tasks.dev-config]
+description = "Generate config.local.yml for local development"
+run = "mise-tasks/generate-dev-config"
+
+[tasks.seed-harbor]
+depends = ["deploy"]
+description = "Seed local Harbor with placeholder image"
+run = "mise-tasks/seed-harbor"
+
+[tasks.patch-coredns]
+env = { KUBECONFIG = ".secrets/go-deploy-dev-kubeconfig" }
+depends = ["deploy"]
+description = "Route *.localtest.me to ingress-nginx inside Kind"
+run = "mise-tasks/patch-coredns"
+
+[tasks.up]
+depends = ["seed-harbor", "patch-coredns", "dev-config"]
+description = "Set up entire reproducible local dev environment"
+
+[tasks.down]
+depends = ["delete-cluster"]
+description = "Tear down local kind dev cluster"
+
+[tasks.build]
+description = "Build go-deploy binary"
+run = "go build -o bin/go-deploy ./cmd/go-deploy"
+
+[tasks.build-image]
+description = "Build go-deploy Docker image with buildx bake"
+run = "docker buildx bake"
+
+[tasks.load-image]
+depends = ["create-cluster", "build-image"]
+description = "Load go-deploy Docker image into kind cluster"
+run = "mise-tasks/load-image go-deploy-dev"
+
+[tasks.run]
+env = { DEPLOY_CONFIG_FILE = "config.local.yml" }
+description = "Run go-deploy locally in dev mode"
+run = "go run ./cmd/go-deploy --mode dev"
+
+[tasks.test-unit]
+description = "Run unit tests (no external dependencies) with -race and coverage"
+run = "go test -race -cover ./..."
+
+[tasks.test-acc]
+env = { DEPLOY_CONFIG_FILE = "config.local.yml" }
+description = "Run acceptance tests against local dev environment"
+run = "go test -tags=acc ./test/acc/..."
+
+[tasks.test]
+env = { DEPLOY_CONFIG_FILE = "config.local.yml" }
+description = "Run full Go test suite (acc + e2e)"
+run = "make test"

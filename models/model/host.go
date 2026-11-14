@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 )
 
 type Host struct {
@@ -31,25 +31,10 @@ func (host *Host) ApiURL() string {
 }
 
 func (host *Host) ToDTO() body.HostRead {
-	return body.HostRead{
-		Name:        host.Name,
-		DisplayName: host.DisplayName,
-		Zone:        host.Zone,
-	}
+	return dtoConverter.HostToDTO(host)
 }
 func (host *Host) ToVerboseDTO() body.HostVerboseRead {
-	return body.HostVerboseRead{
-		Name:             host.Name,
-		DisplayName:      host.DisplayName,
-		Zone:             host.Zone,
-		IP:               host.IP,
-		Port:             host.Port,
-		Enabled:          host.Enabled,
-		Schedulable:      host.Schedulable,
-		DeactivatedUntil: host.DeactivatedUntil,
-		LastSeenAt:       host.LastSeenAt,
-		RegisteredAt:     host.RegisteredAt,
-	}
+	return dtoConverter.HostToVerboseDTO(host)
 }
 func NewHostByParams(params *body.HostRegisterParams) *Host {
 	return &Host{

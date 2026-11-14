@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	bodyV2 "github.com/kthcloud/go-deploy/dto/v2/body"
+	bodyV2 "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"

@@ -1,7 +1,9 @@
+//go:build e2e
+
 package v2
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +42,17 @@ func UpdateResourceMigration(t *testing.T, id string, requestBody body.ResourceM
 
 	assert.Equal(t, requestBody.Status, resourceMigrationUpdated.Status)
 
-	return resourceMigrationUpdated.ResourceMigrationRead
+	return body.ResourceMigrationRead{
+		ID:           resourceMigrationUpdated.ID,
+		ResourceID:   resourceMigrationUpdated.ResourceID,
+		UserID:       resourceMigrationUpdated.UserID,
+		Type:         resourceMigrationUpdated.Type,
+		ResourceType: resourceMigrationUpdated.ResourceType,
+		Status:       resourceMigrationUpdated.Status,
+		UpdateOwner:  resourceMigrationUpdated.UpdateOwner,
+		CreatedAt:    resourceMigrationUpdated.CreatedAt,
+		DeletedAt:    resourceMigrationUpdated.DeletedAt,
+	}
 }
 
 func DeleteResourceMigration(t *testing.T, id string, user ...string) {
@@ -71,7 +83,17 @@ func WithResourceMigration(t *testing.T, requestBody body.ResourceMigrationCreat
 		assert.Equal(t, requestBody.UpdateOwner.OwnerID, resourceMigrationCreated.UpdateOwner.OwnerID)
 	}
 
-	return resourceMigrationCreated.ResourceMigrationRead
+	return body.ResourceMigrationRead{
+		ID:           resourceMigrationCreated.ID,
+		ResourceID:   resourceMigrationCreated.ResourceID,
+		UserID:       resourceMigrationCreated.UserID,
+		Type:         resourceMigrationCreated.Type,
+		ResourceType: resourceMigrationCreated.ResourceType,
+		Status:       resourceMigrationCreated.Status,
+		UpdateOwner:  resourceMigrationCreated.UpdateOwner,
+		CreatedAt:    resourceMigrationCreated.CreatedAt,
+		DeletedAt:    resourceMigrationCreated.DeletedAt,
+	}
 }
 
 func CleanUpResourceMigration(t *testing.T, id string) {

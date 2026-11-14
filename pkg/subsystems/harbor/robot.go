@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-openapi/strfmt"
 	robotModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/robot"
-	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/robotv1"
 	harborModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
@@ -76,9 +75,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return fmt.Errorf("failed to create robot %s. details: %w", public.Name, err)
 	}
 
-	robots, err := client.HarborClient.V2().Robotv1.ListRobotV1(context.TODO(), &robotv1.ListRobotV1Params{
-		ProjectNameOrID: client.Project,
-	})
+	robots, err := client.HarborClient.V2().Robot.ListRobot(context.TODO(), &robotModels.ListRobotParams{})
 	if err != nil {
 		if !IsNotFoundErr(err) {
 			return nil, makeError(err)
@@ -112,9 +109,8 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPubl
 			return nil, err
 		}
 
-		r, err := client.HarborClient.V2().Robotv1.GetRobotByIDV1(context.TODO(), &robotv1.GetRobotByIDV1Params{
-			RobotID:         robotCreated.Payload.ID,
-			ProjectNameOrID: client.Project,
+		r, err := client.HarborClient.V2().Robot.GetRobotByID(context.TODO(), &robotModels.GetRobotByIDParams{
+			RobotID: robotCreated.Payload.ID,
 		})
 		if err != nil {
 			return nil, makeError(err)
@@ -169,7 +165,9 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return nil, makeError(err)
 	}
 
-	robots, err := client.HarborClient.V2().Robotv1.ListRobotV1(context.TODO(), &robotv1.ListRobotV1Params{ProjectNameOrID: client.Project})
+	r, err := client.HarborClient.V2().Robot.GetRobotByID(context.TODO(), &robotModels.GetRobotByIDParams{
+		RobotID: int64(public.ID),
+	})
 	if err != nil {
 		if IsNotFoundErr(err) {
 			return nil, nil
@@ -178,16 +176,7 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return nil, makeError(err)
 	}
 
-	var robot *harborModels.Robot
-	if robots != nil {
-		for _, r := range robots.Payload {
-			if r.ID == int64(public.ID) {
-				robot = r
-				break
-			}
-		}
-	}
-
+	robot := r.Payload
 	if robot == nil {
 		log.Println("Robot", public.Name, "not found when updating. Assuming it was deleted")
 		return nil, nil

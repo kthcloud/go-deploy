@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 )
 
 type Quotas struct {
@@ -15,12 +15,5 @@ type Quotas struct {
 
 // ToDTO converts a Quotas to a body.Quota DTO.
 func (q *Quotas) ToDTO() body.Quota {
-	return body.Quota{
-		CpuCores:         q.CpuCores,
-		RAM:              q.RAM,
-		DiskSize:         q.DiskSize,
-		Snapshots:        q.Snapshots,
-		GpuLeaseDuration: q.GpuLeaseDuration,
-		Gpus:             q.Gpus,
-	}
+	return dtoConverter.QuotasToDTO(q)
 }

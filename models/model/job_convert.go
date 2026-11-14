@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/utils"
 )
 
@@ -26,5 +26,5 @@ func (job *Job) ToDTO(statusMessage string) body.JobRead {
 }
 
 func (params *JobUpdateParams) FromDTO(jobUpdateDTO *body.JobUpdate) {
-	params.Status = jobUpdateDTO.Status
+	*params = dtoConverter.JobUpdateFromDTO(jobUpdateDTO)
 }

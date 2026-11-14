@@ -1,0 +1,58 @@
+environments:
+  dev:
+    values:
+      - environments/dev/values.yaml
+
+---
+repositories:
+  - name: csi-driver-nfs
+    url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: goharbor
+    url: https://helm.goharbor.io
+
+---
+releases:
+  - name: csi-driver-nfs
+    namespace: kube-system
+    chart: csi-driver-nfs/csi-driver-nfs
+    wait: true
+
+  - name: ingress-nginx
+    namespace: ingress-nginx
+    createNamespace: true
+    chart: ingress-nginx/ingress-nginx
+    wait: true
+    values:
+      - environments/dev/ingress-nginx.values.yaml
+
+  - name: cert-manager
+    namespace: cert-manager
+    createNamespace: true
+    chart: jetstack/cert-manager
+    wait: true
+    set:
+      - name: crds.enabled
+        value: true
+
+  - name: harbor
+    namespace: harbor
+    createNamespace: true
+    chart: goharbor/harbor
+    installed: {{ .Values.harbor.enabled | default true }}
+    wait: true
+    values:
+      - environments/dev/harbor.values.yaml
+
+  - name: dev-deps
+    namespace: default
+    chart: ./deploy/helm/dev-deps
+    wait: true
+    values:
+      - environments/{{ .Environment.Name }}/values.yaml
+    needs:
+      - ingress-nginx/ingress-nginx
+      - cert-manager/cert-manager

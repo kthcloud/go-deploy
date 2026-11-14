@@ -4,7 +4,7 @@ import (
 	"slices"
 
 	"github.com/fatih/structs"
-	body2 "github.com/kthcloud/go-deploy/dto/v2/body"
+	body2 "github.com/kthcloud/go-deploy/api/openapi/v2"
 )
 
 type Role struct {

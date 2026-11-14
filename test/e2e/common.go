@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -11,7 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/sys"
 	"github.com/stretchr/testify/assert"

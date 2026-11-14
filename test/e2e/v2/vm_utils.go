@@ -1,9 +1,11 @@
+//go:build e2e
+
 package v2
 
 import (
 	"fmt"
 	"github.com/helloyi/go-sshclient"
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
 	"github.com/kthcloud/go-deploy/test/e2e"
 	"github.com/stretchr/testify/assert"

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"time"
 )
 
@@ -19,12 +19,7 @@ type ApiKeyCreateParams struct {
 }
 
 func (apiKey *ApiKey) ToDTO() body.ApiKeyCreated {
-	return body.ApiKeyCreated{
-		Name:      apiKey.Name,
-		Key:       apiKey.Key,
-		CreatedAt: apiKey.CreatedAt,
-		ExpiresAt: apiKey.ExpiresAt,
-	}
+	return dtoConverter.ApiKeyToCreatedDTO(apiKey)
 }
 
 func (apiKey ApiKeyCreateParams) FromDTO(dto *body.ApiKeyCreate, key string) *ApiKeyCreateParams {

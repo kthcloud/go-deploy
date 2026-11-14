@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/dto/v2/query"
 	"github.com/kthcloud/go-deploy/dto/v2/uri"
 	"github.com/kthcloud/go-deploy/pkg/sys"
@@ -166,9 +166,18 @@ func CreateResourceMigration(c *gin.Context) {
 		return
 	}
 
+	rmDTO := resourceMigration.ToDTO()
 	context.Ok(body.ResourceMigrationCreated{
-		ResourceMigrationRead: resourceMigration.ToDTO(),
-		JobID:                 jobID,
+		ID:           rmDTO.ID,
+		ResourceID:   rmDTO.ResourceID,
+		UserID:       rmDTO.UserID,
+		Type:         rmDTO.Type,
+		ResourceType: rmDTO.ResourceType,
+		Status:       rmDTO.Status,
+		UpdateOwner:  rmDTO.UpdateOwner,
+		CreatedAt:    rmDTO.CreatedAt,
+		DeletedAt:    rmDTO.DeletedAt,
+		JobID:        jobID,
 	})
 }
 
@@ -267,9 +276,18 @@ func UpdateResourceMigration(c *gin.Context) {
 		return
 	}
 
+	rmDTO := resourceMigration.ToDTO()
 	context.Ok(body.ResourceMigrationUpdated{
-		ResourceMigrationRead: resourceMigration.ToDTO(),
-		JobID:                 jobID,
+		ID:           rmDTO.ID,
+		ResourceID:   rmDTO.ResourceID,
+		UserID:       rmDTO.UserID,
+		Type:         rmDTO.Type,
+		ResourceType: rmDTO.ResourceType,
+		Status:       rmDTO.Status,
+		UpdateOwner:  rmDTO.UpdateOwner,
+		CreatedAt:    rmDTO.CreatedAt,
+		DeletedAt:    rmDTO.DeletedAt,
+		JobID:        jobID,
 	})
 }
 

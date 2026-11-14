@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#MISE description="Delete kind cluster"
+set -euo pipefail
+
+CLUSTER_NAME="${1:-go-deploy-dev}"
+KUBECONFIG_FILE="${2:-.secrets/${CLUSTER_NAME}-kubeconfig}"
+
+if kind get clusters | grep -q "^${CLUSTER_NAME}$"; then
+  echo "Deleting kind cluster '${CLUSTER_NAME}'..."
+  kind delete cluster --name "${CLUSTER_NAME}"
+  echo "Kind cluster '${CLUSTER_NAME}' deleted!"
+else
+  echo "Kind cluster '${CLUSTER_NAME}' does not exist. Skipping deletion."
+fi
+
+if [[ -f "$KUBECONFIG_FILE" ]]; then
+  echo "Removing kubeconfig file at $KUBECONFIG_FILE"
+  rm -f "$KUBECONFIG_FILE"
+fi

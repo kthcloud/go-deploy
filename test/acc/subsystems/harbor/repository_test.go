@@ -1,3 +1,5 @@
+//go:build acc
+
 package harbor
 
 import (

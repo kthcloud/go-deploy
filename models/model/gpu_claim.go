@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra/nvidia"
 	"github.com/kthcloud/go-deploy/utils"

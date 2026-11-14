@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"time"
 )
 
@@ -39,8 +39,5 @@ type GpuLeaseCreateParams struct {
 
 // FromDTO converts body.GpuLeaseCreate DTO to GpuLeaseCreateParams.
 func (g GpuLeaseCreateParams) FromDTO(dto *body.GpuLeaseCreate) GpuLeaseCreateParams {
-	return GpuLeaseCreateParams{
-		GpuGroupName: dto.GpuGroupID,
-		LeaseForever: dto.LeaseForever,
-	}
+	return dtoConverter.GpuLeaseCreateFromDTO(dto)
 }

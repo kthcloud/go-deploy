@@ -1,7 +1,9 @@
 package routers
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"strings"
@@ -11,18 +13,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	docsV2 "github.com/kthcloud/go-deploy/docs/api/v2"
-	docsV2Handlers "github.com/kthcloud/go-deploy/docs/api/v2/handlers"
-	docsV2ServerUtil "github.com/kthcloud/go-deploy/docs/api/v2/util"
+	apiV2 "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/mode"
 	"github.com/kthcloud/go-deploy/pkg/auth"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/metrics"
 	"github.com/kthcloud/go-deploy/pkg/sys"
+	v2 "github.com/kthcloud/go-deploy/routers/api/v2"
 	"github.com/kthcloud/go-deploy/routers/api/v2/middleware"
 	"github.com/kthcloud/go-deploy/routers/api/validators"
-	"github.com/kthcloud/go-deploy/routers/routes"
 	"github.com/penglongli/gin-metrics/ginmetrics"
 )
 
@@ -57,61 +57,65 @@ func NewRouter() *gin.Engine {
 		})
 	})
 
-	// Private routing group
-	private := router.Group("/")
-	private.Use(auth.SetupKeycloakChain(auth.Check(), sys.GetKeyCloakConfig()))
-	private.Use(middleware.SetupAuthUser)
+	// OpenAPI docs (v2)
+	router.GET("/v2/docs/*any", apiV2.ServeDocs(basePath+"/v2/docs"))
 
-	// Public routing group
-	public := router.Group("/")
-
-	//// Swagger routes
-	// v2
-	docsV2.SwaggerInfoV2.BasePath = basePath
-	docsV2.SwaggerInfoV2.Host = ""
-	docsV2.SwaggerInfoV2.Schemes = []string{"http", "https"}
-
-	// Update openapi spec to have the correct basepath, since openapi 3.+ doesnt use basepath and uses servers instead
-	if err := docsV2ServerUtil.UpdateSwaggerServers(basePath); err != nil {
-		log.Fatalln(err)
-	}
-
-	//public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	public.GET("/v2/docs/*any", docsV2Handlers.ServeDocs(basePath+"/v2/docs"))
-	//// Health check routes
-	public.Any("/healthz", func(c *gin.Context) {
+	// Health check routes
+	router.Any("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	// TODO: Answer /livez or/and /readyz with 200 if the server is up
 
-	// Hook routing group
-	hook := router.Group("/")
-
-	groups := routes.RoutingGroups()
-	for _, group := range groups {
-		for _, route := range group.PublicRoutes() {
-			HandleRoute(public, route.Method, route.Pattern, route.HandlerFunc, route.Middleware)
-		}
-
-		for _, route := range group.PrivateRoutes() {
-			HandleRoute(private, route.Method, route.Pattern, route.HandlerFunc, route.Middleware)
-		}
-
-		for _, route := range group.HookRoutes() {
-			HandleRoute(hook, route.Method, route.Pattern, route.HandlerFunc, route.Middleware)
-		}
+	publicRoutes := map[string]struct{}{
+		"GET /v2/discover":                  {},
+		"GET /v2/hosts":                     {},
+		"GET /v2/hosts/verbose":             {},
+		"GET /v2/metrics":                   {},
+		"POST /v2/register":                 {},
+		"GET /v2/systemCapacities":          {},
+		"GET /v2/systemStats":               {},
+		"GET /v2/systemStatus":              {},
+		"GET /v2/workerStatus":              {},
+		"POST /v2/hooks/deployments/harbor": {},
 	}
+	authChain := auth.SetupKeycloakChain(auth.Check(), sys.GetKeyCloakConfig())
+	authMiddleware := func(c *gin.Context) {
+		if _, isPublic := publicRoutes[c.Request.Method+" "+c.FullPath()]; isPublic {
+			return
+		}
+		authChain(c)
+		if c.IsAborted() {
+			return
+		}
+		middleware.SetupAuthUser(c)
+	}
+
+	metricsTarget := fmt.Sprintf("localhost:%d", config.Config.Port)
+	metricsHandler := func(c *gin.Context) {
+		metrics.Sync()
+
+		rewrite := func(pr *httputil.ProxyRequest) {
+			pr.Out.URL.Path = "/internal/metrics"
+			pr.Out.URL.Scheme = "http"
+			pr.Out.URL.Host = metricsTarget
+		}
+
+		c.Writer.Header().Del("Access-Control-Allow-Origin")
+		c.Writer.Header().Del("Access-Control-Allow-Methods")
+		c.Writer.Header().Del("Access-Control-Allow-Credentials")
+
+		proxy := &httputil.ReverseProxy{Rewrite: rewrite}
+		proxy.ServeHTTP(c.Writer, c.Request)
+	}
+
+	apiV2.RegisterHandlersWithOptions(router, v2.NewServer(metricsHandler, middleware.CreateSM(), middleware.SseSetup()), apiV2.GinServerOptions{
+		Middlewares: []apiV2.MiddlewareFunc{authMiddleware},
+	})
 
 	registerCustomValidators()
 
 	return router
-}
-
-// HandleRoute registers a route with the given method, path, handler and middleware
-func HandleRoute(engine *gin.RouterGroup, method, path string, handler gin.HandlerFunc, middleware []gin.HandlerFunc) {
-	allHandlers := append(middleware, handler)
-	engine.Handle(method, path, allHandlers...)
 }
 
 // registerCustomValidators registers custom validators for the gin binding

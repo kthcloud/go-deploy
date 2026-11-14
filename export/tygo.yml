@@ -1,6 +1,6 @@
 packages:
   # v2
-  - path: github.com/kthcloud/go-deploy/dto/v2/body
+  - path: github.com/kthcloud/go-deploy/api/openapi/v2
     output_path: types/v2/body
     type_mappings:
       time.Time: "string"

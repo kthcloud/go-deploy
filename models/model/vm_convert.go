@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/pkg/subsystems"
 	"github.com/kthcloud/go-deploy/utils"
 )
@@ -182,18 +182,12 @@ func (p VmUpdateParams) FromDTOv2(dto *body.VmUpdate) VmUpdateParams {
 
 // FromDTOv2 converts a dto.Action to a VmActionParams.
 func (p VmActionParams) FromDTOv2(dto *body.VmActionCreate) VmActionParams {
-	p.Action = dto.Action
-	return p
+	return dtoConverter.VmActionFromDTO(dto)
 }
 
 // ToDTOv2 converts a Snapshot to a body.VmSnapshotRead.
 func (sc *SnapshotV2) ToDTOv2() body.VmSnapshotRead {
-	return body.VmSnapshotRead{
-		ID:        sc.ID,
-		Name:      sc.Name,
-		Status:    sc.Status,
-		CreatedAt: sc.CreatedAt,
-	}
+	return dtoConverter.VmSnapshotToDTO(sc)
 }
 
 // FromDTOv2 converts a body.VmSnapshotCreate to a CreateSnapshotParams.

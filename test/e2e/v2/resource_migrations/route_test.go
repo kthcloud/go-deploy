@@ -1,7 +1,9 @@
+//go:build e2e
+
 package resource_migrations
 
 import (
-	bodyV2 "github.com/kthcloud/go-deploy/dto/v2/body"
+	bodyV2 "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/test/e2e"
 	v2 "github.com/kthcloud/go-deploy/test/e2e/v2"
@@ -44,7 +46,7 @@ func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 		Type:       model.ResourceMigrationTypeUpdateOwner,
 		ResourceID: resource.ID,
 		UpdateOwner: &struct {
-			OwnerID string `json:"ownerId" binding:"required,uuid4"`
+			OwnerID string `binding:"required,uuid4" json:"ownerId"`
 		}{
 			OwnerID: model.TestDefaultUserID,
 		},
@@ -105,7 +107,7 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 		Type:       model.ResourceMigrationTypeUpdateOwner,
 		ResourceID: resource.ID,
 		UpdateOwner: &struct {
-			OwnerID string `json:"ownerId" binding:"required,uuid4"`
+			OwnerID string `binding:"required,uuid4" json:"ownerId"`
 		}{
 			OwnerID: model.TestDefaultUserID,
 		},
@@ -164,7 +166,7 @@ func TestUpdateDeploymentOwnerAsAdmin(t *testing.T) {
 		ResourceID: resource1.ID,
 		Status:     &s,
 		UpdateOwner: &struct {
-			OwnerID string `json:"ownerId" binding:"required,uuid4"`
+			OwnerID string `binding:"required,uuid4" json:"ownerId"`
 		}{
 			OwnerID: model.TestDefaultUserID,
 		},
@@ -205,7 +207,7 @@ func TestUpdateVmOwnerAsAdmin(t *testing.T) {
 		ResourceID: resource2.ID,
 		Status:     &s,
 		UpdateOwner: &struct {
-			OwnerID string `json:"ownerId" binding:"required,uuid4"`
+			OwnerID string `binding:"required,uuid4" json:"ownerId"`
 		}{
 			OwnerID: model.TestDefaultUserID,
 		},

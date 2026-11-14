@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"github.com/kthcloud/go-deploy/utils"
 	"sort"
 	"time"
@@ -79,7 +79,7 @@ func (params *TeamCreateParams) FromDTO(teamCreateDTO *body.TeamCreate, ownerID 
 
 // FromDTO converts a body.TeamJoin DTO to a JoinParams.
 func (params *TeamJoinParams) FromDTO(teamJoinDTO *body.TeamJoin) {
-	params.InvitationCode = teamJoinDTO.InvitationCode
+	*params = dtoConverter.TeamJoinFromDTO(teamJoinDTO)
 }
 
 // FromDTO converts a body.TeamUpdate DTO to an UpdateParams.

@@ -1,0 +1,172 @@
+externalUrl: http://localhost:8080
+port: 8080
+
+timer:
+  deploymentStatusUpdate: 30s
+  deploymentPingUpdate: 15s
+  deploymentDeletionConfirm: 5s
+  deploymentRepair: 30m
+
+  smDeletionConfirm: 5s
+  smRepair: 30m
+
+  vmStatusUpdate: 30s
+  vmDeletionConfirm: 5s
+  vmRepair: 30m
+
+  gpuSynchronize: 5m
+  gpuLeaseSynchronize: 15s
+
+  metricsUpdate: 1m
+  customDomainConfirm: 30m
+  staleResourceCleanup: 1h
+
+  jobFetch: 1s
+  failedJobFetch: 1s
+
+  fetchSystemStats: 5s
+  fetchSystemCapacities: 5s
+  fetchSystemStatus: 5s
+  fetchSystemGpuInfo: 5s
+
+discovery:
+  token: token
+
+zones:
+  - name: local
+    enabled: true
+    description: Local development zone
+    k8s:
+      namespaces:
+        deployment: deploy
+        vm: deploy-vms
+        system: deploy-system
+      configSource:
+        type: localPath
+        path: .secrets/go-deploy-dev-kubeconfig
+      ingressNamespace: ingress-nginx
+    capabilities:
+      - deployment
+    domains:
+      parentDeployment: app.localtest.me
+      parentSm: sm.localtest.me
+      parentVm: vm.localtest.me
+      parentVmApp: vm-app.localtest.me
+    storage:
+      nfsServer: 10.96.200.2
+      paths:
+        parentDeployment: /deployments
+    portRange:
+      start: 30000
+      end: 30025
+
+registry:
+  url: localhost:30002
+  placeholderImage: localhost:30002/library/placeholder
+  vmHttpProxyImage: localhost:30002/library/placeholder
+
+gpu:
+  privilegedGpus:
+  excludedHosts:
+  excludedGpus:
+  addMock: true
+
+deployment:
+  defaultZone: local
+  port: 8080
+  lifetime: 2160h # 90d
+  prefix: deploy-
+  fallback:
+    disabled:
+      name: deploy-fallback
+
+  wildcardCertSecretNamespace: cert-manager
+  wildcardCertSecretName: go-deploy-wildcard-secret
+  customDomainTxtRecordSubdomain: _kthcloud
+
+  ingressClass: nginx
+
+  resources:
+    autoScale:
+      cpuThreshold: 50
+      memoryThreshold: 50
+    limits:
+      cpu: 0.2
+      memory: 0.5
+      storage: 1
+    requests:
+      cpu: 0.1
+      memory: 0.1
+
+vm:
+  defaultZone: local
+  lifetime: 2160h # 90d
+  adminSshPublicKey: ""
+  image: ""
+
+roles:
+  - name: default
+    description: Default
+    iamGroup: default
+    permissions:
+      chooseZone: false
+      chooseGpu: false
+      useCustomDomains: false
+      useGpus: false
+      usePrivilegedGpus: false
+    quotas:
+      cpuCores: 2
+      ram: 4
+      diskSize: 20
+      gpuLeaseDuration:
+  - name: base
+    description: base
+    iamGroup: base
+    permissions:
+      chooseZone: false
+      chooseGpu: false
+      useCustomDomains: true
+      useGpus: true
+      usePrivilegedGpus: false
+    quotas:
+      cpuCores: 4
+      ram: 16
+      diskSize: 50
+      gpuLeaseDuration: 5
+  - name: power
+    description: power
+    iamGroup: power
+    permissions:
+      chooseZone: true
+      chooseGpu: true
+      useCustomDomains: true
+      useGpus: true
+      usePrivilegedGpus: true
+    quotas:
+      cpuCores: 40
+      ram: 160
+      diskSize: 2000
+      snapshots: 10
+      gpuLeaseDuration: 168
+
+keycloak:
+  url: http://iam.localtest.me
+  realm: cloud
+  adminGroup: admin
+  userClient:
+    clientId: go-deploy
+    clientSecret: dev-secret
+
+mongodb:
+  url: mongodb://admin:admin@localhost:30017
+  name: go-deploy
+
+redis:
+  url: localhost:30379
+  password: ""
+
+harbor:
+  url: http://localhost:30002
+  user: admin
+  password: Harbor12345
+  webhookSecret: dev-webhook-secret

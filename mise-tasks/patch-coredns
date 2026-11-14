@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#MISE description="Configure CoreDNS in Kind to route *.localtest.me to ingress-nginx"
+set -euo pipefail
+
+INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.clusterIP}')
+if [[ -z "$INGRESS_IP" ]]; then
+  echo "Failed to resolve ingress-nginx-controller ClusterIP"
+  exit 1
+fi
+
+COREFILE=$(kubectl get configmap coredns -n kube-system -o jsonpath='{.data.Corefile}')
+if echo "$COREFILE" | grep -q "localtest.me"; then
+  echo "CoreDNS already configured for localtest.me."
+  exit 0
+fi
+
+PATCHED_COREFILE=$(printf '%s\n' "$COREFILE" | awk -v ip="$INGRESS_IP" '
+  /kubernetes cluster\.local/ {
+    print "    template IN A localtest.me {"
+    print "        match (^|\\.)localtest\\.me\\.$"
+    print "        answer \"{{ .Name }} 60 IN A " ip "\""
+    print "        fallthrough"
+    print "    }"
+  }
+  { print }
+')
+
+kubectl create configmap coredns -n kube-system --from-literal=Corefile="$PATCHED_COREFILE" --dry-run=client -o yaml | kubectl apply -f -
+kubectl rollout restart deployment/coredns -n kube-system
+kubectl rollout status deployment/coredns -n kube-system --timeout=60s

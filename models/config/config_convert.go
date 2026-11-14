@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 )
 
 // ToDTO converts a Zone to a body.ZoneRead DTO.

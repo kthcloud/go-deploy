@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kthcloud/go-deploy/dto/v2/body"
+	body "github.com/kthcloud/go-deploy/api/openapi/v2"
 	"time"
 )
 
@@ -32,29 +32,5 @@ type NotificationCreateParams struct {
 
 // ToDTO converts a Notification to a body.NotificationRead DTO.
 func (notification *Notification) ToDTO() body.NotificationRead {
-	var readAt *time.Time
-	if !notification.ReadAt.IsZero() {
-		readAt = &notification.ReadAt
-	}
-
-	var toastedAt *time.Time
-	if !notification.ToastedAt.IsZero() {
-		toastedAt = &notification.ToastedAt
-	}
-
-	var completedAt *time.Time
-	if !notification.CompletedAt.IsZero() {
-		completedAt = &notification.CompletedAt
-	}
-
-	return body.NotificationRead{
-		ID:          notification.ID,
-		UserID:      notification.UserID,
-		Type:        notification.Type,
-		Content:     notification.Content,
-		CreatedAt:   notification.CreatedAt,
-		ReadAt:      readAt,
-		ToastedAt:   toastedAt,
-		CompletedAt: completedAt,
-	}
+	return dtoConverter.NotificationToDTO(notification)
 }
