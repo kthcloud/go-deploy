@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_claim_repo"
@@ -15,19 +16,13 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/parsers/dra"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/mitchellh/mapstructure"
 )
 
 func CreateGpuClaim(ctx context.Context, job *model.Job) error {
-	err := utils.AssertParameters(job, []string{"id", "params"})
+	id, paramsMap, err := extractIDAndParams(job)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
-	}
-
-	id := job.Args["id"].(string)
-
-	paramsMap, ok := job.Args["params"].(map[string]any)
-	if !ok {
-		return jErrors.MakeTerminatedError(fmt.Errorf("invalid params type"))
 	}
 
 	params, err := DecodeGpuClaimCreateParams(paramsMap)
@@ -35,8 +30,7 @@ func CreateGpuClaim(ctx context.Context, job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).GpuClaims().Create(ctx, id, &params)
-	if err != nil {
+	if err := service.V2(utils.GetAuthInfo(job)).GpuClaims().Create(ctx, id, &params); err != nil {
 		// We always terminate these jobs, since rerunning it would cause a ErrNonUniqueField
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -45,20 +39,16 @@ func CreateGpuClaim(ctx context.Context, job *model.Job) error {
 }
 
 func DeleteGpuClaim(ctx context.Context, job *model.Job) error {
-	err := utils.AssertParameters(job, []string{"id"})
+	id, err := extractJobID(job)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	id := job.Args["id"].(string)
-
-	err = gpu_claim_repo.New().AddActivity(id, model.ActivityBeingDeleted)
-	if err != nil {
+	if err := gpu_claim_repo.New().AddActivity(id, model.ActivityBeingDeleted); err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).GpuClaims().Delete(ctx, id)
-	if err != nil {
+	if err := service.V2(utils.GetAuthInfo(job)).GpuClaims().Delete(ctx, id); err != nil {
 		if !errors.Is(err, sErrors.ErrResourceNotFound) {
 			return jErrors.MakeFailedError(err)
 		}
@@ -68,173 +58,82 @@ func DeleteGpuClaim(ctx context.Context, job *model.Job) error {
 }
 
 func UpdateGpuClaim(ctx context.Context, job *model.Job) error {
-	err := utils.AssertParameters(job, []string{"id", "params"})
+	id, paramsMap, err := extractIDAndParams(job)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
-	}
-
-	id := job.Args["id"].(string)
-
-	paramsMap, ok := job.Args["params"].(map[string]any)
-	if !ok {
-		return jErrors.MakeTerminatedError(fmt.Errorf("invalid params type"))
 	}
 
 	params, err := DecodeGpuClaimUpdateParams(paramsMap)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
+
 	if err := service.V2(utils.GetAuthInfo(job)).GpuClaims().Update(ctx, id, &params); err != nil {
 		if errors.Is(err, sErrors.ErrResourceNotFound) {
 			return jErrors.MakeTerminatedError(err)
 		}
+		return jErrors.MakeFailedError(err)
 	}
+
 	return nil
 }
 
 // DecodeGpuClaimCreateParams decodes mapstructure for gpuClaimCreate.
-// It is used because the gpuClaimCreateParams have such a complex format.
 func DecodeGpuClaimCreateParams(raw map[string]any) (model.GpuClaimCreateParams, error) {
-	var result model.GpuClaimCreateParams
+	return decodeGpuClaimParams[model.GpuClaimCreateParams](raw)
+}
 
-	type tempGpuDeviceConfiguration struct {
-		Driver     string `json:"driver"`
-		Parameters any    `json:"parameters"`
-	}
-	type tempRequestedGpu struct {
-		AllocationMode  string                      `json:"allocationMode"`
-		DeviceClassName string                      `json:"deviceClassName"`
-		Name            string                      `json:"name"`
-		Count           *int64                      `bson:"count,omitempty"`
-		Selectors       []string                    `bson:"selectors,omitempty"`
-		Config          *tempGpuDeviceConfiguration `json:"config,omitempty"`
-	}
-	type tempGpuClaimCreateParams struct {
-		Name         string             `json:"name"`
-		Zone         string             `json:"zone"`
-		Requested    []tempRequestedGpu `json:"requested"`
-		AllowedRoles []string           `json:"allowedRoles,omitempty"`
+// DecodeGpuClaimUpdateParams decodes mapstructure for gpuClaimUpdate.
+func DecodeGpuClaimUpdateParams(raw map[string]any) (model.GpuClaimUpdateParams, error) {
+	return decodeGpuClaimParams[model.GpuClaimUpdateParams](raw)
+}
+
+func decodeGpuClaimParams[T any](raw map[string]any) (T, error) {
+	var result T
+	if raw == nil {
+		return result, fmt.Errorf("raw params is nil")
 	}
 
-	var temp tempGpuClaimCreateParams
-
-	data, err := json.Marshal(raw)
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: opaqueParamsDecodeHook(),
+		Result:     &result,
+	})
 	if err != nil {
-		return result, fmt.Errorf("failed to marshal raw input: %w", err)
-	}
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return result, fmt.Errorf("failed to unmarshal into temp struct: %w", err)
+		return result, fmt.Errorf("failed to create decoder: %w", err)
 	}
 
-	result.Name = temp.Name
-	result.Zone = temp.Zone
-	result.AllowedRoles = temp.AllowedRoles
-	result.Requested = make([]model.RequestedGpuCreate, len(temp.Requested))
-
-	for i, r := range temp.Requested {
-		req := model.RequestedGpuCreate{
-			AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
-			DeviceClassName: r.DeviceClassName,
-			Count:           r.Count,
-			Selectors:       r.Selectors,
-
-			Name: r.Name,
-		}
-
-		if r.Config != nil {
-			paramsJSON, err := json.Marshal(r.Config.Parameters)
-			if err != nil {
-				return result, fmt.Errorf("failed to marshal Parameters: %w", err)
-			}
-
-			opaqueParams, err := parsers.Parse[dra.OpaqueParams](bytes.NewReader(paramsJSON))
-			if err != nil {
-				return result, fmt.Errorf("failed to parse Parameters: %w", err)
-			}
-
-			req.Config = &model.GpuDeviceConfiguration{
-				Driver:     r.Config.Driver,
-				Parameters: opaqueParams,
-			}
-		}
-
-		result.Requested[i] = req
+	if err := decoder.Decode(raw); err != nil {
+		return result, fmt.Errorf("failed to decode params: %w", err)
 	}
 
 	return result, nil
 }
 
-// DecodeGpuClaimUpdateParams decodes mapstructure for gpuClaimUpdate.
-// It is used because the gpuClaimUpdateParams have such a complex format.
-func DecodeGpuClaimUpdateParams(raw map[string]any) (model.GpuClaimUpdateParams, error) {
-	var result model.GpuClaimUpdateParams
-
-	type tempGpuDeviceConfiguration struct {
-		Driver     string `json:"driver"`
-		Parameters any    `json:"parameters"`
-	}
-	type tempRequestedGpu struct {
-		AllocationMode  string                      `json:"allocationMode"`
-		DeviceClassName string                      `json:"deviceClassName"`
-		Name            string                      `json:"name"`
-		Count           *int64                      `bson:"count,omitempty"`
-		Selectors       []string                    `bson:"selectors,omitempty"`
-		Config          *tempGpuDeviceConfiguration `json:"config,omitempty"`
-	}
-	type tempGpuClaimCreateParams struct {
-		Name         *string             `json:"name,omitempty"`
-		Zone         *string             `json:"zone,omitempty"`
-		Requested    *[]tempRequestedGpu `json:"requested,omitempty"`
-		AllowedRoles *[]string           `json:"allowedRoles,omitempty"`
-	}
-
-	var temp tempGpuClaimCreateParams
-
-	data, err := json.Marshal(raw)
-	if err != nil {
-		return result, fmt.Errorf("failed to marshal raw input: %w", err)
-	}
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return result, fmt.Errorf("failed to unmarshal into temp struct: %w", err)
-	}
-
-	result.Name = temp.Name
-	result.Zone = temp.Zone
-	result.AllowedRoles = temp.AllowedRoles
-	if temp.Requested != nil {
-		resmap := make([]model.RequestedGpuCreate, len(*temp.Requested))
-		result.Requested = &resmap
-
-		for i, r := range *temp.Requested {
-			req := model.RequestedGpuCreate{
-				AllocationMode:  model.RequestAllocationMode(r.AllocationMode),
-				DeviceClassName: r.DeviceClassName,
-				Count:           r.Count,
-				Selectors:       r.Selectors,
-
-				Name: r.Name,
-			}
-
-			if r.Config != nil {
-				paramsJSON, err := json.Marshal(r.Config.Parameters)
-				if err != nil {
-					return result, fmt.Errorf("failed to marshal Parameters: %w", err)
-				}
-
-				opaqueParams, err := parsers.Parse[dra.OpaqueParams](bytes.NewReader(paramsJSON))
-				if err != nil {
-					return result, fmt.Errorf("failed to parse Parameters: %w", err)
-				}
-
-				req.Config = &model.GpuDeviceConfiguration{
-					Driver:     r.Config.Driver,
-					Parameters: opaqueParams,
-				}
-			}
-
-			resmap[i] = req
+func opaqueParamsDecodeHook() mapstructure.DecodeHookFunc {
+	opaqueType := reflect.TypeFor[dra.OpaqueParams]()
+	return func(_ reflect.Type, t reflect.Type, data any) (any, error) {
+		if t != opaqueType || data == nil {
+			return data, nil
 		}
-	}
+		if p, ok := data.(dra.OpaqueParams); ok {
+			return p, nil
+		}
 
-	return result, nil
+		rawBytes, err := json.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal opaque parameters: %w", err)
+		}
+
+		trimmed := bytes.TrimSpace(rawBytes)
+		if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+			return nil, nil
+		}
+
+		opaqueParams, err := parsers.Parse[dra.OpaqueParams](bytes.NewReader(trimmed))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse opaque parameters: %w", err)
+		}
+
+		return opaqueParams, nil
+	}
 }

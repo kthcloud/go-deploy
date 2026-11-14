@@ -181,9 +181,7 @@ func startWith(
 		app.httpServer.BaseContext = func(_ net.Listener) context.Context {
 			return appCtx
 		}
-		app.wg.Add(1)
-		go func() {
-			defer app.wg.Done()
+		app.wg.Go(func() {
 			l.Info("HTTP server listening", zap.String("addr", app.httpServer.Addr))
 			if err := app.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				l.Error("HTTP server failed", zap.Error(err))
@@ -193,7 +191,7 @@ func startWith(
 				}
 				cancel()
 			}
-		}()
+		})
 	}
 
 	return app, nil
