@@ -45,9 +45,6 @@ func OptsNoGenerator(smID string, overwriteOps ...opts.ExtraOpts) *opts.Opts {
 // It contains a BaseClient, which is used to lazy-load and cache data.
 type Client struct {
 	client.BaseClient[Client]
-
-	client    *k8s.Client
-	generator *generators.K8sGenerator
 }
 
 // New creates a new Client and injects the cache.
@@ -61,7 +58,7 @@ func New(cache ...*core.Cache) *Client {
 	}
 
 	c := &Client{BaseClient: client.NewBaseClient[Client](ca)}
-	c.BaseClient.SetParent(c)
+	c.SetParent(c)
 	return c
 }
 
@@ -88,15 +85,15 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 
 	if opts.Client {
 		var userID string
-		if opts.ExtraOpts.UserID != "" {
-			userID = opts.ExtraOpts.UserID
+		if opts.UserID != "" {
+			userID = opts.UserID
 		} else {
 			userID = sm.OwnerID
 		}
 
 		var zone *configModels.Zone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
+		if opts.Zone != nil {
+			zone = opts.Zone
 		} else if sm != nil {
 			zone = config.Config.GetZone(sm.Zone)
 		}
@@ -117,8 +114,8 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 
 	if opts.Generator {
 		var zone *configModels.Zone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
+		if opts.Zone != nil {
+			zone = opts.Zone
 		} else if sm != nil {
 			zone = config.Config.GetZone(sm.Zone)
 		}

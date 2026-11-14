@@ -25,8 +25,8 @@ func (s *VmSnapshotPublic) IsPlaceholder() bool {
 
 func CreateVmSnapshotPublicFromRead(vmSnapshot *v1alpha1.VirtualMachineSnapshot) *VmSnapshotPublic {
 	var name string
-	if vmSnapshot.ObjectMeta.Labels != nil {
-		if n, ok := vmSnapshot.ObjectMeta.Labels[keys.LabelDeployName]; ok {
+	if vmSnapshot.Labels != nil {
+		if n, ok := vmSnapshot.Labels[keys.LabelDeployName]; ok {
 			name = n
 		}
 	}

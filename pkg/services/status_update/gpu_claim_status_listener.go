@@ -12,7 +12,6 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/service/v2/gpu_claims/k8s_service"
-	"github.com/kthcloud/go-deploy/utils"
 )
 
 func GpuClaimStatusListener(ctx context.Context) error {
@@ -53,7 +52,7 @@ func parseGpuClaimStatus(status models.ResourceClaimStatus) *model.GpuClaimStatu
 			}
 			return model.GpuClaimStatusPhase_Pending
 		}(),
-		LastSynced: utils.PtrOf(time.Now()),
+		LastSynced: new(time.Now()),
 	}
 }
 

@@ -136,7 +136,6 @@ func TestCreateWithInvitation(t *testing.T) {
 	notifications := v2.ListNotifications(t, "?userId="+model.TestDefaultUserID, e2e.DefaultUser)
 	assert.NotEmpty(t, notifications, "user has no notifications")
 
-	found = false
 	for _, notification := range notifications {
 		if notification.Type == model.NotificationTeamInvite {
 			for key, val := range notification.Content {

@@ -77,7 +77,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 			return nil, makeError(err)
 		}
 
-		manifest := CreateVmManifest(public, vm.ObjectMeta.ResourceVersion)
+		manifest := CreateVmManifest(public, vm.ResourceVersion)
 		res, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
 		if err != nil {
 			if IsHasBeenModifiedErr(err) {

@@ -55,7 +55,7 @@ func migratePrivateBooleanToVisibilityEnum_2024_06_10() error {
 			continue
 		}
 
-		if mainApp.Private {
+		if mainApp.Private { //nolint:staticcheck // SA1019: migrating from deprecated Private field
 			mainApp.Visibility = model.VisibilityPrivate
 		} else {
 			mainApp.Visibility = model.VisibilityPublic

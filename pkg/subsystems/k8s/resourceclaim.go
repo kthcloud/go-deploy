@@ -7,7 +7,6 @@ import (
 
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
-	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	resourcev1 "k8s.io/api/resource/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -108,7 +107,7 @@ func (client *Client) waitResourceClaimDeleted(name string) error {
 
 // SetupResourceClaimWatcher is a function that sets up a resourceClaim watcher with a callback.
 // It triggers the callback when a resourceClaim event occurs.
-func (client *Client) SetupResourceClaimWatcher(ctx context.Context, callback func(resourceClaimName string, status k8sModels.ResourceClaimStatus, event string)) error {
+func (client *Client) SetupResourceClaimWatcher(ctx context.Context, callback func(resourceClaimName string, status models.ResourceClaimStatus, event string)) error {
 	factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
 	resoureClaimInformer := factory.Resource().V1().ResourceClaims().Informer()
 
@@ -164,10 +163,10 @@ func (client *Client) SetupResourceClaimWatcher(ctx context.Context, callback fu
 	return nil
 }
 
-func rcToK8sModel(rc *resourcev1.ResourceClaim) k8sModels.ResourceClaimStatus {
-	rcp := k8sModels.CreateResourceClaimPublicFromRead(rc)
+func rcToK8sModel(rc *resourcev1.ResourceClaim) models.ResourceClaimStatus {
+	rcp := models.CreateResourceClaimPublicFromRead(rc)
 
-	return k8sModels.ResourceClaimStatus{
+	return models.ResourceClaimStatus{
 		Allocated:         rcp.Allocated,
 		AllocationResults: rcp.AllocationResults,
 		Consumers:         rcp.Consumers,

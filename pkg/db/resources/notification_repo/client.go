@@ -30,7 +30,7 @@ func New() *Client {
 
 // WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
-	client.ResourceClient.Pagination = &db.Pagination{
+	client.Pagination = &db.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 	}
@@ -40,7 +40,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // WithUserID adds a filter to the client to only include notifications with the given user ID.
 func (client *Client) WithUserID(ownerID string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{Key: "userId", Value: ownerID}})
+	client.AddExtraFilter(bson.D{{Key: "userId", Value: ownerID}})
 	client.RestrictUserID = &ownerID
 
 	return client
@@ -48,7 +48,7 @@ func (client *Client) WithUserID(ownerID string) *Client {
 
 // WithType adds a filter to the client to only include notifications with the given type.
 func (client *Client) WithType(notificationType string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{Key: "type", Value: notificationType}})
+	client.AddExtraFilter(bson.D{{Key: "type", Value: notificationType}})
 
 	return client
 }

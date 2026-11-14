@@ -5,9 +5,6 @@ import (
 	"strconv"
 )
 
-//go:fix inline
-func int64Ptr(i int64) *int64 { return new(i) }
-
 // CreateProjectCreateBody creates a body used for create a project in the Harbor API.
 func CreateProjectCreateBody(public *ProjectPublic) models.ProjectReq {
 	return models.ProjectReq{

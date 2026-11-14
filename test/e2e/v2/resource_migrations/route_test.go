@@ -35,8 +35,8 @@ func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 	t.Parallel()
 
 	resource, _ := v2.WithDeployment(t, bodyV2.DeploymentCreate{
-		Name:    e2e.GenName(),
-		Private: false,
+		Name:       e2e.GenName(),
+		Visibility: model.VisibilityPublic,
 	}, e2e.PowerUser)
 
 	// Create as default user
@@ -153,8 +153,8 @@ func TestUpdateDeploymentOwnerAsAdmin(t *testing.T) {
 	t.Parallel()
 
 	resource1, _ := v2.WithDeployment(t, bodyV2.DeploymentCreate{
-		Name:    e2e.GenName(),
-		Private: false,
+		Name:       e2e.GenName(),
+		Visibility: model.VisibilityPublic,
 	}, e2e.PowerUser)
 
 	// Create as default user

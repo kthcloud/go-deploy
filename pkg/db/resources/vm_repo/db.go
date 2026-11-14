@@ -161,7 +161,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 					{Key: "ports.httpProxy.name", Value: port.HttpProxy.Name},
 				}
 
-				existAny, err := client.ResourceClient.ExistsWithFilter(filter)
+				existAny, err := client.ExistsWithFilter(filter)
 				if err != nil {
 					return err
 				}

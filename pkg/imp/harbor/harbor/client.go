@@ -16,16 +16,15 @@ import (
 var InsecureTransport http.RoundTripper = &http.Transport{
 	Proxy: http.ProxyFromEnvironment,
 	DialContext: (&net.Dialer{
-		Timeout:   30 * time.Second, // nolint:gomnd
-		KeepAlive: 30 * time.Second, // nolint:gomnd
-		DualStack: true,
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
 	}).DialContext,
 	TLSClientConfig: &tls.Config{
 		InsecureSkipVerify: true, // nolint:gosec
 	},
-	MaxIdleConns:          100,              // nolint:gomnd
-	IdleConnTimeout:       90 * time.Second, // nolint:gomnd
-	TLSHandshakeTimeout:   10 * time.Second, // nolint:gomnd
+	MaxIdleConns:          100,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
 	ExpectContinueTimeout: 1 * time.Second,
 }
 
@@ -55,9 +54,9 @@ type ClientSet struct {
 // ToV2Config convert the Config to v2client's Config
 func (c *Config) ToV2Config() v2client.Config {
 	var (
-		u url.URL                      = url.URL{}
-		t http.RoundTripper            = c.Transport
-		a runtime.ClientAuthInfoWriter = c.AuthInfo
+		u = url.URL{}
+		t = c.Transport
+		a = c.AuthInfo
 	)
 
 	if c.URL != nil {

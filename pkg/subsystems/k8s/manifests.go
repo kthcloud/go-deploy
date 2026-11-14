@@ -813,7 +813,7 @@ func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networking
 
 func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1.ResourceClaim {
 
-	var deviceClaim resourcev1.DeviceClaim = resourcev1.DeviceClaim{
+	deviceClaim := resourcev1.DeviceClaim{
 		Requests: make([]resourcev1.DeviceRequest, 0, len(public.DeviceRequests)),
 		// TODO: add constraints
 		//Constraints: []resourcev1.DeviceConstraint{},
@@ -912,12 +912,11 @@ func CreateResourceClaimManifest(public *models.ResourceClaimPublic) *resourcev1
 		if strings.TrimSpace(key) == "" {
 			continue
 		}
+		// If public input contains a config without any requests,
+		// just leave it in for now, k8s will probably return error for it.
+		// TODO: check this behavior
 		if v, found := cfgReqMap[key]; found {
 			deviceClaim.Config[i].Requests = v
-		} else {
-			// Public input contains a config without any requests,
-			// just leave it in for now, k8s will probably return error for it
-			// TODO: check this behavior
 		}
 	}
 
@@ -962,11 +961,4 @@ func createResourceList(cpu, memory string) apiv1.ResourceList {
 func intToInt32Ptr(i int) *int32 {
 	i32 := int32(i)
 	return &i32
-}
-
-// strToPtr is a helper function to convert a string to a *string.
-//
-//go:fix inline
-func strToPtr(s string) *string {
-	return new(s)
 }

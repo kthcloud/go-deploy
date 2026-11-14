@@ -19,7 +19,7 @@ import (
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/resources"
 	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // Create sets up K8s for a VM.

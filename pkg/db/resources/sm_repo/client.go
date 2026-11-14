@@ -41,7 +41,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // IncludeDeletedResources makes the client include deleted storage managers.
 func (client *Client) IncludeDeletedResources() *Client {
-	client.ResourceClient.IncludeDeleted = true
+	client.IncludeDeleted = true
 
 	return client
 }

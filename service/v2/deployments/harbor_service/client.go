@@ -53,7 +53,7 @@ type Client struct {
 // Otherwise, an empty context will be created.
 func New(cache *core.Cache) *Client {
 	c := &Client{BaseClient: client.NewBaseClient[Client](cache)}
-	c.BaseClient.SetParent(c)
+	c.SetParent(c)
 	return c
 }
 
@@ -80,8 +80,8 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 
 	if opts.Client {
 		var userID string
-		if opts.ExtraOpts.UserID != "" {
-			userID = opts.ExtraOpts.UserID
+		if opts.UserID != "" {
+			userID = opts.UserID
 		} else {
 			userID = deployment.OwnerID
 		}
@@ -98,15 +98,15 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 
 	if opts.Generator {
 		var userID string
-		if opts.ExtraOpts.UserID != "" {
-			userID = opts.ExtraOpts.UserID
+		if opts.UserID != "" {
+			userID = opts.UserID
 		} else {
 			userID = deployment.OwnerID
 		}
 
 		var zone *configModels.Zone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
+		if opts.Zone != nil {
+			zone = opts.Zone
 		} else if deployment != nil {
 			zone = config.Config.GetZone(deployment.Zone)
 		}

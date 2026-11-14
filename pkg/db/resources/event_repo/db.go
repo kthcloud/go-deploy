@@ -16,6 +16,6 @@ func (client *Client) Create(id string, params *model.EventCreateParams) error {
 		Metadata:  params.Metadata,
 	}
 
-	_, err := client.ResourceClient.Collection.InsertOne(context.TODO(), event)
+	_, err := client.Collection.InsertOne(context.TODO(), event)
 	return err
 }

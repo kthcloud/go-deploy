@@ -24,7 +24,7 @@ func (client *Client) ReadAllNamespaces(prefix *string) ([]models.NamespacePubli
 
 	var result []models.NamespacePublic
 	for _, item := range list.Items {
-		if prefix != nil && !strings.HasPrefix(item.ObjectMeta.Name, *prefix) {
+		if prefix != nil && !strings.HasPrefix(item.Name, *prefix) {
 			continue
 		}
 

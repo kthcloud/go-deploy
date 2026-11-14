@@ -657,7 +657,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %f, Quota: %f", totalRam, quota.RAM))
 			}
 		}
-	} else if o.CreateSnapshot != nil {
+	} else if o.CreateSnapshot != nil { //nolint:staticcheck // SA9003: reserved for future use
 		// This is reserved for future use when snapshots are implemented
 	}
 

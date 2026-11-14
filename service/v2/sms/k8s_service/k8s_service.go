@@ -12,7 +12,6 @@ import (
 	"github.com/kthcloud/go-deploy/service/constants"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/resources"
-	"golang.org/x/exp/slices"
 )
 
 // Create creates the storage manager.
@@ -147,6 +146,9 @@ func (c *Client) Delete(id string) error {
 			WithResourceID(k8sDeployment.Name).
 			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Service
@@ -155,6 +157,9 @@ func (c *Client) Delete(id string) error {
 			WithResourceID(k8sService.Name).
 			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Ingress
@@ -163,6 +168,9 @@ func (c *Client) Delete(id string) error {
 			WithResourceID(ingress.Name).
 			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// PersistentVolumeClaim
@@ -171,6 +179,9 @@ func (c *Client) Delete(id string) error {
 			WithResourceID(pvc.Name).
 			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// PersistentVolume
@@ -179,6 +190,9 @@ func (c *Client) Delete(id string) error {
 			WithResourceID(pv.Name).
 			WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Secret
@@ -238,8 +252,14 @@ func (c *Client) Repair(id string) error {
 
 	deployments := g.Deployments()
 	for mapName, k8sDeployment := range sm.Subsystems.K8s.DeploymentMap {
-		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
-		if idx == -1 {
+		found := false
+		for _, d := range deployments {
+			if d.Name == mapName {
+				found = true
+				break
+			}
+		}
+		if !found {
 			err = resources.SsDeleter(kc.DeleteDeployment).
 				WithResourceID(k8sDeployment.Name).
 				WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
@@ -265,8 +285,14 @@ func (c *Client) Repair(id string) error {
 
 	services := g.Services()
 	for mapName, k8sService := range sm.Subsystems.K8s.ServiceMap {
-		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
-		if idx == -1 {
+		found := false
+		for _, s := range services {
+			if s.Name == mapName {
+				found = true
+				break
+			}
+		}
+		if !found {
 			err = resources.SsDeleter(kc.DeleteService).
 				WithResourceID(k8sService.Name).
 				WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
@@ -292,8 +318,14 @@ func (c *Client) Repair(id string) error {
 
 	ingresses := g.Ingresses()
 	for mapName, ingress := range sm.Subsystems.K8s.IngressMap {
-		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
-		if idx == -1 {
+		found := false
+		for _, i := range ingresses {
+			if i.Name == mapName {
+				found = true
+				break
+			}
+		}
+		if !found {
 			err = resources.SsDeleter(kc.DeleteIngress).
 				WithResourceID(ingress.Name).
 				WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
@@ -323,8 +355,14 @@ func (c *Client) Repair(id string) error {
 
 	secrets := g.Secrets()
 	for mapName, secret := range sm.Subsystems.K8s.SecretMap {
-		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
-		if idx == -1 {
+		found := false
+		for _, s := range secrets {
+			if s.Name == mapName {
+				found = true
+				break
+			}
+		}
+		if !found {
 			err = resources.SsDeleter(kc.DeleteSecret).
 				WithResourceID(secret.Name).
 				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
@@ -355,8 +393,14 @@ func (c *Client) Repair(id string) error {
 
 	pvcs := g.PVCs()
 	for mapName := range sm.Subsystems.K8s.PvcMap {
-		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
-		if idx == -1 {
+		found := false
+		for _, s := range pvcs {
+			if s.Name == mapName {
+				found = true
+				break
+			}
+		}
+		if !found {
 			anyMismatch = true
 			break
 		}
@@ -376,8 +420,14 @@ func (c *Client) Repair(id string) error {
 
 	pvs := g.PVs()
 	for mapName := range sm.Subsystems.K8s.PvMap {
-		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
-		if idx == -1 {
+		found := false
+		for _, s := range pvs {
+			if s.Name == mapName {
+				found = true
+				break
+			}
+		}
+		if !found {
 			anyMismatch = true
 			break
 		}

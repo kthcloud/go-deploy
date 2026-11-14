@@ -47,8 +47,8 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 	var image string
 	var name string
 
-	if vm.ObjectMeta.Labels != nil {
-		if n, ok := vm.ObjectMeta.Labels[keys.LabelDeployName]; ok {
+	if vm.Labels != nil {
+		if n, ok := vm.Labels[keys.LabelDeployName]; ok {
 			name = n
 		}
 	}

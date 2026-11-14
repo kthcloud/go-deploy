@@ -17,7 +17,6 @@ import (
 type K8sGenerator struct {
 	generators.K8sGeneratorBase
 
-	image     *string
 	namespace string
 	client    *k8s.Client
 
@@ -53,7 +52,7 @@ func (kg *K8sGenerator) ResourceClaims() []models.ResourceClaimPublic {
 		return nil
 	}
 
-	var rc models.ResourceClaimPublic = models.ResourceClaimPublic{
+	rc := models.ResourceClaimPublic{
 		Name:           kg.gc.Name,
 		Namespace:      kg.namespace,
 		DeviceRequests: make([]models.ResourceClaimDeviceRequestPublic, 0, len(kg.gc.Requested)),

@@ -29,7 +29,7 @@ func New(v2 clients.V2, cache ...*core.Cache) *Client {
 	}
 
 	c := &Client{V2: v2, BaseClient: client.NewBaseClient[Client](ca)}
-	c.BaseClient.SetParent(c)
+	c.SetParent(c)
 	return c
 }
 

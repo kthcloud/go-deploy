@@ -38,7 +38,7 @@ type testParam struct {
 }
 
 var params = []testParam{
-	testParam{
+	{
 		url:               "//10.0.0.1:443",
 		transport:         harbor.InsecureTransport,
 		authInfo:          nil,
@@ -49,7 +49,7 @@ var params = []testParam{
 		expectedAuthInfo:  nil,
 		clientType:        v2Type,
 	},
-	testParam{
+	{
 		url:               "http://10.0.0.1",
 		transport:         harbor.InsecureTransport,
 		authInfo:          nil,
@@ -88,7 +88,7 @@ func TestToConfig(t *testing.T) {
 }
 
 var clientSetParams = []testParam{
-	testParam{
+	{
 		url:       "//10.0.0.1:443",
 		transport: harbor.InsecureTransport,
 		authInfo:  nil,

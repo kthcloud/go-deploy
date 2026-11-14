@@ -63,7 +63,7 @@ func New(cache ...*core.Cache) *Client {
 	}
 
 	c := &Client{BaseClient: client.NewBaseClient[Client](ca)}
-	c.BaseClient.SetParent(c)
+	c.SetParent(c)
 	return c
 }
 
@@ -157,8 +157,8 @@ func withClient(zone *configModels.Zone, namespace string) (*k8s.Client, error) 
 
 // getZone is a helper function that returns either the zone in opts or the zone in the deployment.
 func getZone(opts *opts.Opts, d *model.Deployment) *configModels.Zone {
-	if opts.ExtraOpts.Zone != nil {
-		return opts.ExtraOpts.Zone
+	if opts.Zone != nil {
+		return opts.Zone
 	}
 
 	if d != nil {

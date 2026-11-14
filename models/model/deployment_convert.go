@@ -142,7 +142,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		}
 	}
 
-	var gpus []body.DeploymentGPU = make([]body.DeploymentGPU, 0, len(app.GPUs))
+	gpus := make([]body.DeploymentGPU, 0, len(app.GPUs))
 	for _, gpu := range app.GPUs {
 		dto := body.DeploymentGPU{
 			Name:      gpu.Name,
@@ -357,7 +357,7 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 	if dto.GPUs != nil {
 		gpus := make([]DeploymentGPU, 0, len(*dto.GPUs))
 		for _, gpu := range *dto.GPUs {
-			var gpuM DeploymentGPU = DeploymentGPU{
+			gpuM := DeploymentGPU{
 				Name:      gpu.Name,
 				ClaimName: gpu.ClaimName,
 			}

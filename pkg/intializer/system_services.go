@@ -58,18 +58,3 @@ func EnsureSystemDeploymentsExists() error {
 
 	return nil
 }
-
-//go:fix inline
-func floatPtr(f float64) *float64 {
-	return new(f)
-}
-
-//go:fix inline
-func intPtr(i int) *int {
-	return new(i)
-}
-
-//go:fix inline
-func strPtr(s string) *string {
-	return new(s)
-}

@@ -82,11 +82,7 @@ func getPublicKey(keyId string, config KeycloakConfig) (any, error) {
 		return &rsa.PublicKey{N: bigN, E: int(bigE.Int64())}, nil
 	} else if strings.ToUpper(keyEntry.Kty) == "EC" {
 		x, _ := base64.RawURLEncoding.DecodeString(keyEntry.X)
-		bigX := new(big.Int)
-		bigX.SetBytes(x)
 		y, _ := base64.RawURLEncoding.DecodeString(keyEntry.Y)
-		bigY := new(big.Int)
-		bigY.SetBytes(y)
 
 		var curve elliptic.Curve
 		crv := strings.ToUpper(keyEntry.Crv)
@@ -103,11 +99,16 @@ func getPublicKey(keyId string, config KeycloakConfig) (any, error) {
 			return nil, errors.New("EC curve algorithm not supported " + keyEntry.Kty)
 		}
 
-		return &ecdsa.PublicKey{
-			Curve: curve,
-			X:     bigX,
-			Y:     bigY,
-		}, nil
+		coordSize := (curve.Params().BitSize + 7) / 8
+		if len(x) > coordSize || len(y) > coordSize {
+			return nil, errors.New("invalid EC public key coordinate length")
+		}
+		uncompressed := make([]byte, 1+2*coordSize)
+		uncompressed[0] = 0x04
+		copy(uncompressed[1+coordSize-len(x):1+coordSize], x)
+		copy(uncompressed[1+2*coordSize-len(y):], y)
+
+		return ecdsa.ParseUncompressedPublicKey(curve, uncompressed)
 	}
 
 	return nil, errors.New("no support for keys of type " + keyEntry.Kty)
@@ -134,7 +135,7 @@ func getPublicKeyFromCacheOrBackend(keyId string, config KeycloakConfig) (KeyEnt
 	if err != nil {
 		return KeyEntry{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 
 	var certs Certs

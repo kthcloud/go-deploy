@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/metrics"
-	"net/http"
 	"net/http/httputil"
 )
 
@@ -25,10 +24,10 @@ func MetricsRoutes() *MetricsRoutingGroup {
 	ginHandler := func(c *gin.Context) {
 		metrics.Sync()
 
-		director := func(req *http.Request) {
-			req.URL.Path = "/internal/metrics"
-			req.URL.Scheme = "http"
-			req.URL.Host = target
+		rewrite := func(pr *httputil.ProxyRequest) {
+			pr.Out.URL.Path = "/internal/metrics"
+			pr.Out.URL.Scheme = "http"
+			pr.Out.URL.Host = target
 		}
 
 		// To prevent duplicate headers, we need to clear CORS headers
@@ -36,7 +35,7 @@ func MetricsRoutes() *MetricsRoutingGroup {
 		c.Writer.Header().Del("Access-Control-Allow-Methods")
 		c.Writer.Header().Del("Access-Control-Allow-Credentials")
 
-		proxy := &httputil.ReverseProxy{Director: director}
+		proxy := &httputil.ReverseProxy{Rewrite: rewrite}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 

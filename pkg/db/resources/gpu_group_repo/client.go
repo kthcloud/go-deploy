@@ -21,7 +21,7 @@ func New() *Client {
 
 // WithPagination sets the pagination for the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
-	client.ResourceClient.Pagination = &db.Pagination{
+	client.Pagination = &db.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 	}
@@ -31,7 +31,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // WithZone adds a filter to the client to only include groups with the given zone.
 func (client *Client) WithZone(zone string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{Key: "zone", Value: zone}})
+	client.AddExtraFilter(bson.D{{Key: "zone", Value: zone}})
 
 	return client
 }

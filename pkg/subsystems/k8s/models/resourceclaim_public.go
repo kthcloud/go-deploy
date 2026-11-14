@@ -150,7 +150,7 @@ func CreateResourceClaimPublicFromRead(claim *resourcev1.ResourceClaim) *Resourc
 
 	rc.DeviceRequests = make([]ResourceClaimDeviceRequestPublic, 0, len(claim.Spec.Devices.Requests))
 	for _, req := range claim.Spec.Devices.Requests {
-		var request ResourceClaimDeviceRequestPublic = ResourceClaimDeviceRequestPublic{
+		request := ResourceClaimDeviceRequestPublic{
 			Name: req.Name,
 		}
 

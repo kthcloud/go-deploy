@@ -386,7 +386,7 @@ func UpdateVM(c *gin.Context) {
 
 	if requestBody.Ports != nil {
 		for _, port := range *requestBody.Ports {
-			if port.HttpProxy != nil {
+			if port.HttpProxy != nil { //nolint:staticcheck // SA9003: TODO: Fix this
 				// TODO: Fix this
 				//available, err := deployV2.VMs().HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
 				//if err != nil {

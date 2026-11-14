@@ -216,7 +216,7 @@ func createGpuGroupName(gpu *body.GpuInfo) *string {
 		return nil
 	}
 
-	device := strings.Replace(strings.ToLower(gpu.Name), " ", "-", -1)
+	device := strings.ReplaceAll(strings.ToLower(gpu.Name), " ", "-")
 
 	groupName := fmt.Sprintf("%s/%s", vendor, device)
 	return &groupName

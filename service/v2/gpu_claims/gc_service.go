@@ -209,7 +209,7 @@ func (c *Client) Update(id string, params *model.GpuClaimUpdateParams) error {
 		needsK8sUpdate = true
 	}
 
-	if needsK8sUpdate {
+	if needsK8sUpdate { //nolint:staticcheck // SA9003: TODO: impl update for k8s
 		// TODO: impl update for k8s
 	}
 

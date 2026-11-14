@@ -35,7 +35,7 @@ func (client *Client) WithSearch(search string) *Client {
 
 // WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
-	client.ResourceClient.Pagination = &db.Pagination{
+	client.Pagination = &db.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 	}

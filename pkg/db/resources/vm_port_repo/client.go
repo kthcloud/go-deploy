@@ -29,7 +29,7 @@ func New() *Client {
 
 // WithPagination sets the pagination for the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
-	client.ResourceClient.Pagination = &db.Pagination{
+	client.Pagination = &db.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 	}
@@ -39,7 +39,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // WithZone adds a filter to the client to only return VM ports in the given zone.
 func (client *Client) WithZone(zone string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{Key: "zone", Value: zone}})
+	client.AddExtraFilter(bson.D{{Key: "zone", Value: zone}})
 
 	return client
 }
@@ -51,22 +51,22 @@ func (client *Client) ExcludePortRange(start, end int) *Client {
 		bson.D{{Key: "publicPort", Value: bson.D{{Key: "$gte", Value: end}}}},
 	}}}
 
-	client.ResourceClient.AddExtraFilter(filter)
+	client.AddExtraFilter(filter)
 
 	return client
 }
 
 // IncludePortRange adds a filter to the client to only return VM ports in the given range.
 func (client *Client) IncludePortRange(start, end int) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{Key: "publicPort", Value: bson.D{{Key: "$gte", Value: start}}}})
-	client.ResourceClient.AddExtraFilter(bson.D{{Key: "publicPort", Value: bson.D{{Key: "$lt", Value: end}}}})
+	client.AddExtraFilter(bson.D{{Key: "publicPort", Value: bson.D{{Key: "$gte", Value: start}}}})
+	client.AddExtraFilter(bson.D{{Key: "publicPort", Value: bson.D{{Key: "$lt", Value: end}}}})
 
 	return client
 }
 
 // WithVmID adds a filter to the client to only return VM ports for the given VM.
 func (client *Client) WithVmID(vmID string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{Key: "lease.vmId", Value: vmID}})
+	client.AddExtraFilter(bson.D{{Key: "lease.vmId", Value: vmID}})
 
 	return client
 }

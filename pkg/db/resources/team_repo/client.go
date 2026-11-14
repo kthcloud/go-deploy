@@ -24,7 +24,7 @@ func New() *Client {
 
 // WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
-	client.ResourceClient.Pagination = &db.Pagination{
+	client.Pagination = &db.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 	}
@@ -59,7 +59,7 @@ func (client *Client) WithResourceID(resourceID string) *Client {
 // WithNameRegex adds a filter to the client to only include teams with a name matching the given regex.
 func (client *Client) WithNameRegex(name string) *Client {
 	filter := bson.D{{Key: "name", Value: bson.D{{Key: "$regex", Value: name}}}}
-	client.ResourceClient.AddExtraFilter(filter)
+	client.AddExtraFilter(filter)
 
 	return client
 }
@@ -67,7 +67,7 @@ func (client *Client) WithNameRegex(name string) *Client {
 // OlderThan adds a filter to the client to only include teams older than the given timestamp.
 func (client *Client) OlderThan(timestamp time.Time) *Client {
 	filter := bson.D{{Key: "createdAt", Value: bson.D{{Key: "$lt", Value: timestamp}}}}
-	client.ResourceClient.AddExtraFilter(filter)
+	client.AddExtraFilter(filter)
 
 	return client
 }

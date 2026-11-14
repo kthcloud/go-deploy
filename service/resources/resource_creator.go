@@ -8,7 +8,6 @@ import (
 // SsCreatorType is a type that can be used to create a single subsystem model
 // It contains the public model that should be created, and the functions that should be used to create it
 type SsCreatorType[T subsystems.SsResource] struct {
-	name   *string
 	public T
 
 	dbFunc     func(any) error

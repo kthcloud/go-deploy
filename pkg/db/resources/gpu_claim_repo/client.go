@@ -110,7 +110,7 @@ func (client *Client) WithNames(names []string) *Client {
 
 // IncludeDeletedResources makes the client include deleted gpu claims.
 func (client *Client) IncludeDeletedResources() *Client {
-	client.ResourceClient.IncludeDeleted = true
+	client.IncludeDeleted = true
 
 	return client
 }

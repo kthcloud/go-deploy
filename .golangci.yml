@@ -1,0 +1,19 @@
+# golangci-lint configuration (v2 schema).
+#
+# Run: `go tool golangci-lint run ./...`
+
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  exclusions:
+    generated: strict
+
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: strict

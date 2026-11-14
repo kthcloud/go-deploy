@@ -5,7 +5,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // DeploymentDeletionConfirmer is a worker that confirms deployment deletion.

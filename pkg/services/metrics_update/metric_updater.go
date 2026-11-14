@@ -104,10 +104,3 @@ func jobMetrics(key string, status *string) func() error {
 		return nil
 	}
 }
-
-// strPtr is a helper function that returns a pointer to a string.
-//
-//go:fix inline
-func strPtr(s string) *string {
-	return new(s)
-}

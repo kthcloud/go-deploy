@@ -75,7 +75,7 @@ func New(cache ...*core.Cache) *Client {
 	}
 
 	c := &Client{BaseClient: client.NewBaseClient[Client](ca)}
-	c.BaseClient.SetParent(c)
+	c.SetParent(c)
 	return c
 }
 
@@ -122,7 +122,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGen
 			return nil, nil, nil, sErrors.ErrZoneNotFound
 		}
 
-		g = c.Generator(vm, kc, zone, opts.ExtraOpts.ExtraSshKeys)
+		g = c.Generator(vm, kc, zone, opts.ExtraSshKeys)
 		if g == nil {
 			return nil, nil, nil, sErrors.ErrVmNotFound
 		}
@@ -174,8 +174,8 @@ func withClient(zone *configModels.Zone, namespace string) (*k8s.Client, error) 
 
 // getZone is a helper function that returns either the zone in opts or the zone in vm.
 func getZone(opts *opts.Opts, vm *model.VM) *configModels.Zone {
-	if opts.ExtraOpts.Zone != nil {
-		return opts.ExtraOpts.Zone
+	if opts.Zone != nil {
+		return opts.Zone
 	}
 
 	if vm != nil {

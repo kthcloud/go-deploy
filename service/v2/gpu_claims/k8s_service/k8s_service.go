@@ -72,6 +72,9 @@ func (c *Client) Delete(id string) error {
 			WithResourceID(rc.Name).
 			WithDbFunc(dbFunc(id, "resourceClaimMap."+mapName)).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Namespace

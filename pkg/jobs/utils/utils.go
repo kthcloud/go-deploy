@@ -15,7 +15,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // AssertParameters asserts that the job has all the required parameters.
