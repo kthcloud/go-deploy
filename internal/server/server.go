@@ -122,6 +122,9 @@ func Start(ctx context.Context, opts Options) (*App, error) {
 			return &http.Server{
 				Addr:    listenAddr,
 				Handler: routers.NewRouter(),
+				BaseContext: func(_ net.Listener) context.Context {
+					return ctx
+				},
 			}
 		}
 	}
