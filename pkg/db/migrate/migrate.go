@@ -8,6 +8,7 @@ import (
 
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/worker_status_repo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 )
@@ -46,6 +47,7 @@ func Migrate(ctx context.Context, logger *zap.Logger) error {
 func getMigrations() map[string]func(ctx context.Context, logger *zap.Logger) error {
 	return map[string]func(ctx context.Context, logger *zap.Logger) error{
 		"migratePrivateBooleanToVisibilityEnum_2024_06_10": migratePrivateBooleanToVisibilityEnum_2024_06_10,
+		"migrateGpClaimDeletionConfirmerName_2026_11_14":   migrateGpClaimDeletionConfirmerName_2026_11_14,
 	}
 }
 
@@ -79,6 +81,37 @@ func migratePrivateBooleanToVisibilityEnum_2024_06_10(ctx context.Context, logge
 	}
 
 	logger.Info("migrated", zap.Int("deploymentCount", migrated), zap.Duration("in", time.Since(start)))
+
+	return nil
+}
+
+func migrateGpClaimDeletionConfirmerName_2026_11_14(ctx context.Context, logger *zap.Logger) error {
+	start := time.Now()
+	col := worker_status_repo.New().Collection
+
+	const oldName = "gpClaimDeletionConfirmer"
+	const newName = "gpuClaimDeletionConfirmer"
+
+	existingNewCount, err := col.CountDocuments(ctx, bson.D{{Key: "name", Value: newName}})
+	if err != nil {
+		return err
+	}
+
+	if existingNewCount > 0 {
+		res, err := col.DeleteMany(ctx, bson.D{{Key: "name", Value: oldName}})
+		if err != nil {
+			return err
+		}
+		logger.Info("migrated", zap.Int64("deletedOldCount", res.DeletedCount), zap.Duration("in", time.Since(start)))
+		return nil
+	}
+
+	res, err := col.UpdateOne(ctx, bson.D{{Key: "name", Value: oldName}}, bson.D{{Key: "$set", Value: bson.D{{Key: "name", Value: newName}}}})
+	if err != nil {
+		return err
+	}
+
+	logger.Info("migrated", zap.Int64("renamedCount", res.ModifiedCount), zap.Duration("in", time.Since(start)))
 
 	return nil
 }

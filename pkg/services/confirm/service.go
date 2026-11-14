@@ -27,7 +27,7 @@ func Setup(ctx context.Context) {
 			services.PeriodicWorker(ctx, "customDomainConfirmer", CustomDomainConfirmer, config.Config.Timer.CustomDomainConfirm)
 		},
 		func(ctx context.Context) {
-			services.PeriodicWorker(ctx, "gpClaimDeletionConfirmer", GcDeletionConfirmer, config.Config.Timer.DeploymentDeletionConfirm)
+			services.PeriodicWorker(ctx, "gpuClaimDeletionConfirmer", GcDeletionConfirmer, config.Config.Timer.DeploymentDeletionConfirm)
 		},
 	)
 }
